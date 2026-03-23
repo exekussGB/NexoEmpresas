@@ -4,6 +4,13 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class CreateEmpresaRequest(
+    val nombre: String,
+    val rut: String,
+    val giro: String? = null,
+    @SerialName("created_by") val createdBy: String
+)
+@Serializable
 data class Empresa(
     val id: String = "",
     val nombre: String = "",
