@@ -16,11 +16,12 @@ class GraficosRepositoryImpl @Inject constructor(
     override suspend fun getGraficoData(empresaId: String, meses: Int): Result<GraficoData> =
         runCatching {
             client.auth.awaitInitialization()
+            // El RPC retorna un jsonb directo → decodeAs (no decodeSingle que espera array)
             client.postgrest
                 .rpc("get_grafico_data", buildJsonObject {
                     put("p_empresa_id", empresaId)
                     put("p_meses", meses)
                 })
-                .decodeSingle<GraficoData>()
+                .decodeAs<GraficoData>()
         }
 }

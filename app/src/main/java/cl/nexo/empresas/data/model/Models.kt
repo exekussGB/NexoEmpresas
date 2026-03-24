@@ -101,12 +101,16 @@ data class Documento(
 
 // DocumentoCreate está definido en DocumentoCreate.kt
 
-/** UPDATE DTO para marcar un documento como pagado */
+/**
+ * UPDATE DTO para marcar un documento como pagado.
+ * IMPORTANTE: `estado` NO tiene valor default para forzar serialización
+ * aunque encodeDefaults = false esté activo en el cliente Supabase.
+ */
 @Serializable
 data class DocumentoMarcarPagado(
-    val estado: String = "pagado",
-    @SerialName("fecha_pago")           val fechaPago: String,
-    @SerialName("numero_seguimiento")   val numeroSeguimiento: String? = null
+    val estado: String,                                          // sin default → siempre serializa
+    @SerialName("fecha_pago")         val fechaPago: String,
+    @SerialName("numero_seguimiento") val numeroSeguimiento: String? = null
 )
 
 // ── Cheque ──────────────────────────────────────────────────────────────────────────

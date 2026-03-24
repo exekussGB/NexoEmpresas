@@ -6,6 +6,7 @@ import cl.nexo.empresas.domain.repository.DocumentosRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -59,13 +60,35 @@ class DocumentosRepositoryImpl @Inject constructor(
                 }
             }
 
+            // 3. Si este documento es el pago/cobro de otro (referencia),
+            //    marcar el documento original como pagado automáticamente.
+            val refId = doc.referenciaDocId
+            if (refId != null) {
+                runCatching {
+                    supabaseClient.postgrest["documentos"].update(
+                        DocumentoMarcarPagado(
+                            estado             = "pagado",
+                            fechaPago          = doc.fechaMovimiento,
+                            numeroSeguimiento  = null
+                        )
+                    ) {
+                        filter { eq("id", refId) }
+                    }
+                }
+                // No propagamos el error si el update falla — el documento nuevo ya se creó.
+            }
+
             inserted.id
         }
 
     override suspend fun marcarPagado(id: String, fechaPago: String, numeroSeguimiento: String?): Result<Unit> =
         runCatching {
             supabaseClient.postgrest["documentos"].update(
-                DocumentoMarcarPagado(fechaPago = fechaPago, numeroSeguimiento = numeroSeguimiento)
+                DocumentoMarcarPagado(
+                    estado            = "pagado",   // sin default → siempre se serializa
+                    fechaPago         = fechaPago,
+                    numeroSeguimiento = numeroSeguimiento
+                )
             ) {
                 filter { eq("id", id) }
             }
