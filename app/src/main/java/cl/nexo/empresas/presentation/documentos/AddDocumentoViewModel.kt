@@ -102,7 +102,12 @@ class AddDocumentoViewModel @Inject constructor(
     }
 
     fun guardar() {
+        // Guard: evita múltiples submits si el usuario toca el botón varias veces
+        if (_uiState.value.isSaving) return
+
         val state = _uiState.value
+
+        // Validaciones
         if (state.descripcion.isBlank()) {
             _uiState.value = state.copy(error = "La descripción es obligatoria")
             return
@@ -116,8 +121,10 @@ class AddDocumentoViewModel @Inject constructor(
             return
         }
 
+        // Bloquear botón ANTES de lanzar el coroutine para evitar doble insert
+        _uiState.value = state.copy(isSaving = true, error = null)
+
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isSaving = true, error = null)
             val empresaId = sessionManager.currentEmpresaId ?: ""
             val userId = sessionManager.currentUserId ?: ""
 
@@ -140,7 +147,7 @@ class AddDocumentoViewModel @Inject constructor(
             val cheques = if (state.isChequePago) {
                 state.cheques.mapIndexed { i, c ->
                     ChequeCreate(
-                        documentoId = "", // será reemplazado en el repositorio
+                        documentoId = "", // reemplazado en el repositorio
                         empresaId = empresaId,
                         numeroCheque = c.numeroCheque,
                         banco = c.banco.takeIf { it.isNotBlank() },

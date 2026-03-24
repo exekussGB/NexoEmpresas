@@ -29,7 +29,7 @@ data class ChequeCreate(
     val banco: String? = null,
     val monto: Long,
     @SerialName("fecha_cobro") val fechaCobro: String,
-    val orden: Int = 1
+    val orden: Int  // sin default: siempre se serializa en el JSON (evita null constraint)
 )
 
 @Serializable

@@ -38,14 +38,27 @@ class DocumentosRepositoryImpl @Inject constructor(
 
     override suspend fun addDocumento(doc: DocumentoCreate, cheques: List<ChequeCreate>): Result<String> =
         runCatching {
+            // 1. Insertar documento
             val inserted = supabaseClient.postgrest["documentos"].insert(doc) {
                 select()
             }.decodeSingle<Documento>()
 
+            // 2. Insertar cheques si corresponde (con rollback si falla)
             if (cheques.isNotEmpty()) {
-                val chequesConId = cheques.map { it.copy(documentoId = inserted.id) }
-                supabaseClient.postgrest["cheques"].insert(chequesConId)
+                try {
+                    val chequesConId = cheques.map { it.copy(documentoId = inserted.id) }
+                    supabaseClient.postgrest["cheques"].insert(chequesConId)
+                } catch (e: Exception) {
+                    // Rollback: eliminar el documento ya insertado para mantener consistencia
+                    runCatching {
+                        supabaseClient.postgrest["documentos"].delete {
+                            filter { eq("id", inserted.id) }
+                        }
+                    }
+                    throw e
+                }
             }
+
             inserted.id
         }
 
@@ -67,7 +80,6 @@ class DocumentosRepositoryImpl @Inject constructor(
 
     override suspend fun getDocumentosVencimientoProximo(tipo: String, fechaLimite: String): Result<List<Documento>> =
         runCatching {
-            // tipo "cobro" -> ingreso, "pago" -> egreso
             val tipoFiltro = if (tipo == "cobro") "ingreso" else "egreso"
             supabaseClient.postgrest["documentos"].select {
                 filter {

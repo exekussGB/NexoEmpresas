@@ -2,6 +2,7 @@ package cl.nexo.empresas.presentation.graficos
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cl.nexo.empresas.core.session.SessionManager
 import cl.nexo.empresas.core.session.TenantManager
 import cl.nexo.empresas.data.model.GraficoData
 import cl.nexo.empresas.domain.repository.GraficosRepository
@@ -14,7 +15,8 @@ import javax.inject.Inject
 @HiltViewModel
 class GraficosViewModel @Inject constructor(
     private val repo: GraficosRepository,
-    private val tenantManager: TenantManager
+    private val tenantManager: TenantManager,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<GraficosUiState>(GraficosUiState.Loading)
@@ -31,7 +33,15 @@ class GraficosViewModel @Inject constructor(
     }
 
     fun load() {
-        val empresaId = tenantManager.empresaId ?: return
+        // TenantManager.empresaId retorna "" (no null) cuando no hay empresa cargada.
+        // Usamos SessionManager como fallback antes de mostrar error.
+        val empresaId = tenantManager.empresa?.id?.takeIf { it.isNotBlank() }
+            ?: sessionManager.currentEmpresaId?.takeIf { it.isNotBlank() }
+            ?: run {
+                _uiState.value = GraficosUiState.Error("No hay empresa activa. Vuelve al menú principal.")
+                return
+            }
+
         viewModelScope.launch {
             _uiState.value = GraficosUiState.Loading
             repo.getGraficoData(empresaId, _meses.value)
