@@ -50,6 +50,7 @@ kotlin {
 configurations.all {
     resolutionStrategy {
         force("androidx.browser:browser:1.8.0")
+        force("org.jetbrains.kotlin:kotlin-metadata-jvm:2.3.0")
     }
 }
 
