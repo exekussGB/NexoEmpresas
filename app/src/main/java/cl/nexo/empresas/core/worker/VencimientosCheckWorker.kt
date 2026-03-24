@@ -106,7 +106,7 @@ class VencimientosCheckWorker @AssistedInject constructor(
     private fun dispararNotificacion(id: Int, titulo: String, mensaje: String) {
         try {
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(titulo)
                 .setContentText(mensaje)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(mensaje))
