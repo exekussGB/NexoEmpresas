@@ -9,6 +9,7 @@ data class CreateEmpresaRequest(
     val rut: String,
     val giro: String? = null,
 )
+
 @Serializable
 data class Empresa(
     val id: String = "",
@@ -42,12 +43,7 @@ data class Contacto(
     @SerialName("created_at") val createdAt: String? = null
 )
 
-/**
- * DTO para UPDATE de Contacto.
- * Sin valores por defecto para que kotlinx.serialization
- * siempre incluya todos los campos en el JSON (incluyendo
- * tipo = "ambos" que coincide con el default del data class).
- */
+/** UPDATE DTO para Contacto — sin defaults para forzar serialización completa */
 @Serializable
 data class ContactoUpdate(
     val nombre: String,
@@ -66,6 +62,16 @@ data class CuentaCorriente(
     @SerialName("saldo_inicial") val saldoInicial: Long = 0L,
     val activa: Boolean = true,
     @SerialName("created_at") val createdAt: String? = null
+)
+
+/** UPDATE DTO para CuentaCorriente — sin defaults para forzar serialización completa */
+@Serializable
+data class CuentaCorrienteUpdate(
+    val nombre: String,
+    val tipo: String,
+    @SerialName("numero_cuenta") val numeroCuenta: String?,
+    @SerialName("saldo_inicial") val saldoInicial: Long,
+    val activa: Boolean
 )
 
 @Serializable
