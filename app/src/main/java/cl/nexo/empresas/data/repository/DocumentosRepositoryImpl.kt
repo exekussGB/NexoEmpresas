@@ -1,14 +1,18 @@
 package cl.nexo.empresas.data.repository
 
+import cl.nexo.empresas.core.session.SessionManager
 import cl.nexo.empresas.data.model.*
 import cl.nexo.empresas.domain.repository.DocumentosRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class DocumentosRepositoryImpl @Inject constructor(
-    private val supabaseClient: SupabaseClient
+    private val supabaseClient: SupabaseClient,
+    private val sessionManager: SessionManager
 ) : DocumentosRepository {
 
     override suspend fun getDocumentos(empresaId: String, tipo: String, estado: String?): Result<List<Documento>> =
@@ -20,7 +24,7 @@ class DocumentosRepositoryImpl @Inject constructor(
                     if (estado != null) eq("estado", estado)
                 }
                 order("fecha_vencimiento", Order.ASCENDING)
-            }.decodeList<Documento>()
+            }.decodeList()
         }
 
     override suspend fun getDocumento(id: String): Result<Documento> =
@@ -29,7 +33,7 @@ class DocumentosRepositoryImpl @Inject constructor(
                 filter { eq("id", id) }
                 limit(1)
                 single()
-            }.decodeSingle<Documento>()
+            }.decodeSingle()
         }
 
     override suspend fun addDocumento(doc: DocumentoCreate, cheques: List<ChequeCreate>): Result<String> =
@@ -59,5 +63,20 @@ class DocumentosRepositoryImpl @Inject constructor(
             supabaseClient.postgrest["documentos"].update(mapOf("estado" to "anulado")) {
                 filter { eq("id", id) }
             }
+        }
+
+    override suspend fun getDocumentosVencimientoProximo(tipo: String, fechaLimite: String): Result<List<Documento>> =
+        runCatching {
+            // tipo "cobro" -> ingreso, "pago" -> egreso
+            val tipoFiltro = if (tipo == "cobro") "ingreso" else "egreso"
+            supabaseClient.postgrest["documentos"].select {
+                filter {
+                    eq("empresa_id", sessionManager.empresaId)
+                    eq("tipo", tipoFiltro)
+                    eq("estado", "pendiente")
+                    lte("fecha_vencimiento", fechaLimite)
+                }
+                order("fecha_vencimiento", Order.ASCENDING)
+            }.decodeList()
         }
 }
