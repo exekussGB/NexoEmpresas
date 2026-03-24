@@ -38,6 +38,10 @@ data class AddDocumentoUiState(
     val cheques: List<ChequeForm> = emptyList(),
     val contactos: List<Contacto> = emptyList(),
     val cuentas: List<CuentaCorriente> = emptyList(),
+    // ── Documento de referencia ──
+    val referenciaDocId: String? = null,
+    val documentosPendientes: List<Documento> = emptyList(),
+    // ── Estados ──
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val error: String? = null,
@@ -48,6 +52,8 @@ data class AddDocumentoUiState(
     val chequesDiff: Long get() = montoLong - sumaChequesLong
     val isChequePago: Boolean get() = metodoPago == MetodoPago.CHEQUE.value
     val chequesValidos: Boolean get() = !isChequePago || (cheques.isNotEmpty() && chequesDiff == 0L)
+    /** Documentos pendientes filtrados por el tipo actual (ingreso/egreso) */
+    val pendientesFiltrados: List<Documento> get() = documentosPendientes.filter { it.tipo == tipo }
 }
 
 @HiltViewModel
@@ -69,11 +75,22 @@ class AddDocumentoViewModel @Inject constructor(
             val empresaId = sessionManager.currentEmpresaId ?: ""
             val contactos = contactosRepository.getContactos(empresaId).getOrElse { emptyList() }
             val cuentas = cuentasRepository.getCuentas(empresaId).getOrElse { emptyList() }.filter { it.activa }
-            _uiState.value = _uiState.value.copy(contactos = contactos, cuentas = cuentas, isLoading = false)
+            // Cargar documentos pendientes de ambos tipos para el dropdown de referencia
+            val pendingIngreso = docRepository.getDocumentos(empresaId, "ingreso", "pendiente").getOrElse { emptyList() }
+            val pendingEgreso  = docRepository.getDocumentos(empresaId, "egreso",  "pendiente").getOrElse { emptyList() }
+            _uiState.value = _uiState.value.copy(
+                contactos           = contactos,
+                cuentas             = cuentas,
+                documentosPendientes = pendingIngreso + pendingEgreso,
+                isLoading           = false
+            )
         }
     }
 
-    fun setTipo(tipo: String) { _uiState.value = _uiState.value.copy(tipo = tipo) }
+    fun setTipo(tipo: String) {
+        // Al cambiar tipo, limpiar la referencia (era del tipo anterior)
+        _uiState.value = _uiState.value.copy(tipo = tipo, referenciaDocId = null)
+    }
     fun setNumeroDocumento(v: String) { _uiState.value = _uiState.value.copy(numeroDocumento = v) }
     fun setContactoId(v: String?) { _uiState.value = _uiState.value.copy(contactoId = v) }
     fun setDescripcion(v: String) { _uiState.value = _uiState.value.copy(descripcion = v) }
@@ -93,7 +110,9 @@ class AddDocumentoViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(cheques = _uiState.value.cheques + nuevo)
     }
     fun removeCheque(index: Int) {
-        _uiState.value = _uiState.value.copy(cheques = _uiState.value.cheques.toMutableList().also { it.removeAt(index) })
+        _uiState.value = _uiState.value.copy(
+            cheques = _uiState.value.cheques.toMutableList().also { it.removeAt(index) }
+        )
     }
     fun updateCheque(index: Int, cheque: ChequeForm) {
         val list = _uiState.value.cheques.toMutableList()
@@ -101,13 +120,32 @@ class AddDocumentoViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(cheques = list)
     }
 
+    /**
+     * Selecciona un documento de referencia y pre-rellena el formulario con sus datos.
+     * Si [doc] es null, limpia la referencia.
+     */
+    fun setReferenciaDoc(doc: Documento?) {
+        val current = _uiState.value
+        if (doc == null) {
+            _uiState.value = current.copy(referenciaDocId = null)
+            return
+        }
+        _uiState.value = current.copy(
+            referenciaDocId  = doc.id,
+            // Pre-rellenar sólo si el campo está vacío
+            descripcion      = if (current.descripcion.isBlank()) doc.descripcion else current.descripcion,
+            monto            = if (current.monto.isBlank()) doc.monto.toString() else current.monto,
+            contactoId       = current.contactoId ?: doc.contactoId,
+            fechaVencimiento = doc.fechaVencimiento,  // siempre usar la fecha del doc de referencia
+            categoria        = doc.categoria ?: current.categoria
+        )
+    }
+
     fun guardar() {
-        // Guard: evita múltiples submits si el usuario toca el botón varias veces
         if (_uiState.value.isSaving) return
 
         val state = _uiState.value
 
-        // Validaciones
         if (state.descripcion.isBlank()) {
             _uiState.value = state.copy(error = "La descripción es obligatoria")
             return
@@ -121,39 +159,39 @@ class AddDocumentoViewModel @Inject constructor(
             return
         }
 
-        // Bloquear botón ANTES de lanzar el coroutine para evitar doble insert
         _uiState.value = state.copy(isSaving = true, error = null)
 
         viewModelScope.launch {
             val empresaId = sessionManager.currentEmpresaId ?: ""
-            val userId = sessionManager.currentUserId ?: ""
+            val userId    = sessionManager.currentUserId    ?: ""
 
             val doc = DocumentoCreate(
-                empresaId = empresaId,
-                tipo = state.tipo,
-                numeroDocumento = state.numeroDocumento.takeIf { it.isNotBlank() },
-                contactoId = state.contactoId,
-                descripcion = state.descripcion,
-                categoria = state.categoria.takeIf { it.isNotBlank() },
-                monto = state.montoLong,
+                empresaId        = empresaId,
+                tipo             = state.tipo,
+                numeroDocumento  = state.numeroDocumento.takeIf { it.isNotBlank() },
+                contactoId       = state.contactoId,
+                descripcion      = state.descripcion,
+                categoria        = state.categoria.takeIf { it.isNotBlank() },
+                monto            = state.montoLong,
                 cuentaCorrienteId = state.cuentaCorrienteId,
-                fechaMovimiento = state.fechaMovimiento,
+                fechaMovimiento  = state.fechaMovimiento,
                 fechaVencimiento = state.fechaVencimiento,
-                metodoPago = state.metodoPago,
-                notas = state.notas.takeIf { it.isNotBlank() },
-                createdBy = userId
+                metodoPago       = state.metodoPago,
+                notas            = state.notas.takeIf { it.isNotBlank() },
+                referenciaDocId  = state.referenciaDocId,
+                createdBy        = userId
             )
 
             val cheques = if (state.isChequePago) {
                 state.cheques.mapIndexed { i, c ->
                     ChequeCreate(
-                        documentoId = "", // reemplazado en el repositorio
-                        empresaId = empresaId,
+                        documentoId  = "",
+                        empresaId    = empresaId,
                         numeroCheque = c.numeroCheque,
-                        banco = c.banco.takeIf { it.isNotBlank() },
-                        monto = c.monto.replace(".", "").replace(",", "").toLongOrNull() ?: 0L,
-                        fechaCobro = c.fechaCobro,
-                        orden = i + 1
+                        banco        = c.banco.takeIf { it.isNotBlank() },
+                        monto        = c.monto.replace(".", "").replace(",", "").toLongOrNull() ?: 0L,
+                        fechaCobro   = c.fechaCobro,
+                        orden        = i + 1
                     )
                 }
             } else emptyList()

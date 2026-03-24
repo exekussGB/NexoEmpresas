@@ -17,9 +17,11 @@ class DashboardRepositoryImpl @Inject constructor(
 ) : DashboardRepository {
 
     override suspend fun getTotales(): Result<DashboardTotales> = runCatching {
+        // El RPC retorna un objeto JSON plano {}, NO un array []
+        // Por eso usamos decodeAs en vez de decodeSingle
         supabase.postgrest.rpc(
             "get_dashboard_totals",
             buildJsonObject { put("p_empresa_id", sessionManager.empresaId) }
-        ).decodeSingle<DashboardTotales>()
+        ).decodeAs<DashboardTotales>()
     }
 }

@@ -19,6 +19,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cl.nexo.empresas.data.model.CategoriaDocumento
 import cl.nexo.empresas.data.model.MetodoPago
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,7 +82,7 @@ fun AddDocumentoScreen(
                     )
                 }
 
-                // Contacto dropdown
+                // Contacto
                 item {
                     val contactoNombre = state.contactos.find { it.id == state.contactoId }?.nombre ?: "Sin contacto"
                     DropdownSelector(
@@ -127,7 +130,7 @@ fun AddDocumentoScreen(
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
-                        prefix = { Text("$") }
+                        prefix = { Text("\$") }
                     )
                 }
 
@@ -143,6 +146,39 @@ fun AddDocumentoScreen(
                             viewModel.setCuentaId(c?.id)
                         }
                     )
+                }
+
+                // ── Documento de referencia ────────────────────────────────────────────
+                // Muestra documentos pendientes del mismo tipo (cobros o pagos) con su fecha
+                item {
+                    val pendientes = state.pendientesFiltrados
+                    if (pendientes.isNotEmpty()) {
+                        val fmt = DateTimeFormatter.ofPattern("dd/MM/yy", Locale("es", "CL"))
+                        fun fmtDoc(d: cl.nexo.empresas.data.model.Documento): String {
+                            val fStr = try { LocalDate.parse(d.fechaVencimiento).format(fmt) } catch (e: Exception) { d.fechaVencimiento }
+                            return "${d.descripcion} · Vence $fStr · ${formatMonto(d.monto)}"
+                        }
+                        val noneLabel = "Sin referencia"
+                        val docLabels = pendientes.map { fmtDoc(it) }
+                        val allOptions = listOf(noneLabel) + docLabels
+                        val selectedLabel = state.referenciaDocId
+                            ?.let { id -> pendientes.find { it.id == id }?.let { fmtDoc(it) } }
+                            ?: noneLabel
+                        val sectionLabel = if (state.tipo == "ingreso") "Cobro relacionado" else "Pago relacionado"
+                        DropdownSelector(
+                            label = "$sectionLabel (opcional)",
+                            selected = selectedLabel,
+                            options = allOptions,
+                            onSelect = { sel ->
+                                if (sel == noneLabel) {
+                                    viewModel.setReferenciaDoc(null)
+                                } else {
+                                    val idx = docLabels.indexOf(sel)
+                                    viewModel.setReferenciaDoc(pendientes.getOrNull(idx))
+                                }
+                            }
+                        )
+                    }
                 }
 
                 // Fechas
@@ -207,7 +243,6 @@ fun AddDocumentoScreen(
                     }
 
                     item {
-                        // Resumen suma cheques
                         val diff = state.chequesDiff
                         val diffColor = if (diff == 0L) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
                         Row(
@@ -263,7 +298,7 @@ private fun SegmentedTipoSelector(selected: String, onSelect: (String) -> Unit) 
             modifier = Modifier.weight(1f),
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (ingresoSelected) Color(0xFF2E7D32) else MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = if (ingresoSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                contentColor   = if (ingresoSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
             )
         ) { Text("💰 Ingreso", fontWeight = FontWeight.SemiBold) }
         Button(
@@ -271,7 +306,7 @@ private fun SegmentedTipoSelector(selected: String, onSelect: (String) -> Unit) 
             modifier = Modifier.weight(1f),
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (!ingresoSelected) Color(0xFFC62828) else MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = if (!ingresoSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                contentColor   = if (!ingresoSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
             )
         ) { Text("💳 Egreso", fontWeight = FontWeight.SemiBold) }
     }
@@ -352,7 +387,7 @@ private fun ChequeFormCard(
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    prefix = { Text("$") }
+                    prefix = { Text("\$") }
                 )
                 OutlinedTextField(
                     value = cheque.fechaCobro,
@@ -368,5 +403,5 @@ private fun ChequeFormCard(
 
 private fun formatMonto(monto: Long): String {
     val formatted = "%,d".format(monto).replace(",", ".")
-    return "$$formatted"
+    return "\$$formatted"
 }

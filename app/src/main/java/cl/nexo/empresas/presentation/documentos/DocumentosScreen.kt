@@ -124,9 +124,10 @@ fun DocumentosScreen(
         }
     }
 
-    // Dialog marcar pagado
+    // Dialog marcar pagado / cobrado
     showMarcarPagadoDialog?.let { doc ->
         MarcarPagadoDialog(
+            tipo = doc.tipo,
             onConfirm = { fechaPago, numeroSeguimiento ->
                 viewModel.marcarPagado(doc.id, fechaPago, numeroSeguimiento)
                 showMarcarPagadoDialog = null
@@ -148,9 +149,9 @@ private fun DocumentoCard(
     val fechaVenc = try { LocalDate.parse(documento.fechaVencimiento).format(formatter) } catch (e: Exception) { documento.fechaVencimiento }
 
     val estadoColor = when (documento.estado) {
-        "pagado" -> Color(0xFF2E7D32)
+        "pagado"  -> Color(0xFF2E7D32)
         "anulado" -> Color(0xFF757575)
-        else -> Color(0xFFF57F17) // amber para pendiente
+        else      -> Color(0xFFF57F17) // amber pendiente
     }
 
     var expanded by remember { mutableStateOf(false) }
@@ -160,17 +161,31 @@ private fun DocumentoCard(
         onClick = { expanded = !expanded }
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+
+            // ── Fila principal: descripción a la izquierda, monto/estado a la derecha ──
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(documento.descripcion, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        documento.descripcion,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
                     documento.categoria?.let {
-                        Text(it.replaceFirstChar { c -> c.uppercase() }, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            it.replaceFirstChar { c -> c.uppercase() },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                    Text("Vence: $fechaVenc", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "Vence: $fechaVenc",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
@@ -179,7 +194,10 @@ private fun DocumentoCard(
                         fontWeight = FontWeight.Bold,
                         color = colorMonto
                     )
-                    Surface(color = estadoColor.copy(alpha = 0.15f), shape = MaterialTheme.shapes.small) {
+                    Surface(
+                        color = estadoColor.copy(alpha = 0.15f),
+                        shape = MaterialTheme.shapes.small
+                    ) {
                         Text(
                             documento.estado.replaceFirstChar { it.uppercase() },
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
@@ -191,24 +209,49 @@ private fun DocumentoCard(
                 }
             }
 
-            // Detalles expandibles + acciones
+            // ── Botón Pagar / Cobrar SIEMPRE VISIBLE para documentos pendientes ──
+            if (isOwner && documento.estado == "pendiente") {
+                Spacer(Modifier.height(10.dp))
+                FilledTonalButton(
+                    onClick = onMarcarPagado,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        if (documento.tipo == "ingreso") "Registrar Cobro" else "Registrar Pago"
+                    )
+                }
+            }
+
+            // ── Detalles expandibles (tap en la card) ──
             AnimatedVisibility(visible = expanded) {
                 Column(modifier = Modifier.padding(top = 12.dp)) {
-                    documento.numeroDocumento?.let { Text("Nº: $it", style = MaterialTheme.typography.bodySmall) }
-                    documento.metodoPago?.let { Text("Método: ${it.replaceFirstChar { c -> c.uppercase() }}", style = MaterialTheme.typography.bodySmall) }
-                    documento.notas?.let { Text("Notas: $it", style = MaterialTheme.typography.bodySmall) }
+                    documento.numeroDocumento?.let {
+                        Text("Nº: $it", style = MaterialTheme.typography.bodySmall)
+                    }
+                    documento.metodoPago?.let {
+                        Text(
+                            "Método: ${it.replaceFirstChar { c -> c.uppercase() }}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    documento.notas?.let {
+                        Text("Notas: $it", style = MaterialTheme.typography.bodySmall)
+                    }
 
+                    // Sólo el botón Anular queda en los detalles expandidos
                     if (isOwner && documento.estado == "pendiente") {
                         Spacer(Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = onMarcarPagado, modifier = Modifier.weight(1f)) {
-                                Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Marcar Pagado")
-                            }
-                            OutlinedButton(onClick = onAnular, modifier = Modifier.weight(1f)) {
-                                Text("Anular")
-                            }
+                        OutlinedButton(
+                            onClick = onAnular,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Anular documento")
                         }
                     }
                 }
@@ -219,21 +262,24 @@ private fun DocumentoCard(
 
 @Composable
 private fun MarcarPagadoDialog(
+    tipo: String = "egreso",
     onConfirm: (fechaPago: String, numeroSeguimiento: String?) -> Unit,
     onDismiss: () -> Unit
 ) {
     var fechaPago by remember { mutableStateOf(LocalDate.now().toString()) }
     var numeroSeguimiento by remember { mutableStateOf("") }
 
+    val titulo = if (tipo == "ingreso") "Registrar Cobro" else "Registrar Pago"
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Marcar como Pagado") },
+        title = { Text(titulo) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = fechaPago,
                     onValueChange = { fechaPago = it },
-                    label = { Text("Fecha de pago (YYYY-MM-DD)") },
+                    label = { Text("Fecha (YYYY-MM-DD)") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -259,5 +305,5 @@ private fun MarcarPagadoDialog(
 
 private fun formatMonto(monto: Long): String {
     val formatted = "%,d".format(monto).replace(",", ".")
-    return "$$formatted"
+    return "\$$formatted"
 }

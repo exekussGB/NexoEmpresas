@@ -92,6 +92,7 @@ data class Documento(
     @SerialName("metodo_pago") val metodoPago: String? = null,
     @SerialName("fecha_pago") val fechaPago: String? = null,
     val notas: String? = null,
+    @SerialName("referencia_doc_id") val referenciaDocId: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("created_by") val createdBy: String? = null
 )
