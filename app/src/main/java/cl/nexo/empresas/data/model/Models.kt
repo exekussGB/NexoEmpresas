@@ -181,3 +181,25 @@ data class GraficoParams(
     @SerialName("p_empresa_id") val empresaId: String,
     @SerialName("p_meses")      val meses:     Int
 )
+
+// ── Módulo 3: Dashboard ──────────────────────────────────────────────────────
+
+@Serializable
+data class CuentaDashboard(
+    val id: String = "",
+    val nombre: String = "",
+    val tipo: String = "banco",
+    @SerialName("saldo_inicial") val saldoInicial: Long = 0L,
+    val ingresos: Long = 0L,
+    val egresos: Long = 0L
+) {
+    val saldo: Long get() = saldoInicial + ingresos - egresos
+}
+
+@Serializable
+data class DashboardTotales(
+    @SerialName("total_por_cobrar") val totalPorCobrar: Long = 0L,
+    @SerialName("total_por_pagar") val totalPorPagar: Long = 0L,
+    @SerialName("total_cheques_pendientes") val totalChequesPendientes: Long = 0L,
+    val cuentas: List<CuentaDashboard> = emptyList()
+)
