@@ -74,6 +74,8 @@ data class CuentaCorrienteUpdate(
     val activa: Boolean
 )
 
+// ── Documento ────────────────────────────────────────────────────────────────────────
+
 @Serializable
 data class Documento(
     val id: String = "",
@@ -97,18 +99,61 @@ data class Documento(
     @SerialName("created_by") val createdBy: String? = null
 )
 
+/** INSERT DTO para Documento */
+@Serializable
+data class DocumentoCreate(
+    @SerialName("empresa_id")         val empresaId: String,
+    val tipo: String,
+    @SerialName("numero_documento")   val numeroDocumento: String? = null,
+    @SerialName("contacto_id")        val contactoId: String? = null,
+    val descripcion: String,
+    val categoria: String? = null,
+    val monto: Long,
+    @SerialName("cuenta_corriente_id") val cuentaCorrienteId: String? = null,
+    @SerialName("fecha_movimiento")   val fechaMovimiento: String,
+    @SerialName("fecha_vencimiento")  val fechaVencimiento: String,
+    val estado: String = "pendiente",
+    @SerialName("metodo_pago")        val metodoPago: String? = null,
+    val notas: String? = null,
+    @SerialName("referencia_doc_id")  val referenciaDocId: String? = null,
+    @SerialName("created_by")         val createdBy: String? = null
+)
+
+/** UPDATE DTO para marcar un documento como pagado */
+@Serializable
+data class DocumentoMarcarPagado(
+    val estado: String = "pagado",
+    @SerialName("fecha_pago")           val fechaPago: String,
+    @SerialName("numero_seguimiento")   val numeroSeguimiento: String? = null
+)
+
+// ── Cheque ──────────────────────────────────────────────────────────────────────────
+
 @Serializable
 data class Cheque(
     val id: String = "",
     @SerialName("documento_id") val documentoId: String = "",
-    @SerialName("empresa_id") val empresaId: String = "",
+    @SerialName("empresa_id")   val empresaId: String = "",
     @SerialName("numero_cheque") val numeroCheque: String = "",
     val banco: String? = null,
     val monto: Long = 0L,
-    @SerialName("fecha_cobro") val fechaCobro: String = "",
+    @SerialName("fecha_cobro")  val fechaCobro: String = "",
     val estado: String = "pendiente",
     val orden: Int = 1,
-    @SerialName("created_at") val createdAt: String? = null
+    @SerialName("created_at")   val createdAt: String? = null
+)
+
+/** INSERT DTO para Cheque — `orden` sin default para forzar serialización */
+@Serializable
+data class ChequeCreate(
+    @SerialName("documento_id")  val documentoId: String,
+    @SerialName("empresa_id")    val empresaId: String,
+    @SerialName("numero_cheque") val numeroCheque: String,
+    val banco: String? = null,
+    val monto: Long,
+    @SerialName("fecha_cobro")   val fechaCobro: String,
+    val estado: String = "pendiente",
+    val orden: Int
 )
 
 @Serializable
@@ -155,7 +200,7 @@ enum class RolEmpresa(val value: String) {
     VIEWER("viewer")
 }
 
-// ── Módulo 7: Gráficos ──────────────────────────────────────────────────────
+// ── Módulo 7: Gráficos ─────────────────────────────────────────────────────────────────────
 
 @Serializable
 data class GraficoMensual(
@@ -183,7 +228,7 @@ data class GraficoParams(
     @SerialName("p_meses")      val meses:     Int
 )
 
-// ── Módulo 3: Dashboard ──────────────────────────────────────────────────────
+// ── Módulo 3: Dashboard ────────────────────────────────────────────────────────────────────
 
 @Serializable
 data class CuentaDashboard(
