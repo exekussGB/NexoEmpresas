@@ -37,8 +37,9 @@ class SettingsViewModel @Inject constructor(
     private fun loadEmpresa() {
         viewModelScope.launch {
             _isLoading.value = true
-            empresasRepository.getEmpresaById(sessionManager.empresaId)
-                .onSuccess { emp ->
+            empresasRepository.getEmpresasForUser()
+                .onSuccess { empresas ->
+                    val emp = empresas.find { it.id == sessionManager.empresaId }
                     _empresa.value = emp
                     _inviteCode.value = emp?.inviteCode ?: ""
                 }

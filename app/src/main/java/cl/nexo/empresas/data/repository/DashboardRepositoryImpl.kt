@@ -5,15 +5,10 @@ import cl.nexo.empresas.data.model.DashboardTotales
 import cl.nexo.empresas.domain.repository.DashboardRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import javax.inject.Inject
 import javax.inject.Singleton
-
-@Serializable
-private data class DashboardParams(
-    @SerialName("p_empresa_id") val pEmpresaId: String
-)
 
 @Singleton
 class DashboardRepositoryImpl @Inject constructor(
@@ -24,7 +19,7 @@ class DashboardRepositoryImpl @Inject constructor(
     override suspend fun getTotales(): Result<DashboardTotales> = runCatching {
         supabase.postgrest.rpc(
             "get_dashboard_totals",
-            DashboardParams(sessionManager.empresaId)
-        ).decodeAs<DashboardTotales>()
+            buildJsonObject { put("p_empresa_id", sessionManager.empresaId) }
+        ).decodeSingle<DashboardTotales>()
     }
 }

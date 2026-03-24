@@ -12,19 +12,20 @@ import cl.nexo.empresas.presentation.contactos.ContactosScreen
 import cl.nexo.empresas.presentation.cuentas.CuentasCorrientesScreen
 import cl.nexo.empresas.presentation.dashboard.DashboardScreen
 import cl.nexo.empresas.presentation.documentos.AddDocumentoScreen
-import cl.nexo.empresas.presentation.documentos.CuentasCobrarScreen
-import cl.nexo.empresas.presentation.documentos.CuentasPagarScreen
-import cl.nexo.empresas.presentation.documentos.DocumentoDetailScreen
+import cl.nexo.empresas.presentation.documentos.DocumentosScreen
 import cl.nexo.empresas.presentation.empresas.EmpresasScreen
 import cl.nexo.empresas.presentation.graficos.GraficosScreen
-import cl.nexo.empresas.presentation.hub.HubScreen
+import cl.nexo.empresas.presentation.hub.HubEmpresaScreen
 import cl.nexo.empresas.presentation.settings.SettingsScreen
 
 @Composable
-fun AppNavGraph(navController: NavHostController) {
+fun AppNavGraph(
+    navController: NavHostController,
+    startDestination: String = Screen.Login.route
+) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Login.route
+        startDestination = startDestination
     ) {
         composable(Screen.Login.route) {
             LoginScreen(
@@ -47,8 +48,13 @@ fun AppNavGraph(navController: NavHostController) {
         }
 
         composable(Screen.Hub.route) {
-            HubScreen(
-                onNavigate = { screen -> navController.navigate(screen.route) }
+            HubEmpresaScreen(
+                onNavigate = { screen -> navController.navigate(screen.route) },
+                onLogout = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
 
@@ -60,18 +66,18 @@ fun AppNavGraph(navController: NavHostController) {
         }
 
         composable(Screen.CuentasCobrar.route) {
-            CuentasCobrarScreen(
+            DocumentosScreen(
+                tipo = "ingreso",
                 onBack = { navController.popBackStack() },
-                onAddDocumento = { navController.navigate(Screen.AddDocumento.route) },
-                onDocumentoClick = { id -> navController.navigate(Screen.DocumentoDetail.route(id)) }
+                onAddDocumento = { navController.navigate(Screen.AddDocumento.route) }
             )
         }
 
         composable(Screen.CuentasPagar.route) {
-            CuentasPagarScreen(
+            DocumentosScreen(
+                tipo = "egreso",
                 onBack = { navController.popBackStack() },
-                onAddDocumento = { navController.navigate(Screen.AddDocumento.route) },
-                onDocumentoClick = { id -> navController.navigate(Screen.DocumentoDetail.route(id)) }
+                onAddDocumento = { navController.navigate(Screen.AddDocumento.route) }
             )
         }
 
@@ -83,8 +89,7 @@ fun AppNavGraph(navController: NavHostController) {
 
         composable(Screen.AddDocumento.route) {
             AddDocumentoScreen(
-                onBack = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() }
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -102,14 +107,6 @@ fun AppNavGraph(navController: NavHostController) {
 
         composable(Screen.Contactos.route) {
             ContactosScreen(
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(Screen.DocumentoDetail.route) {
-            val documentoId = it.arguments?.getString("documentoId") ?: ""
-            DocumentoDetailScreen(
-                documentoId = documentoId,
                 onBack = { navController.popBackStack() }
             )
         }

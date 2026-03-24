@@ -7,8 +7,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
-import cl.nexo.empresas.core.navigation.AppNavGraph
-import cl.nexo.empresas.core.navigation.Screen
+import cl.nexo.empresas.presentation.navigation.AppNavGraph
+import cl.nexo.empresas.presentation.navigation.Screen
 import cl.nexo.empresas.presentation.auth.AuthViewModel
 import cl.nexo.empresas.presentation.theme.NexoEmpresasTheme
 import dagger.hilt.android.AndroidEntryPoint

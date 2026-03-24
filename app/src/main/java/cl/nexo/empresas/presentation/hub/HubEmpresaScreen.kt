@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import cl.nexo.empresas.core.navigation.Screen
+import cl.nexo.empresas.presentation.navigation.Screen
 
 data class HubItem(val label: String, val icon: ImageVector, val screen: Screen)
 
