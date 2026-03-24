@@ -42,6 +42,20 @@ data class Contacto(
     @SerialName("created_at") val createdAt: String? = null
 )
 
+/**
+ * DTO para UPDATE de Contacto.
+ * Sin valores por defecto para que kotlinx.serialization
+ * siempre incluya todos los campos en el JSON (incluyendo
+ * tipo = "ambos" que coincide con el default del data class).
+ */
+@Serializable
+data class ContactoUpdate(
+    val nombre: String,
+    val rut: String?,
+    val tipo: String,
+    val activo: Boolean
+)
+
 @Serializable
 data class CuentaCorriente(
     val id: String = "",

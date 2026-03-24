@@ -6,9 +6,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import cl.nexo.empresas.presentation.auth.LoginScreen
 import cl.nexo.empresas.presentation.auth.RegisterScreen
+import cl.nexo.empresas.presentation.contactos.ContactosScreen
+import cl.nexo.empresas.presentation.dashboard.DashboardScreen
 import cl.nexo.empresas.presentation.empresas.EmpresasScreen
 import cl.nexo.empresas.presentation.hub.HubEmpresaScreen
-import cl.nexo.empresas.presentation.dashboard.DashboardScreen
 
 @Composable
 fun AppNavGraph(
@@ -41,6 +42,9 @@ fun AppNavGraph(
         }
         composable(Screen.Dashboard.route) {
             DashboardScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Screen.Contactos.route) {
+            ContactosScreen(onBack = { navController.popBackStack() })
         }
         // TODO: agregar composables de cada pantalla en orden de implementación
     }

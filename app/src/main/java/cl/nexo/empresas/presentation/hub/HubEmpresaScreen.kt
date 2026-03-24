@@ -31,6 +31,7 @@ fun HubEmpresaScreen(
         HubItem("Ingresar Doc.",     Icons.Default.AddCircle,         Screen.AddDocumento),
         HubItem("Gráficos",          Icons.Default.BarChart,          Screen.Graficos),
         HubItem("Cuentas",           Icons.Default.AccountBalance,    Screen.Cuentas),
+        HubItem("Contactos",         Icons.Default.Contacts,          Screen.Contactos),
         HubItem("Opciones",          Icons.Default.Settings,          Screen.Opciones),
     )
 
@@ -64,10 +65,10 @@ fun HubEmpresaScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(item.icon, null, modifier = Modifier.size(40.dp),
-                             tint = MaterialTheme.colorScheme.primary)
+                            tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.height(8.dp))
                         Text(item.label, style = MaterialTheme.typography.labelLarge,
-                             textAlign = TextAlign.Center)
+                            textAlign = TextAlign.Center)
                     }
                 }
             }

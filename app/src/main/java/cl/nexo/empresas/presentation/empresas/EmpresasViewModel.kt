@@ -2,6 +2,7 @@ package cl.nexo.empresas.presentation.empresas
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cl.nexo.empresas.core.session.TenantManager
 import cl.nexo.empresas.data.model.Empresa
 import cl.nexo.empresas.domain.repository.EmpresasRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,6 +15,7 @@ import javax.inject.Inject
 @HiltViewModel
 class EmpresasViewModel @Inject constructor(
     private val empresasRepository: EmpresasRepository,
+    private val tenantManager: TenantManager,
     private val client: SupabaseClient
 ) : ViewModel() {
 
@@ -26,8 +28,7 @@ class EmpresasViewModel @Inject constructor(
     private val _createState = MutableStateFlow<CreateEmpresaState>(CreateEmpresaState.Idle)
     val createState: StateFlow<CreateEmpresaState> = _createState
 
-    var selectedEmpresa: Empresa? = null
-        private set
+    val selectedEmpresa: Empresa? get() = tenantManager.empresa
 
     fun loadEmpresas() {
         viewModelScope.launch {
@@ -39,7 +40,7 @@ class EmpresasViewModel @Inject constructor(
     }
 
     fun selectEmpresa(empresa: Empresa) {
-        selectedEmpresa = empresa
+        tenantManager.empresa = empresa
     }
 
     fun showCreateDialog(show: Boolean) {
