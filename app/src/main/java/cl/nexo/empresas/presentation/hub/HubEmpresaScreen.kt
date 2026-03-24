@@ -24,7 +24,7 @@ fun HubEmpresaScreen(
     onLogout: () -> Unit
 ) {
     val items = listOf(
-        HubItem("Dashboard",         Icons.Default.Dashboard,         Screen.Dashboard),
+        HubItem("Resumen",           Icons.Default.Dashboard,         Screen.Dashboard),
         HubItem("Por Cobrar",        Icons.Default.TrendingUp,        Screen.CuentasCobrar),
         HubItem("Por Pagar",         Icons.Default.TrendingDown,      Screen.CuentasPagar),
         HubItem("Cheques",           Icons.Default.Receipt,           Screen.Cheques),

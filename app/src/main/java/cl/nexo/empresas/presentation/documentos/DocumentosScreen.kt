@@ -14,9 +14,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import cl.nexo.empresas.data.model.Documento
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -30,7 +33,17 @@ fun DocumentosScreen(
     onAddDocumento: () -> Unit,
     viewModel: DocumentosViewModel = hiltViewModel()
 ) {
+    // Establece el tipo cuando cambia (ejm: al reusar el ViewModel con otro tipo)
     LaunchedEffect(tipo) { viewModel.init(tipo) }
+
+    // Recarga la lista cada vez que la pantalla vuelve a estar en foco (RESUMED).
+    // Esto cubre el caso de volver desde AddDocumento tras registrar un pago/cobro.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner.lifecycle) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            viewModel.cargarDocumentos()
+        }
+    }
 
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }

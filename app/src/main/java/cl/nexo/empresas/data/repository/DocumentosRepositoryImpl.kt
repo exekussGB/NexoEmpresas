@@ -23,6 +23,9 @@ class DocumentosRepositoryImpl @Inject constructor(
                     eq("empresa_id", empresaId)
                     eq("tipo", tipo)
                     if (estado != null) eq("estado", estado)
+                    // Excluir registros de pago interno (tienen referencia a otro documento).
+                    // Estos solo sirven para marcar el original como pagado, no son facturas/boletas.
+                    isNull("referencia_doc_id")
                 }
                 order("fecha_vencimiento", Order.ASCENDING)
             }.decodeList()
@@ -61,9 +64,10 @@ class DocumentosRepositoryImpl @Inject constructor(
             }
 
             // 3. Si este documento es el pago/cobro de otro (referencia),
-            //    marcar el documento original como pagado automáticamente.
+            //    marcar el documento original como pagado Y sus cheques como cobrados.
             val refId = doc.referenciaDocId
             if (refId != null) {
+                // Marcar documento original como pagado
                 runCatching {
                     supabaseClient.postgrest["documentos"].update(
                         DocumentoMarcarPagado(
@@ -75,7 +79,15 @@ class DocumentosRepositoryImpl @Inject constructor(
                         filter { eq("id", refId) }
                     }
                 }
-                // No propagamos el error si el update falla — el documento nuevo ya se creó.
+                // Marcar cheques asociados al documento original como cobrados
+                runCatching {
+                    supabaseClient.postgrest["cheques"].update(mapOf("estado" to "cobrado")) {
+                        filter {
+                            eq("documento_id", refId)
+                            eq("estado", "pendiente")
+                        }
+                    }
+                }
             }
 
             inserted.id
@@ -83,14 +95,24 @@ class DocumentosRepositoryImpl @Inject constructor(
 
     override suspend fun marcarPagado(id: String, fechaPago: String, numeroSeguimiento: String?): Result<Unit> =
         runCatching {
+            // Marcar documento como pagado
             supabaseClient.postgrest["documentos"].update(
                 DocumentoMarcarPagado(
-                    estado            = "pagado",   // sin default → siempre se serializa
+                    estado            = "pagado",
                     fechaPago         = fechaPago,
                     numeroSeguimiento = numeroSeguimiento
                 )
             ) {
                 filter { eq("id", id) }
+            }
+            // También marcar los cheques asociados como cobrados
+            runCatching {
+                supabaseClient.postgrest["cheques"].update(mapOf("estado" to "cobrado")) {
+                    filter {
+                        eq("documento_id", id)
+                        eq("estado", "pendiente")
+                    }
+                }
             }
         }
 
