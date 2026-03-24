@@ -3,8 +3,8 @@ package cl.nexo.empresas.data.repository
 import cl.nexo.empresas.core.session.SessionManager
 import cl.nexo.empresas.data.model.AlertaConfig
 import cl.nexo.empresas.domain.repository.AlertasRepository
-import io.github.jan.tennert.supabase.SupabaseClient
-import io.github.jan.tennert.supabase.postgrest.from
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.postgrest.from
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -24,7 +24,11 @@ class AlertasRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveConfig(config: AlertaConfig): Result<Unit> = runCatching {
-        supabase.from("alertas_config").upsert(config) {
+        val withUser = config.copy(
+            empresaId = sessionManager.empresaId,
+            userId = sessionManager.userId
+        )
+        supabase.from("alertas_config").upsert(withUser) {
             onConflict = "empresa_id,user_id"
         }
     }

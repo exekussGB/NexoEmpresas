@@ -3,8 +3,8 @@ package cl.nexo.empresas.data.repository
 import cl.nexo.empresas.core.session.SessionManager
 import cl.nexo.empresas.data.model.DashboardTotales
 import cl.nexo.empresas.domain.repository.DashboardRepository
-import io.github.jan.tennert.supabase.SupabaseClient
-import io.github.jan.tennert.supabase.postgrest.postgrest
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
