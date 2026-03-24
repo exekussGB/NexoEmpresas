@@ -6,7 +6,6 @@ import cl.nexo.empresas.data.model.Empresa
 import cl.nexo.empresas.domain.repository.EmpresasRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -51,15 +50,10 @@ class EmpresasViewModel @Inject constructor(
     fun createEmpresa(nombre: String, rut: String, giro: String) {
         viewModelScope.launch {
             _createState.value = CreateEmpresaState.Loading
-            val userId = client.auth.currentUserOrNull()?.id ?: run {
-                _createState.value = CreateEmpresaState.Error("Usuario no autenticado")
-                return@launch
-            }
             val empresa = Empresa(
                 nombre = nombre.trim(),
                 rut = rut.trim(),
-                giro = giro.trim().ifEmpty { null },
-                createdBy = userId
+                giro = giro.trim().ifEmpty { null }
             )
             empresasRepository.createEmpresa(empresa)
                 .onSuccess {

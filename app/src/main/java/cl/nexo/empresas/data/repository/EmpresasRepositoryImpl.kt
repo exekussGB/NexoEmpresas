@@ -33,7 +33,6 @@ class EmpresasRepositoryImpl @Inject constructor(
             nombre = empresa.nombre,
             rut = empresa.rut,
             giro = empresa.giro,
-            createdBy = empresa.createdBy!!
         )
         client.from(Constants.TABLE_EMPRESAS)
             .insert(request) { select() }

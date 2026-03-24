@@ -8,7 +8,6 @@ data class CreateEmpresaRequest(
     val nombre: String,
     val rut: String,
     val giro: String? = null,
-    @SerialName("created_by") val createdBy: String
 )
 @Serializable
 data class Empresa(
