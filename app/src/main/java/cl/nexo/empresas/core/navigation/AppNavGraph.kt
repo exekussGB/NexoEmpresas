@@ -22,6 +22,7 @@ import cl.nexo.empresas.presentation.auth.RegisterScreen
 import cl.nexo.empresas.presentation.contactos.ContactosScreen
 import cl.nexo.empresas.presentation.cuentas.CuentasCorrientesScreen
 import cl.nexo.empresas.presentation.empresas.EmpresasScreen
+import cl.nexo.empresas.presentation.graficos.GraficosScreen
 import cl.nexo.empresas.presentation.hub.HubEmpresaScreen
 
 @Composable
@@ -60,7 +61,7 @@ fun AppNavGraph(
             )
         }
 
-// Hub de empresa
+        // Hub de empresa
         composable(Screen.Hub.route) {
             HubEmpresaScreen(
                 onNavigate = { screen -> navController.navigate(screen.route) },
@@ -82,6 +83,11 @@ fun AppNavGraph(
             CuentasCorrientesScreen(onBack = { navController.popBackStack() })
         }
 
+        // Gráficos ✅
+        composable(Screen.Graficos.route) {
+            GraficosScreen(onBack = { navController.popBackStack() })
+        }
+
         // Pantallas pendientes
         composable(Screen.Dashboard.route) {
             PlaceholderScreen("Dashboard") { navController.popBackStack() }
@@ -97,9 +103,6 @@ fun AppNavGraph(
         }
         composable(Screen.AddDocumento.route) {
             PlaceholderScreen("Ingresar Documento") { navController.popBackStack() }
-        }
-        composable(Screen.Graficos.route) {
-            PlaceholderScreen("Gráficos") { navController.popBackStack() }
         }
         composable(Screen.Opciones.route) {
             PlaceholderScreen("Opciones") { navController.popBackStack() }

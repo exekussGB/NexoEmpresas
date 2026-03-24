@@ -153,3 +153,31 @@ enum class RolEmpresa(val value: String) {
     OWNER("owner"),
     VIEWER("viewer")
 }
+
+// ── Módulo 7: Gráficos ──────────────────────────────────────────────────────
+
+@Serializable
+data class GraficoMensual(
+    val mes: String,
+    @SerialName("total_cobrado") val totalCobrado: Long,
+    @SerialName("total_pagado")  val totalPagado:  Long
+)
+
+@Serializable
+data class SaldoCuentaMensual(
+    @SerialName("cuenta_nombre") val cuentaNombre: String,
+    val mes:                                        String,
+    @SerialName("saldo_neto")    val saldoNeto:     Long
+)
+
+@Serializable
+data class GraficoData(
+    val mensual:                                          List<GraficoMensual>,
+    @SerialName("por_cuenta") val porCuenta: List<SaldoCuentaMensual>
+)
+
+@Serializable
+data class GraficoParams(
+    @SerialName("p_empresa_id") val empresaId: String,
+    @SerialName("p_meses")      val meses:     Int
+)

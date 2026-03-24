@@ -1,0 +1,22 @@
+package cl.nexo.empresas.data.repository
+
+import cl.nexo.empresas.data.model.GraficoData
+import cl.nexo.empresas.data.model.GraficoParams
+import cl.nexo.empresas.domain.repository.GraficosRepository
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.postgrest.postgrest
+import javax.inject.Inject
+
+class GraficosRepositoryImpl @Inject constructor(
+    private val client: SupabaseClient
+) : GraficosRepository {
+
+    override suspend fun getGraficoData(empresaId: String, meses: Int): Result<GraficoData> =
+        runCatching {
+            client.auth.awaitInitialization()
+            client.postgrest
+                .rpc("get_grafico_data", GraficoParams(empresaId = empresaId, meses = meses))
+                .decodeAs<GraficoData>()
+        }
+}
