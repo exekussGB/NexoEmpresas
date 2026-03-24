@@ -43,7 +43,7 @@ data class Contacto(
     @SerialName("created_at") val createdAt: String? = null
 )
 
-/** UPDATE DTO para Contacto — sin defaults para forzar serialización completa */
+/** UPDATE DTO para Contacto */
 @Serializable
 data class ContactoUpdate(
     val nombre: String,
@@ -64,7 +64,7 @@ data class CuentaCorriente(
     @SerialName("created_at") val createdAt: String? = null
 )
 
-/** UPDATE DTO para CuentaCorriente — sin defaults para forzar serialización completa */
+/** UPDATE DTO para CuentaCorriente */
 @Serializable
 data class CuentaCorrienteUpdate(
     val nombre: String,
@@ -99,25 +99,7 @@ data class Documento(
     @SerialName("created_by") val createdBy: String? = null
 )
 
-/** INSERT DTO para Documento */
-@Serializable
-data class DocumentoCreate(
-    @SerialName("empresa_id")         val empresaId: String,
-    val tipo: String,
-    @SerialName("numero_documento")   val numeroDocumento: String? = null,
-    @SerialName("contacto_id")        val contactoId: String? = null,
-    val descripcion: String,
-    val categoria: String? = null,
-    val monto: Long,
-    @SerialName("cuenta_corriente_id") val cuentaCorrienteId: String? = null,
-    @SerialName("fecha_movimiento")   val fechaMovimiento: String,
-    @SerialName("fecha_vencimiento")  val fechaVencimiento: String,
-    val estado: String = "pendiente",
-    @SerialName("metodo_pago")        val metodoPago: String? = null,
-    val notas: String? = null,
-    @SerialName("referencia_doc_id")  val referenciaDocId: String? = null,
-    @SerialName("created_by")         val createdBy: String? = null
-)
+// DocumentoCreate está definido en DocumentoCreate.kt
 
 /** UPDATE DTO para marcar un documento como pagado */
 @Serializable
