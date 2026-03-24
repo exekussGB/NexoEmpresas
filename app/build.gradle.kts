@@ -41,6 +41,11 @@ android {
         compose = true
         buildConfig = true
     }
+    }
+configurations.all {
+    resolutionStrategy {
+        force("androidx.browser:browser:1.8.0")
+    }
 }
 
 dependencies {
