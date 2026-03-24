@@ -6,6 +6,7 @@ import cl.nexo.empresas.data.model.Empresa
 import cl.nexo.empresas.data.model.EmpresaMember
 import cl.nexo.empresas.domain.repository.EmpresasRepository
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import javax.inject.Inject
 
@@ -13,11 +14,21 @@ class EmpresasRepositoryImpl @Inject constructor(
     private val client: SupabaseClient
 ) : EmpresasRepository {
 
+    /**
+     * Espera a que la sesión esté cargada desde DataStore antes de hacer requests.
+     * Esto evita que el SDK use el anon key en la primera solicitud tras reinicio.
+     */
+    private suspend fun ensureSession() {
+        client.auth.awaitInitialization()
+    }
+
     override suspend fun getEmpresasForUser(): Result<List<Empresa>> = runCatching {
+        ensureSession()
         client.from(Constants.TABLE_EMPRESAS).select().decodeList<Empresa>()
     }
 
     override suspend fun createEmpresa(empresa: Empresa): Result<Empresa> = runCatching {
+        ensureSession()
         val request = CreateEmpresaRequest(
             nombre = empresa.nombre,
             rut = empresa.rut,
@@ -30,6 +41,7 @@ class EmpresasRepositoryImpl @Inject constructor(
     }
 
     override suspend fun joinByCode(inviteCode: String): Result<Unit> = runCatching {
+        ensureSession()
         val empresa = client.from(Constants.TABLE_EMPRESAS)
             .select { filter { eq("invite_code", inviteCode) } }
             .decodeSingle<Empresa>()
@@ -38,6 +50,7 @@ class EmpresasRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getMemberRole(empresaId: String, userId: String): Result<String> = runCatching {
+        ensureSession()
         client.from(Constants.TABLE_EMPRESA_MEMBERS)
             .select { filter { eq("empresa_id", empresaId); eq("user_id", userId) } }
             .decodeSingle<EmpresaMember>().rol

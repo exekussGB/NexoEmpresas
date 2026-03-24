@@ -1,9 +1,11 @@
 package cl.nexo.empresas.core.di
 
+import android.content.Context
 import cl.nexo.empresas.core.util.Constants
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
@@ -19,13 +21,18 @@ object SupabaseModule {
 
     @Provides
     @Singleton
-    fun provideSupabaseClient(): SupabaseClient = createSupabaseClient(
-        supabaseUrl = Constants.SUPABASE_URL,
-        supabaseKey = Constants.SUPABASE_ANON_KEY
-    ) {
-        install(Auth)
-        install(Postgrest)
-        install(Storage)
-        install(Realtime)
-    }
+    fun provideSupabaseClient(@ApplicationContext context: Context): SupabaseClient =
+        createSupabaseClient(
+            supabaseUrl = Constants.SUPABASE_URL,
+            supabaseKey = Constants.SUPABASE_ANON_KEY
+        ) {
+            install(Auth) {
+                // Persiste la sesión en DataStore → resiste reinicios de app
+                // y evita que el SDK caiga al anon key cuando el token expira
+                sessionManager = SupabaseSessionManager(context)
+            }
+            install(Postgrest)
+            install(Storage)
+            install(Realtime)
+        }
 }

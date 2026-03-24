@@ -28,8 +28,12 @@ class AuthRepositoryImpl @Inject constructor(
         client.auth.signOut()
     }
 
+    /**
+     * Verifica si hay una sesión activa con access token válido.
+     * currentSessionOrNull() confirma que hay token, no solo usuario cacheado.
+     */
     override fun isLoggedIn(): Boolean =
-        client.auth.currentUserOrNull() != null
+        client.auth.currentSessionOrNull() != null
 
     override fun currentUserId(): String? =
         client.auth.currentUserOrNull()?.id

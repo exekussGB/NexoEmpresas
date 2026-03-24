@@ -9,7 +9,7 @@ composeBom = "2024.12.01"
 navigationCompose = "2.8.5"
 hilt = "2.52"
 hiltNavigationCompose = "1.2.0"
-supabase = "3.0.2"
+supabase = "3.3.0"
 ktor = "3.0.3"
 coil = "2.7.0"
 vico = "2.0.0-alpha.28"
@@ -38,7 +38,7 @@ supabase-auth = { group = "io.github.jan-tennert.supabase", name = "auth-kt", ve
 supabase-postgrest = { group = "io.github.jan-tennert.supabase", name = "postgrest-kt", version.ref = "supabase" }
 supabase-storage = { group = "io.github.jan-tennert.supabase", name = "storage-kt", version.ref = "supabase" }
 supabase-realtime = { group = "io.github.jan-tennert.supabase", name = "realtime-kt", version.ref = "supabase" }
-ktor-android = { group = "io.ktor", name = "ktor-client-android", version.ref = "ktor" }
+ktor-android = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase" }
