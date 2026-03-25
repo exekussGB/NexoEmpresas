@@ -251,10 +251,10 @@ fun SimuladorScreen(
 
                         // ── Composición visual ──
                         val totalRef = r.costoTotalEmpresa.toFloat()
-                        if (totalRef > 0) {
-                            val liquidoPct = r.sueldoLiquido / totalRef
-                            val descPct = r.totalDescuentosTrabajador / totalRef
-                            val empPct = r.totalCostosEmpleador / totalRef
+                        if (totalRef > 0 && r.sueldoLiquido > 0) {
+                            val liquidoPct = (r.sueldoLiquido / totalRef).coerceAtLeast(0.01f)
+                            val descPct = (r.totalDescuentosTrabajador / totalRef).coerceAtLeast(0.01f)
+                            val empPct = (r.totalCostosEmpleador / totalRef).coerceAtLeast(0.01f)
                             Row(
                                 modifier = Modifier.fillMaxWidth().height(24.dp)
                                     .background(
