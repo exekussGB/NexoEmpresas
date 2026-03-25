@@ -32,6 +32,7 @@ fun HubEmpresaScreen(
         HubItem("Gráficos",          Icons.Default.BarChart,          Screen.Graficos),
         HubItem("Cuentas",           Icons.Default.AccountBalance,    Screen.Cuentas),
         HubItem("Contactos",         Icons.Default.Contacts,          Screen.Contactos),
+        HubItem("Simulador",         Icons.Default.Calculate,         Screen.Simulador),
         HubItem("Opciones",          Icons.Default.Settings,          Screen.Opciones),
     )
 

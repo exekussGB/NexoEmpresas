@@ -1,0 +1,20 @@
+{
+    "logs": [
+        {
+            "outputFile": "cl.nexo.empresas.app-mergeDebugResources-68:/values-watch-v20/values-watch-v20.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\exeku\\.gradle\\caches\\9.0.0\\transforms\\185c5f811f3b77f1a409632d852159e7\\transformed\\appcompat-1.7.0\\res\\values-watch-v20\\values-watch-v20.xml",
+                    "from": {
+                        "startLines": "2,5,8",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "55,214,385",
+                        "endLines": "4,7,10",
+                        "endColumns": "12,12,12",
+                        "endOffsets": "209,380,553"
+                    }
+                }
+            ]
+        }
+    ]
+}

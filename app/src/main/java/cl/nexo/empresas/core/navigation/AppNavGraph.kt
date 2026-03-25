@@ -18,6 +18,7 @@ import cl.nexo.empresas.presentation.graficos.GraficosScreen
 import cl.nexo.empresas.presentation.hub.HubEmpresaScreen
 import cl.nexo.empresas.presentation.settings.SettingsScreen
 import cl.nexo.empresas.presentation.scanner.ScannerScreen
+import cl.nexo.empresas.presentation.simulador.SimuladorScreen
 
 @Composable
 fun AppNavGraph(
@@ -109,6 +110,12 @@ fun AppNavGraph(
 
         composable(Screen.Contactos.route) {
             ContactosScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Simulador.route) {
+            SimuladorScreen(
                 onBack = { navController.popBackStack() }
             )
         }

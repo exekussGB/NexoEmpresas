@@ -1,0 +1,1 @@
+-keep,allowobfuscation,allowshrinking class cl.nexo.empresas.presentation.empresas.EmpresasViewModel
