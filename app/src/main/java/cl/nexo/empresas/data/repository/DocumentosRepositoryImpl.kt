@@ -6,6 +6,7 @@ import cl.nexo.empresas.domain.repository.DocumentosRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -25,7 +26,7 @@ class DocumentosRepositoryImpl @Inject constructor(
                     if (estado != null) eq("estado", estado)
                     // Excluir registros de pago interno (tienen referencia a otro documento).
                     // Estos solo sirven para marcar el original como pagado, no son facturas/boletas.
-                    isNull("referencia_doc_id")
+                    filter("referencia_doc_id", FilterOperator.IS, "null")
                 }
                 order("fecha_vencimiento", Order.ASCENDING)
             }.decodeList()
