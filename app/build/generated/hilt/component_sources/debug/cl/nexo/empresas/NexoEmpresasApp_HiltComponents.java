@@ -14,6 +14,7 @@ import cl.nexo.empresas.presentation.documentos.AddDocumentoViewModel_HiltModule
 import cl.nexo.empresas.presentation.documentos.DocumentosViewModel_HiltModules;
 import cl.nexo.empresas.presentation.empresas.EmpresasViewModel_HiltModules;
 import cl.nexo.empresas.presentation.graficos.GraficosViewModel_HiltModules;
+import cl.nexo.empresas.presentation.scanner.ScannerViewModel_HiltModules;
 import cl.nexo.empresas.presentation.settings.SettingsViewModel_HiltModules;
 import dagger.Binds;
 import dagger.Component;
@@ -184,6 +185,7 @@ public final class NexoEmpresasApp_HiltComponents {
           HiltWrapper_ActivitySavedStateHandleModule.class,
           ActivityCBuilderModule.class,
           ViewModelCBuilderModule.class,
+          ScannerViewModel_HiltModules.KeyModule.class,
           SettingsViewModel_HiltModules.KeyModule.class
       }
   )
@@ -231,6 +233,7 @@ public final class NexoEmpresasApp_HiltComponents {
           EmpresasViewModel_HiltModules.BindsModule.class,
           GraficosViewModel_HiltModules.BindsModule.class,
           HiltWrapper_HiltViewModelFactory_ViewModelModule.class,
+          ScannerViewModel_HiltModules.BindsModule.class,
           SettingsViewModel_HiltModules.BindsModule.class
       }
   )

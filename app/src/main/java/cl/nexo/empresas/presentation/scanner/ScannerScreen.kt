@@ -41,6 +41,7 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 
 @OptIn(ExperimentalMaterial3Api::class)
+@androidx.annotation.OptIn(androidx.camera.core.ExperimentalGetImage::class)
 @Composable
 fun ScannerScreen(
     onScanned: (DteScanResult) -> Unit,
@@ -301,10 +302,19 @@ private fun ScannerOverlay(isDetected: Boolean) {
             Offset(frameLeft + frameWidth, frameTop + frameHeight)
         )
         corners.forEachIndexed { idx, corner ->
-            val signX = if (idx % 2 == 0) 1f else -1f
-            val signY = if (idx < 2) 1f else -1f
-            drawLine(frameColor, corner, corner.copy(x = corner.x + signX * cornerLen), stroke)
-            drawLine(frameColor, corner, corner.copy(y = corner.y + signY * cornerLen), stroke)
+            val cornerStrokeWidth = 5.dp.toPx()
+            val corners = listOf(
+                Offset(frameLeft, frameTop),
+                Offset(frameLeft + frameWidth, frameTop),
+                Offset(frameLeft, frameTop + frameHeight),
+                Offset(frameLeft + frameWidth, frameTop + frameHeight)
+            )
+            corners.forEachIndexed { idx, corner ->
+                val signX = if (idx % 2 == 0) 1f else -1f
+                val signY = if (idx < 2) 1f else -1f
+                drawLine(frameColor, corner, corner.copy(x = corner.x + signX * cornerLen), strokeWidth = cornerStrokeWidth)
+                drawLine(frameColor, corner, corner.copy(y = corner.y + signY * cornerLen), strokeWidth = cornerStrokeWidth)
+            }
         }
     }
 }
