@@ -23,6 +23,9 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+// Marca especial para activar modo «categoría personalizada»
+private const val NUEVA_CATEGORIA = "__nueva__"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddDocumentoScreen(
@@ -38,6 +41,11 @@ fun AddDocumentoScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state.error) {
         state.error?.let { snackbarHostState.showSnackbar(it) }
+    }
+
+    // ¿La categoría actual es personalizada (no está en el enum)?
+    val isCustomCategoria = remember(state.categoria) {
+        CategoriaDocumento.entries.none { it.value == state.categoria }
     }
 
     Scaffold(
@@ -71,14 +79,15 @@ fun AddDocumentoScreen(
                     )
                 }
 
-                // Número de factura
+                // Número de factura (obligatorio)
                 item {
                     OutlinedTextField(
                         value = state.numeroDocumento,
                         onValueChange = viewModel::setNumeroDocumento,
-                        label = { Text("Número de factura (opcional)") },
+                        label = { Text("Número de factura *") },
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        singleLine = true,
+                        isError = state.error?.contains("factura") == true
                     )
                 }
 
@@ -96,17 +105,40 @@ fun AddDocumentoScreen(
                     )
                 }
 
-                // Categoría
+                // Categoría  (predefinida o personalizada)
                 item {
-                    DropdownSelector(
-                        label = "Categoría",
-                        selected = CategoriaDocumento.entries.find { it.value == state.categoria }?.label ?: state.categoria,
-                        options = CategoriaDocumento.entries.map { it.label },
-                        onSelect = { label ->
-                            val cat = CategoriaDocumento.entries.find { it.label == label }
-                            viewModel.setCategoria(cat?.value ?: label)
-                        }
-                    )
+                    if (isCustomCategoria) {
+                        // Modo texto libre
+                        OutlinedTextField(
+                            value = state.categoria,
+                            onValueChange = viewModel::setCategoria,
+                            label = { Text("Categoría personalizada") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            trailingIcon = {
+                                TextButton(
+                                    onClick = { viewModel.setCategoria(CategoriaDocumento.SERVICIOS.value) }
+                                ) { Text("Lista", style = MaterialTheme.typography.labelSmall) }
+                            }
+                        )
+                    } else {
+                        // Dropdown con categorías predefinidas + opción de nueva
+                        val opcionesPredefinidas = CategoriaDocumento.entries.map { it.label }
+                        DropdownSelector(
+                            label = "Categoría",
+                            selected = CategoriaDocumento.entries.find { it.value == state.categoria }?.label
+                                ?: state.categoria,
+                            options = opcionesPredefinidas + listOf("+ Nueva categoría..."),
+                            onSelect = { label ->
+                                if (label == "+ Nueva categoría...") {
+                                    viewModel.setCategoria("")   // entra en modo personalizado
+                                } else {
+                                    val cat = CategoriaDocumento.entries.find { it.label == label }
+                                    viewModel.setCategoria(cat?.value ?: label)
+                                }
+                            }
+                        )
+                    }
                 }
 
                 // Descripción
@@ -149,7 +181,6 @@ fun AddDocumentoScreen(
                 }
 
                 // ── Documento de referencia ────────────────────────────────────────────
-                // Muestra documentos pendientes del mismo tipo (cobros o pagos) con su fecha
                 item {
                     val pendientes = state.pendientesFiltrados
                     if (pendientes.isNotEmpty()) {

@@ -146,6 +146,11 @@ class AddDocumentoViewModel @Inject constructor(
 
         val state = _uiState.value
 
+        // Validaciones
+        if (state.numeroDocumento.isBlank()) {
+            _uiState.value = state.copy(error = "El número de factura es obligatorio")
+            return
+        }
         if (state.descripcion.isBlank()) {
             _uiState.value = state.copy(error = "La descripción es obligatoria")
             return

@@ -82,7 +82,9 @@ class DocumentosRepositoryImpl @Inject constructor(
                 }
                 // Marcar cheques asociados al documento original como cobrados
                 runCatching {
-                    supabaseClient.postgrest["cheques"].update(mapOf("estado" to "cobrado")) {
+                    supabaseClient.postgrest["cheques"].update(
+                        ChequeEstadoUpdate("cobrado")
+                    ) {
                         filter {
                             eq("documento_id", refId)
                             eq("estado", "pendiente")
@@ -108,7 +110,9 @@ class DocumentosRepositoryImpl @Inject constructor(
             }
             // También marcar los cheques asociados como cobrados
             runCatching {
-                supabaseClient.postgrest["cheques"].update(mapOf("estado" to "cobrado")) {
+                supabaseClient.postgrest["cheques"].update(
+                    ChequeEstadoUpdate("cobrado")
+                ) {
                     filter {
                         eq("documento_id", id)
                         eq("estado", "pendiente")

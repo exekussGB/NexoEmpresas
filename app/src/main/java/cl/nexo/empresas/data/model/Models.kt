@@ -142,6 +142,12 @@ data class ChequeCreate(
     val orden: Int
 )
 
+/** UPDATE DTO para actualizar estado de cheque — sin default para forzar serialización */
+@Serializable
+data class ChequeEstadoUpdate(
+    val estado: String
+)
+
 @Serializable
 data class AlertaConfig(
     val id: String = "",

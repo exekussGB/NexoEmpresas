@@ -2,11 +2,15 @@ package cl.nexo.empresas.presentation.empresas
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cl.nexo.empresas.core.session.SessionManager
 import cl.nexo.empresas.core.session.TenantManager
 import cl.nexo.empresas.data.model.Empresa
+import cl.nexo.empresas.data.model.EmpresaMember
 import cl.nexo.empresas.domain.repository.EmpresasRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -16,6 +20,7 @@ import javax.inject.Inject
 class EmpresasViewModel @Inject constructor(
     private val empresasRepository: EmpresasRepository,
     private val tenantManager: TenantManager,
+    private val sessionManager: SessionManager,
     private val client: SupabaseClient
 ) : ViewModel() {
 
@@ -39,8 +44,32 @@ class EmpresasViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Selecciona la empresa activa y, de forma async, carga el rol del usuario
+     * en esa empresa para que isOwner() funcione en toda la app.
+     */
     fun selectEmpresa(empresa: Empresa) {
         tenantManager.empresa = empresa
+        viewModelScope.launch {
+            try {
+                val userId = client.auth.currentUserOrNull()?.id ?: return@launch
+                val members = client.postgrest["empresa_members"]
+                    .select {
+                        filter {
+                            eq("empresa_id", empresa.id)
+                            eq("user_id", userId)
+                        }
+                    }
+                    .decodeList<EmpresaMember>()
+                sessionManager.userRole = members.firstOrNull()?.rol ?: "viewer"
+            } catch (e: Exception) {
+                // Fallback: si el usuario creó esta empresa, es el owner
+                val userId = runCatching { client.auth.currentUserOrNull()?.id }.getOrNull()
+                if (userId != null && empresa.createdBy == userId) {
+                    sessionManager.userRole = "owner"
+                }
+            }
+        }
     }
 
     fun showCreateDialog(show: Boolean) {
