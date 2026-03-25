@@ -71,7 +71,6 @@ fun CuentasCorrientesScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Filtro tabs
             FiltroTabs(filtroActiva = filtroActiva, onFiltroChange = viewModel::setFiltro)
 
             when (val state = uiState) {
@@ -185,7 +184,6 @@ private fun CuentaCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icono tipo
             Icon(
                 imageVector = tipoIcon(cuenta.tipo),
                 contentDescription = null,
@@ -198,7 +196,6 @@ private fun CuentaCard(
 
             Spacer(Modifier.width(12.dp))
 
-            // Info
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -232,7 +229,6 @@ private fun CuentaCard(
                 }
             }
 
-            // Acciones
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 IconButton(onClick = onEdit) {
                     Icon(Icons.Default.Edit, "Editar", tint = MaterialTheme.colorScheme.primary)
@@ -285,7 +281,7 @@ private fun CuentaDialog(
                     singleLine    = true
                 )
 
-                // Tipo (segmented buttons)
+                // Tipo
                 Text("Tipo", style = MaterialTheme.typography.labelMedium)
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                     tipos.forEachIndexed { index, (value, label) ->
@@ -298,20 +294,27 @@ private fun CuentaDialog(
                     }
                 }
 
-                // Número de cuenta
+                // Número de cuenta — solo dígitos
                 OutlinedTextField(
                     value         = numeroCuenta,
-                    onValueChange = { numeroCuenta = it },
+                    onValueChange = { newVal ->
+                        if (newVal.all { it.isDigit() }) numeroCuenta = newVal
+                    },
                     label         = { Text("N° de cuenta (opcional)") },
                     modifier      = Modifier.fillMaxWidth(),
                     singleLine    = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
 
-                // Saldo inicial
+                // Saldo inicial — solo dígitos (sin signo)
                 OutlinedTextField(
                     value         = saldoTexto,
-                    onValueChange = { saldoTexto = it; saldoError = false },
+                    onValueChange = { newVal ->
+                        if (newVal.all { it.isDigit() }) {
+                            saldoTexto = newVal
+                            saldoError = false
+                        }
+                    },
                     label         = { Text("Saldo inicial (CLP)") },
                     isError       = saldoError,
                     supportingText = if (saldoError) {{ Text("Ingresa un monto válido") }} else null,
@@ -333,7 +336,6 @@ private fun CuentaDialog(
                     }
                 }
 
-                // Error de guardado
                 if (saveState is SaveState.Error) {
                     Text(
                         text  = saveState.message,

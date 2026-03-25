@@ -1,5 +1,6 @@
 package cl.nexo.empresas.presentation.documentos
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -7,11 +8,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -19,7 +22,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cl.nexo.empresas.data.model.CategoriaDocumento
 import cl.nexo.empresas.data.model.MetodoPago
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -87,6 +92,7 @@ fun AddDocumentoScreen(
                         label = { Text("Número de factura *") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         isError = state.error?.contains("factura") == true
                     )
                 }
@@ -108,7 +114,6 @@ fun AddDocumentoScreen(
                 // Categoría  (predefinida o personalizada)
                 item {
                     if (isCustomCategoria) {
-                        // Modo texto libre
                         OutlinedTextField(
                             value = state.categoria,
                             onValueChange = viewModel::setCategoria,
@@ -122,7 +127,6 @@ fun AddDocumentoScreen(
                             }
                         )
                     } else {
-                        // Dropdown con categorías predefinidas + opción de nueva
                         val opcionesPredefinidas = CategoriaDocumento.entries.map { it.label }
                         DropdownSelector(
                             label = "Categoría",
@@ -131,7 +135,7 @@ fun AddDocumentoScreen(
                             options = opcionesPredefinidas + listOf("+ Nueva categoría..."),
                             onSelect = { label ->
                                 if (label == "+ Nueva categoría...") {
-                                    viewModel.setCategoria("")   // entra en modo personalizado
+                                    viewModel.setCategoria("")
                                 } else {
                                     val cat = CategoriaDocumento.entries.find { it.label == label }
                                     viewModel.setCategoria(cat?.value ?: label)
@@ -153,11 +157,13 @@ fun AddDocumentoScreen(
                     )
                 }
 
-                // Monto
+                // Monto — solo dígitos
                 item {
                     OutlinedTextField(
                         value = state.monto,
-                        onValueChange = viewModel::setMonto,
+                        onValueChange = { newValue ->
+                            if (newValue.all { it.isDigit() }) viewModel.setMonto(newValue)
+                        },
                         label = { Text("Monto (CLP) *") },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -180,7 +186,7 @@ fun AddDocumentoScreen(
                     )
                 }
 
-                // ── Documento de referencia ────────────────────────────────────────────
+                // ── Documento de referencia ──────────────────────────────────────────
                 item {
                     val pendientes = state.pendientesFiltrados
                     if (pendientes.isNotEmpty()) {
@@ -212,22 +218,20 @@ fun AddDocumentoScreen(
                     }
                 }
 
-                // Fechas
+                // Fechas con DatePicker
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
+                        DatePickerField(
+                            label = "Fecha movimiento",
                             value = state.fechaMovimiento,
-                            onValueChange = viewModel::setFechaMovimiento,
-                            label = { Text("Fecha movimiento") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
+                            onDateSelected = viewModel::setFechaMovimiento,
+                            modifier = Modifier.weight(1f)
                         )
-                        OutlinedTextField(
+                        DatePickerField(
+                            label = "Fecha vencimiento",
                             value = state.fechaVencimiento,
-                            onValueChange = viewModel::setFechaVencimiento,
-                            label = { Text("Fecha vencimiento") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
+                            onDateSelected = viewModel::setFechaVencimiento,
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
@@ -320,6 +324,77 @@ fun AddDocumentoScreen(
     }
 }
 
+// ── DatePickerField ──────────────────────────────────────────────────────────
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DatePickerField(
+    label: String,
+    value: String,
+    onDateSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    val displayText = if (value.isNotBlank()) {
+        try {
+            LocalDate.parse(value).format(DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale("es", "CL")))
+        } catch (e: Exception) { value }
+    } else ""
+
+    Box(modifier = modifier) {
+        OutlinedTextField(
+            value = displayText,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            trailingIcon = { Icon(Icons.Default.DateRange, null) },
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                disabledBorderColor = MaterialTheme.colorScheme.outline,
+                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            enabled = false
+        )
+        // Overlay transparente que captura el click
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .alpha(0f)
+                .clickable { showDialog = true }
+        )
+    }
+
+    if (showDialog) {
+        val initialMillis = if (value.isNotBlank()) {
+            try { LocalDate.parse(value).toEpochDay() * 86_400_000L }
+            catch (e: Exception) { System.currentTimeMillis() }
+        } else System.currentTimeMillis()
+
+        val pickerState = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
+
+        DatePickerDialog(
+            onDismissRequest = { showDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    pickerState.selectedDateMillis?.let { millis ->
+                        val date = Instant.ofEpochMilli(millis).atOffset(ZoneOffset.UTC).toLocalDate()
+                        onDateSelected(date.toString())
+                    }
+                    showDialog = false
+                }) { Text("Aceptar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) { Text("Cancelar") }
+            }
+        ) {
+            DatePicker(state = pickerState)
+        }
+    }
+}
+
+// ── Otros composables ─────────────────────────────────────────────────────────
 @Composable
 private fun SegmentedTipoSelector(selected: String, onSelect: (String) -> Unit) {
     val ingresoSelected = selected == "ingreso"
@@ -395,12 +470,16 @@ private fun ChequeFormCard(
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Nº cheque — solo dígitos
                 OutlinedTextField(
                     value = cheque.numeroCheque,
-                    onValueChange = { onUpdate(cheque.copy(numeroCheque = it)) },
+                    onValueChange = { newVal ->
+                        if (newVal.all { it.isDigit() }) onUpdate(cheque.copy(numeroCheque = newVal))
+                    },
                     label = { Text("Nº Cheque") },
                     modifier = Modifier.weight(1f),
-                    singleLine = true
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
                 OutlinedTextField(
                     value = cheque.banco,
@@ -411,21 +490,24 @@ private fun ChequeFormCard(
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Monto cheque — solo dígitos
                 OutlinedTextField(
                     value = cheque.monto,
-                    onValueChange = { onUpdate(cheque.copy(monto = it)) },
+                    onValueChange = { newVal ->
+                        if (newVal.all { it.isDigit() }) onUpdate(cheque.copy(monto = newVal))
+                    },
                     label = { Text("Monto") },
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     prefix = { Text("\$") }
                 )
-                OutlinedTextField(
+                // Fecha cobro — DatePicker
+                DatePickerField(
+                    label = "Fecha cobro",
                     value = cheque.fechaCobro,
-                    onValueChange = { onUpdate(cheque.copy(fechaCobro = it)) },
-                    label = { Text("Fecha cobro") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
+                    onDateSelected = { onUpdate(cheque.copy(fechaCobro = it)) },
+                    modifier = Modifier.weight(1f)
                 )
             }
         }

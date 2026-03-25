@@ -3,6 +3,7 @@ package cl.nexo.empresas.presentation.contactos
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -10,9 +11,51 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cl.nexo.empresas.data.model.Contacto
+
+// ── RUT auto-formato chileno (ej: 12345678-9 → 12.345.678-9) ─────────────────
+private fun formatRut(input: String): String {
+    // Conserva solo dígitos y K/k, convertir a mayúscula
+    val clean = input.filter { it.isDigit() || it.lowercaseChar() == 'k' }.uppercase()
+    if (clean.length <= 1) return clean
+
+    val verifier = clean.last()
+    val body = clean.dropLast(1)
+
+    // Inserta puntos cada 3 dígitos desde la derecha
+    val sb = StringBuilder()
+    body.reversed().forEachIndexed { i, c ->
+        if (i > 0 && i % 3 == 0) sb.insert(0, '.')
+        sb.insert(0, c)
+    }
+    return "$sb-$verifier"
+}
+
+private fun isValidRut(rut: String): Boolean {
+    if (rut.isBlank()) return true // campo opcional → vacío es válido
+    val clean = rut.filter { it.isDigit() || it.lowercaseChar() == 'k' }.uppercase()
+    if (clean.length < 2) return false
+    val body = clean.dropLast(1)
+    val dv = clean.last()
+    if (!body.all { it.isDigit() }) return false
+
+    // Validación módulo 11
+    var sum = 0
+    var mul = 2
+    for (c in body.reversed()) {
+        sum += c.digitToInt() * mul
+        mul = if (mul == 7) 2 else mul + 1
+    }
+    val expected = when (val rem = 11 - (sum % 11)) {
+        11 -> '0'
+        10 -> 'K'
+        else -> '0' + rem
+    }
+    return dv == expected
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,7 +165,6 @@ fun ContactosScreen(
         }
     }
 
-    // Dialog Agregar / Editar
     if (showDialog) {
         ContactoDialog(
             contacto = editando,
@@ -156,12 +198,11 @@ private fun ContactoCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icono según tipo
             Icon(
                 imageVector = when (contacto.tipo) {
                     "proveedor" -> Icons.Default.LocalShipping
-                    "cliente" -> Icons.Default.Person
-                    else -> Icons.Default.People
+                    "cliente"   -> Icons.Default.Person
+                    else        -> Icons.Default.People
                 },
                 contentDescription = null,
                 tint = if (contacto.activo)
@@ -189,11 +230,10 @@ private fun ContactoCard(
                     )
                 }
                 Spacer(Modifier.height(4.dp))
-                // Badge tipo
                 val (tipoLabel, tipoColor) = when (contacto.tipo) {
                     "proveedor" -> "Proveedor" to MaterialTheme.colorScheme.tertiary
-                    "cliente" -> "Cliente" to MaterialTheme.colorScheme.secondary
-                    else -> "Ambos" to MaterialTheme.colorScheme.primary
+                    "cliente"   -> "Cliente" to MaterialTheme.colorScheme.secondary
+                    else        -> "Ambos" to MaterialTheme.colorScheme.primary
                 }
                 Surface(
                     shape = MaterialTheme.shapes.small,
@@ -207,10 +247,8 @@ private fun ContactoCard(
                     )
                 }
             }
-            // Acciones
             IconButton(onClick = onEdit) {
-                Icon(Icons.Default.Edit, "Editar",
-                    tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Default.Edit, "Editar", tint = MaterialTheme.colorScheme.primary)
             }
             IconButton(onClick = onToggleActivo) {
                 Icon(
@@ -233,12 +271,15 @@ private fun ContactoDialog(
     onSave: (nombre: String, rut: String, tipo: String) -> Unit
 ) {
     var nombre by remember { mutableStateOf(contacto?.nombre ?: "") }
-    var rut by remember { mutableStateOf(contacto?.rut ?: "") }
-    var tipo by remember { mutableStateOf(contacto?.tipo ?: "ambos") }
+    var rut    by remember { mutableStateOf(contacto?.rut ?: "") }
+    var tipo   by remember { mutableStateOf(contacto?.tipo ?: "ambos") }
+
+    var nombreError by remember { mutableStateOf(false) }
+    var rutError    by remember { mutableStateOf(false) }
 
     val isEditing = contacto != null
     val isLoading = saveState is SaveContactoState.Loading
-    val errorMsg = (saveState as? SaveContactoState.Error)?.message
+    val errorMsg  = (saveState as? SaveContactoState.Error)?.message
 
     AlertDialog(
         onDismissRequest = { if (!isLoading) onDismiss() },
@@ -247,35 +288,46 @@ private fun ContactoDialog(
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = nombre,
-                    onValueChange = { nombre = it },
+                    onValueChange = { nombre = it; nombreError = false },
                     label = { Text("Nombre *") },
+                    isError = nombreError,
+                    supportingText = if (nombreError) {{ Text("El nombre es obligatorio") }} else null,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     enabled = !isLoading
                 )
                 OutlinedTextField(
                     value = rut,
-                    onValueChange = { rut = it },
+                    onValueChange = { input ->
+                        rut = formatRut(input)
+                        rutError = false
+                    },
                     label = { Text("RUT (opcional)") },
-                    placeholder = { Text("76.123.456-7") },
+                    placeholder = { Text("12.345.678-9") },
+                    isError = rutError,
+                    supportingText = if (rutError) {
+                        { Text("RUT inválido. Ej: 12.345.678-9") }
+                    } else {
+                        { Text("Se formatea automáticamente", style = MaterialTheme.typography.labelSmall) }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    enabled = !isLoading
+                    enabled = !isLoading,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
                 Text("Tipo", style = MaterialTheme.typography.labelMedium)
-                // Segmented buttons para tipo
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                     listOf(
                         "proveedor" to "Proveedor",
-                        "cliente" to "Cliente",
-                        "ambos" to "Ambos"
+                        "cliente"   to "Cliente",
+                        "ambos"     to "Ambos"
                     ).forEachIndexed { index, (value, label) ->
                         SegmentedButton(
                             selected = tipo == value,
-                            onClick = { tipo = value },
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = 3),
-                            label = { Text(label, style = MaterialTheme.typography.labelSmall) },
-                            enabled = !isLoading
+                            onClick  = { tipo = value },
+                            shape    = SegmentedButtonDefaults.itemShape(index = index, count = 3),
+                            label    = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                            enabled  = !isLoading
                         )
                     }
                 }
@@ -287,7 +339,11 @@ private fun ContactoDialog(
         },
         confirmButton = {
             Button(
-                onClick = { if (nombre.isNotBlank()) onSave(nombre, rut, tipo) },
+                onClick = {
+                    nombreError = nombre.isBlank()
+                    rutError    = rut.isNotBlank() && !isValidRut(rut)
+                    if (!nombreError && !rutError) onSave(nombre, rut, tipo)
+                },
                 enabled = nombre.isNotBlank() && !isLoading
             ) {
                 if (isLoading) {
