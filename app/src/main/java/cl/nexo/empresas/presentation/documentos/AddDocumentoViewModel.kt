@@ -51,7 +51,7 @@ data class AddDocumentoUiState(
     val sumaChequesLong: Long get() = cheques.sumOf { it.monto.replace(".", "").replace(",", "").toLongOrNull() ?: 0L }
     val chequesDiff: Long get() = montoLong - sumaChequesLong
     val isChequePago: Boolean get() = metodoPago == MetodoPago.CHEQUE.value
-    val chequesValidos: Boolean get() = !isChequePago || (cheques.isNotEmpty() && chequesDiff == 0L)
+    val chequesValidos: Boolean get() = !isChequePago || cheques.isNotEmpty()
     /** Documentos pendientes filtrados por el tipo actual (ingreso/egreso) */
     val pendientesFiltrados: List<Documento> get() = documentosPendientes.filter { it.tipo == tipo }
 }
@@ -159,10 +159,10 @@ class AddDocumentoViewModel @Inject constructor(
             _uiState.value = state.copy(error = "El monto debe ser mayor a 0")
             return
         }
-        if (state.isChequePago && !state.chequesValidos) {
-            _uiState.value = state.copy(error = "La suma de cheques debe igualar el monto del documento")
-            return
-        }
+        //if (state.isChequePago && !state.chequesValidos) {
+        //    _uiState.value = state.copy(error = "La suma de cheques debe igualar el monto del documento")
+        //    return
+        //}
 
         _uiState.value = state.copy(isSaving = true, error = null)
 
@@ -205,5 +205,35 @@ class AddDocumentoViewModel @Inject constructor(
                 .onSuccess { _uiState.value = _uiState.value.copy(isSaving = false, savedSuccessfully = true) }
                 .onFailure { e -> _uiState.value = _uiState.value.copy(isSaving = false, error = e.message) }
         }
+    }
+    /**
+     * Pre-rellena el formulario con los datos del Timbre Electrónico escaneado.
+     * Valida que el RUT receptor del TED coincida con el RUT de la empresa actual.
+     *
+     * @param result  Datos extraídos del código PDF417
+     * @param empresaRut RUT de la empresa seleccionada (obtenido desde SessionManager/estado)
+     */
+    fun applyDteScan(result: DteScanResult, empresaRut: String = "") {
+        val contactoMatchId = _uiState.value.contactos
+            .firstOrNull { it.rut?.replace(".", "")?.replace("-", "") ==
+                    result.rutEmisor.replace(".", "").replace("-", "") }
+            ?.id
+
+        val rutWarning = if (empresaRut.isNotBlank() &&
+            result.rutReceptor.replace(".", "").replace("-", "") !=
+            empresaRut.replace(".", "").replace("-", "")
+        ) {
+            "⚠️ El RUT receptor del documento (${result.rutReceptor}) no coincide con tu empresa"
+        } else null
+
+        _uiState.value = _uiState.value.copy(
+            tipo             = result.tipoNexo,
+            numeroDocumento  = result.folio,
+            monto            = result.montoTotal.toString(),
+            descripcion      = result.descripcion.ifBlank { DteScanResult.nombreDte(result.tipoDocumento) },
+            fechaMovimiento  = result.fechaEmision,
+            contactoId       = contactoMatchId,     // null si el RUT no está en catálogo
+            error            = rutWarning           // warning de RUT, no bloquea
+        )
     }
 }

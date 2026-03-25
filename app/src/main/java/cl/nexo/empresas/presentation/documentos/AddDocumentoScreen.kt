@@ -27,6 +27,10 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.navigation.NavHostController
+import cl.nexo.empresas.data.model.DteScanResult
+import androidx.compose.material.icons.filled.QrCodeScanner
+import cl.nexo.empresas.presentation.navigation.Screen
 
 // Marca especial para activar modo «categoría personalizada»
 private const val NUEVA_CATEGORIA = "__nueva__"
@@ -34,6 +38,7 @@ private const val NUEVA_CATEGORIA = "__nueva__"
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddDocumentoScreen(
+    navController: NavHostController,
     onBack: () -> Unit,
     viewModel: AddDocumentoViewModel = hiltViewModel()
 ) {
@@ -46,6 +51,23 @@ fun AddDocumentoScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state.error) {
         state.error?.let { snackbarHostState.showSnackbar(it) }
+    }
+    // ── Recibir resultado del scanner PDF417 ──────────────────────────────────
+    val dteScanResultState = navController.currentBackStackEntry
+        ?.savedStateHandle
+        ?.getStateFlow<DteScanResult?>("dte_scan_result", null)
+        ?.collectAsState()
+
+    LaunchedEffect(dteScanResultState?.value) {
+        dteScanResultState?.value?.let { result ->
+            viewModel.applyDteScan(result)
+            navController.currentBackStackEntry
+                ?.savedStateHandle
+                ?.remove<DteScanResult>("dte_scan_result")
+            // Snackbar de confirmación
+            val monto = "%,d".format(result.montoTotal).replace(",", ".")
+            snackbarHostState.showSnackbar("✅ Factura escaneada: N° ${result.folio} · \$$monto")
+        }
     }
 
     // ¿La categoría actual es personalizada (no está en el enum)?
@@ -84,20 +106,31 @@ fun AddDocumentoScreen(
                     )
                 }
 
-                // Número de factura (obligatorio, solo dígitos)
+                // Número de factura
                 item {
-                    OutlinedTextField(
-                        value = state.numeroDocumento,
-                        onValueChange = { newValue ->
-                            // Filtrar: solo dígitos permitidos
-                            if (newValue.all { it.isDigit() }) viewModel.setNumeroDocumento(newValue)
-                        },
-                        label = { Text("Número de factura *") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        isError = state.error?.contains("factura") == true
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = state.numeroDocumento,
+                            onValueChange = { newValue ->
+                                if (newValue.all { it.isDigit() }) viewModel.setNumeroDocumento(newValue)
+                            },
+                            label = { Text("Número de factura *") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            isError = state.error?.contains("factura") == true
+                        )
+                        // ── Botón escanear PDF417 ──────────────────────────────────────────
+                        FilledTonalIconButton(
+                            onClick = { navController.navigate(Screen.Scanner.route) },
+                            modifier = Modifier.size(56.dp)
+                        ) {
+                            Icon(Icons.Default.QrCodeScanner, contentDescription = "Escanear DTE PDF417")
+                        }
+                    }
                 }
 
                 // Contacto

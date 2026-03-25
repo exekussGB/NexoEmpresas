@@ -17,6 +17,7 @@ import cl.nexo.empresas.presentation.empresas.EmpresasScreen
 import cl.nexo.empresas.presentation.graficos.GraficosScreen
 import cl.nexo.empresas.presentation.hub.HubEmpresaScreen
 import cl.nexo.empresas.presentation.settings.SettingsScreen
+import cl.nexo.empresas.presentation.scanner.ScannerScreen
 
 @Composable
 fun AppNavGraph(
@@ -89,6 +90,7 @@ fun AppNavGraph(
 
         composable(Screen.AddDocumento.route) {
             AddDocumentoScreen(
+                navController = navController,
                 onBack = { navController.popBackStack() }
             )
         }
@@ -125,6 +127,18 @@ fun AppNavGraph(
 
         composable(Screen.Alertas.route) {
             AlertasConfigScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Screen.Scanner.route) {
+            ScannerScreen(
+                onScanned = { result ->
+                    // Pasar resultado a AddDocumento via SavedStateHandle
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("dte_scan_result", result)
+                    navController.popBackStack()
+                },
                 onBack = { navController.popBackStack() }
             )
         }

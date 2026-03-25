@@ -15,6 +15,7 @@ sealed class Screen(val route: String) {
     data object Contactos     : Screen("contactos")
     data object Opciones      : Screen("opciones")
     data object Alertas       : Screen("alertas")
+    data object Scanner : Screen("scanner")
     data object DocumentoDetail : Screen("documento/{documentoId}") {
         fun route(id: String) = "documento/$id"
     }

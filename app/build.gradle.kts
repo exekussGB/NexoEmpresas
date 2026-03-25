@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)   // Firebase
+    id("kotlin-parcelize")   // ← NUEVO: para @Parcelize en DteScanResult
 }
 
 android {
@@ -98,4 +99,14 @@ dependencies {
     implementation(libs.firebase.messaging)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // ── Módulo Scanner PDF417 ───────────────────────────────────────────────────
+// ML Kit — barcode scanning con soporte nativo PDF417 (sin modelo de descarga)
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+
+// CameraX — acceso a cámara en Jetpack Compose
+    implementation("androidx.camera:camera-camera2:1.4.1")
+    implementation("androidx.camera:camera-lifecycle:1.4.1")
+    implementation("androidx.camera:camera-view:1.4.1")
+    implementation("androidx.camera:camera-core:1.4.1")
 }
