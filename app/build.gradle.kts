@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
-    // alias(libs.plugins.google.services)
+    alias(libs.plugins.google.services)   // Firebase
 }
 
 android {
@@ -93,9 +93,9 @@ dependencies {
     implementation(libs.vico.compose.m3)
     implementation(libs.datastore.preferences)
 
-    // Firebase
-    // implementation(platform(libs.firebase.bom))
-    // implementation(libs.firebase.messaging)
+    // Firebase Cloud Messaging
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

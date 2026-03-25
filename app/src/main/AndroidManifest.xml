@@ -22,7 +22,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Firebase Messaging -->
+        <!-- Firebase Cloud Messaging -->
         <service
             android:name=".core.service.NexoFcmService"
             android:exported="false">
@@ -30,6 +30,16 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <!-- Canal de notificaciones por defecto -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="nexo_vencimientos" />
+
+        <!-- Icono por defecto para notificaciones FCM -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
 
     </application>
 </manifest>

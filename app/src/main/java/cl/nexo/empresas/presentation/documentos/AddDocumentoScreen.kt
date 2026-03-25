@@ -84,11 +84,14 @@ fun AddDocumentoScreen(
                     )
                 }
 
-                // Número de factura (obligatorio)
+                // Número de factura (obligatorio, solo dígitos)
                 item {
                     OutlinedTextField(
                         value = state.numeroDocumento,
-                        onValueChange = viewModel::setNumeroDocumento,
+                        onValueChange = { newValue ->
+                            // Filtrar: solo dígitos permitidos
+                            if (newValue.all { it.isDigit() }) viewModel.setNumeroDocumento(newValue)
+                        },
                         label = { Text("Número de factura *") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,

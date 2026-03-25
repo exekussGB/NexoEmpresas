@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import cl.nexo.empresas.core.session.SessionManager
 import cl.nexo.empresas.data.model.AlertaConfig
 import cl.nexo.empresas.domain.repository.AlertasRepository
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,6 +33,7 @@ class AlertasViewModel @Inject constructor(
 
     init {
         loadConfig()
+        registrarFcmToken()
     }
 
     private fun loadConfig() {
@@ -48,6 +50,21 @@ class AlertasViewModel @Inject constructor(
                 .onFailure { _error.value = it.message ?: "Error al cargar configuración" }
             _isLoading.value = false
         }
+    }
+
+    /**
+     * Obtiene el token FCM actual del dispositivo y lo guarda en Supabase.
+     * Se ejecuta cada vez que se abre la pantalla de alertas para mantenerlo actualizado.
+     */
+    private fun registrarFcmToken() {
+        FirebaseMessaging.getInstance().token
+            .addOnSuccessListener { token ->
+                viewModelScope.launch {
+                    alertasRepository.saveFcmToken(token)
+                        .onFailure { /* ignorar silenciosamente */ }
+                }
+            }
+            .addOnFailureListener { /* ignorar si Firebase no está disponible */ }
     }
 
     fun saveConfig(

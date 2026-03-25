@@ -157,7 +157,7 @@ data class AlertaConfig(
     @SerialName("alertas_cobros") val alertasCobros: Boolean = true,
     @SerialName("alertas_pagos") val alertasPagos: Boolean = true,
     @SerialName("alertas_cheques") val alertasCheques: Boolean = true,
-    @SerialName("push_token") val pushToken: String? = null,
+    @SerialName("fcm_token") val fcmToken: String? = null,   // token FCM para push notifications
     @SerialName("created_at") val createdAt: String? = null
 )
 
