@@ -30,6 +30,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onLogout: () -> Unit,
     onAlertas: () -> Unit,
+    onTutoriales: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val empresa by viewModel.empresa.collectAsState()
@@ -204,7 +205,31 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "🔔  Configurar Alertas",
+                            text = "🔔 Configurar Alertas",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // --- ListTile "Tutoriales y Ayuda" ---
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onTutoriales
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "📚 Tutoriales y Ayuda",
                             style = MaterialTheme.typography.bodyLarge
                         )
                         Icon(

@@ -3,6 +3,8 @@ package cl.nexo.empresas;
 import android.app.Activity;
 import android.app.Service;
 import android.view.View;
+import androidx.datastore.core.DataStore;
+import androidx.datastore.preferences.core.Preferences;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.SavedStateHandle;
 import androidx.lifecycle.ViewModel;
@@ -11,6 +13,8 @@ import cl.nexo.empresas.core.di.SupabaseModule_ProvideSupabaseSessionManagerFact
 import cl.nexo.empresas.core.session.SessionManager;
 import cl.nexo.empresas.core.session.SupabaseSessionManager;
 import cl.nexo.empresas.core.session.TenantManager;
+import cl.nexo.empresas.core.tutorial.TutorialDiModule_ProvideTutorialDataStoreFactory;
+import cl.nexo.empresas.core.tutorial.TutorialManager;
 import cl.nexo.empresas.data.repository.AlertasRepositoryImpl;
 import cl.nexo.empresas.data.repository.AuthRepositoryImpl;
 import cl.nexo.empresas.data.repository.ChequesRepositoryImpl;
@@ -65,6 +69,10 @@ import cl.nexo.empresas.presentation.graficos.GraficosViewModel;
 import cl.nexo.empresas.presentation.graficos.GraficosViewModel_HiltModules;
 import cl.nexo.empresas.presentation.graficos.GraficosViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
 import cl.nexo.empresas.presentation.graficos.GraficosViewModel_HiltModules_KeyModule_Provide_LazyMapKey;
+import cl.nexo.empresas.presentation.hub.HubViewModel;
+import cl.nexo.empresas.presentation.hub.HubViewModel_HiltModules;
+import cl.nexo.empresas.presentation.hub.HubViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
+import cl.nexo.empresas.presentation.hub.HubViewModel_HiltModules_KeyModule_Provide_LazyMapKey;
 import cl.nexo.empresas.presentation.scanner.ScannerViewModel;
 import cl.nexo.empresas.presentation.scanner.ScannerViewModel_HiltModules;
 import cl.nexo.empresas.presentation.scanner.ScannerViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
@@ -73,6 +81,14 @@ import cl.nexo.empresas.presentation.settings.SettingsViewModel;
 import cl.nexo.empresas.presentation.settings.SettingsViewModel_HiltModules;
 import cl.nexo.empresas.presentation.settings.SettingsViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
 import cl.nexo.empresas.presentation.settings.SettingsViewModel_HiltModules_KeyModule_Provide_LazyMapKey;
+import cl.nexo.empresas.presentation.tutorial.OnboardingViewModel;
+import cl.nexo.empresas.presentation.tutorial.OnboardingViewModel_HiltModules;
+import cl.nexo.empresas.presentation.tutorial.OnboardingViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
+import cl.nexo.empresas.presentation.tutorial.OnboardingViewModel_HiltModules_KeyModule_Provide_LazyMapKey;
+import cl.nexo.empresas.presentation.tutorial.TutorialListViewModel;
+import cl.nexo.empresas.presentation.tutorial.TutorialListViewModel_HiltModules;
+import cl.nexo.empresas.presentation.tutorial.TutorialListViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
+import cl.nexo.empresas.presentation.tutorial.TutorialListViewModel_HiltModules_KeyModule_Provide_LazyMapKey;
 import dagger.hilt.android.ActivityRetainedLifecycle;
 import dagger.hilt.android.ViewModelLifecycle;
 import dagger.hilt.android.internal.builders.ActivityComponentBuilder;
@@ -423,7 +439,7 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
     }
 
     Map keySetMapOfClassOfAndBooleanBuilder() {
-      MapBuilder mapBuilder = MapBuilder.<String, Boolean>newMapBuilder(12);
+      MapBuilder mapBuilder = MapBuilder.<String, Boolean>newMapBuilder(15);
       mapBuilder.put(AddDocumentoViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, AddDocumentoViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(AlertasViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, AlertasViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(AuthViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, AuthViewModel_HiltModules.KeyModule.provide());
@@ -434,8 +450,11 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
       mapBuilder.put(DocumentosViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, DocumentosViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(EmpresasViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, EmpresasViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(GraficosViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, GraficosViewModel_HiltModules.KeyModule.provide());
+      mapBuilder.put(HubViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, HubViewModel_HiltModules.KeyModule.provide());
+      mapBuilder.put(OnboardingViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, OnboardingViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(ScannerViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, ScannerViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(SettingsViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, SettingsViewModel_HiltModules.KeyModule.provide());
+      mapBuilder.put(TutorialListViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, TutorialListViewModel_HiltModules.KeyModule.provide());
       return mapBuilder.build();
     }
 
@@ -496,9 +515,15 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
 
     Provider<GraficosViewModel> graficosViewModelProvider;
 
+    Provider<HubViewModel> hubViewModelProvider;
+
+    Provider<OnboardingViewModel> onboardingViewModelProvider;
+
     Provider<ScannerViewModel> scannerViewModelProvider;
 
     Provider<SettingsViewModel> settingsViewModelProvider;
+
+    Provider<TutorialListViewModel> tutorialListViewModelProvider;
 
     ViewModelCImpl(SingletonCImpl singletonCImpl, ActivityRetainedCImpl activityRetainedCImpl,
         SavedStateHandle savedStateHandleParam, ViewModelLifecycle viewModelLifecycleParam) {
@@ -510,7 +535,7 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
     }
 
     Map hiltViewModelMapMapOfClassOfAndProviderOfViewModelBuilder() {
-      MapBuilder mapBuilder = MapBuilder.<String, javax.inject.Provider<ViewModel>>newMapBuilder(12);
+      MapBuilder mapBuilder = MapBuilder.<String, javax.inject.Provider<ViewModel>>newMapBuilder(15);
       mapBuilder.put(AddDocumentoViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (addDocumentoViewModelProvider)));
       mapBuilder.put(AlertasViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (alertasViewModelProvider)));
       mapBuilder.put(AuthViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (authViewModelProvider)));
@@ -521,8 +546,11 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
       mapBuilder.put(DocumentosViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (documentosViewModelProvider)));
       mapBuilder.put(EmpresasViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (empresasViewModelProvider)));
       mapBuilder.put(GraficosViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (graficosViewModelProvider)));
+      mapBuilder.put(HubViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (hubViewModelProvider)));
+      mapBuilder.put(OnboardingViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (onboardingViewModelProvider)));
       mapBuilder.put(ScannerViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (scannerViewModelProvider)));
       mapBuilder.put(SettingsViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (settingsViewModelProvider)));
+      mapBuilder.put(TutorialListViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (tutorialListViewModelProvider)));
       return mapBuilder.build();
     }
 
@@ -539,8 +567,11 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
       this.documentosViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 7);
       this.empresasViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 8);
       this.graficosViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 9);
-      this.scannerViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 10);
-      this.settingsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 11);
+      this.hubViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 10);
+      this.onboardingViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 11);
+      this.scannerViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 12);
+      this.settingsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 13);
+      this.tutorialListViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 14);
     }
 
     @Override
@@ -604,11 +635,20 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
           case 9: // cl.nexo.empresas.presentation.graficos.GraficosViewModel
           return (T) new GraficosViewModel(singletonCImpl.bindGraficosRepositoryProvider.get(), singletonCImpl.tenantManagerProvider.get(), singletonCImpl.sessionManagerProvider.get());
 
-          case 10: // cl.nexo.empresas.presentation.scanner.ScannerViewModel
+          case 10: // cl.nexo.empresas.presentation.hub.HubViewModel
+          return (T) new HubViewModel(singletonCImpl.tutorialManagerProvider.get());
+
+          case 11: // cl.nexo.empresas.presentation.tutorial.OnboardingViewModel
+          return (T) new OnboardingViewModel(singletonCImpl.tutorialManagerProvider.get());
+
+          case 12: // cl.nexo.empresas.presentation.scanner.ScannerViewModel
           return (T) new ScannerViewModel();
 
-          case 11: // cl.nexo.empresas.presentation.settings.SettingsViewModel
+          case 13: // cl.nexo.empresas.presentation.settings.SettingsViewModel
           return (T) new SettingsViewModel(singletonCImpl.bindEmpresasRepositoryProvider.get(), singletonCImpl.sessionManagerProvider.get());
+
+          case 14: // cl.nexo.empresas.presentation.tutorial.TutorialListViewModel
+          return (T) new TutorialListViewModel(singletonCImpl.tutorialManagerProvider.get());
 
           default: throw new AssertionError(id);
         }
@@ -726,6 +766,10 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
 
     Provider<GraficosRepository> bindGraficosRepositoryProvider;
 
+    Provider<DataStore<Preferences>> provideTutorialDataStoreProvider;
+
+    Provider<TutorialManager> tutorialManagerProvider;
+
     SingletonCImpl(ApplicationContextModule applicationContextModuleParam) {
       this.applicationContextModule = applicationContextModuleParam;
       initialize(applicationContextModuleParam);
@@ -752,10 +796,12 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
       this.bindEmpresasRepositoryProvider = DoubleCheck.provider((Provider) (empresasRepositoryImplProvider));
       this.graficosRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 12);
       this.bindGraficosRepositoryProvider = DoubleCheck.provider((Provider) (graficosRepositoryImplProvider));
+      this.provideTutorialDataStoreProvider = DoubleCheck.provider(new SwitchingProvider<DataStore<Preferences>>(singletonCImpl, 14));
+      this.tutorialManagerProvider = DoubleCheck.provider(new SwitchingProvider<TutorialManager>(singletonCImpl, 13));
     }
 
     @Override
-    public void injectNexoEmpresasApp(NexoEmpresasApp arg0) {
+    public void injectNexoEmpresasApp(NexoEmpresasApp nexoEmpresasApp) {
     }
 
     @Override
@@ -825,6 +871,12 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
 
           case 12: // cl.nexo.empresas.data.repository.GraficosRepositoryImpl
           return (T) new GraficosRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get());
+
+          case 13: // cl.nexo.empresas.core.tutorial.TutorialManager
+          return (T) new TutorialManager(singletonCImpl.provideTutorialDataStoreProvider.get());
+
+          case 14: // @cl.nexo.empresas.core.tutorial.TutorialDataStore androidx.datastore.core.DataStore<androidx.datastore.preferences.core.Preferences>
+          return (T) TutorialDiModule_ProvideTutorialDataStoreFactory.provideTutorialDataStore(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
           default: throw new AssertionError(id);
         }

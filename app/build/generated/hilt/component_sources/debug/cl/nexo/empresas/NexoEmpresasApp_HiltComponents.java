@@ -3,6 +3,7 @@ package cl.nexo.empresas;
 import androidx.hilt.work.HiltWrapper_WorkerFactoryModule;
 import cl.nexo.empresas.core.di.AppModule;
 import cl.nexo.empresas.core.di.SupabaseModule;
+import cl.nexo.empresas.core.tutorial.TutorialDiModule;
 import cl.nexo.empresas.core.worker.VencimientosCheckWorker_HiltModule;
 import cl.nexo.empresas.presentation.alertas.AlertasViewModel_HiltModules;
 import cl.nexo.empresas.presentation.auth.AuthViewModel_HiltModules;
@@ -14,8 +15,11 @@ import cl.nexo.empresas.presentation.documentos.AddDocumentoViewModel_HiltModule
 import cl.nexo.empresas.presentation.documentos.DocumentosViewModel_HiltModules;
 import cl.nexo.empresas.presentation.empresas.EmpresasViewModel_HiltModules;
 import cl.nexo.empresas.presentation.graficos.GraficosViewModel_HiltModules;
+import cl.nexo.empresas.presentation.hub.HubViewModel_HiltModules;
 import cl.nexo.empresas.presentation.scanner.ScannerViewModel_HiltModules;
 import cl.nexo.empresas.presentation.settings.SettingsViewModel_HiltModules;
+import cl.nexo.empresas.presentation.tutorial.OnboardingViewModel_HiltModules;
+import cl.nexo.empresas.presentation.tutorial.TutorialListViewModel_HiltModules;
 import dagger.Binds;
 import dagger.Component;
 import dagger.Module;
@@ -147,6 +151,7 @@ public final class NexoEmpresasApp_HiltComponents {
           ActivityRetainedCBuilderModule.class,
           ServiceCBuilderModule.class,
           SupabaseModule.class,
+          TutorialDiModule.class,
           VencimientosCheckWorker_HiltModule.class
       }
   )
@@ -183,10 +188,13 @@ public final class NexoEmpresasApp_HiltComponents {
           GraficosViewModel_HiltModules.KeyModule.class,
           HiltWrapper_ActivityRetainedComponentManager_LifecycleModule.class,
           HiltWrapper_ActivitySavedStateHandleModule.class,
+          HubViewModel_HiltModules.KeyModule.class,
           ActivityCBuilderModule.class,
           ViewModelCBuilderModule.class,
+          OnboardingViewModel_HiltModules.KeyModule.class,
           ScannerViewModel_HiltModules.KeyModule.class,
-          SettingsViewModel_HiltModules.KeyModule.class
+          SettingsViewModel_HiltModules.KeyModule.class,
+          TutorialListViewModel_HiltModules.KeyModule.class
       }
   )
   @ActivityRetainedScoped
@@ -233,8 +241,11 @@ public final class NexoEmpresasApp_HiltComponents {
           EmpresasViewModel_HiltModules.BindsModule.class,
           GraficosViewModel_HiltModules.BindsModule.class,
           HiltWrapper_HiltViewModelFactory_ViewModelModule.class,
+          HubViewModel_HiltModules.BindsModule.class,
+          OnboardingViewModel_HiltModules.BindsModule.class,
           ScannerViewModel_HiltModules.BindsModule.class,
-          SettingsViewModel_HiltModules.BindsModule.class
+          SettingsViewModel_HiltModules.BindsModule.class,
+          TutorialListViewModel_HiltModules.BindsModule.class
       }
   )
   @ViewModelScoped
