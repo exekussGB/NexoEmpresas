@@ -1,13 +1,3 @@
-// ═══════════════════════════════════════════════════════════════════════════
-// NexoEmpresas — app/build.gradle.kts
-// ═══════════════════════════════════════════════════════════════════════════
-// CAMBIO vs versión anterior:
-//   buildTypes > release:
-//     + isShrinkResources = true   ← NUEVO (seguridad + tamaño APK)
-//       Elimina recursos no referenciados del APK de producción.
-//       Requiere isMinifyEnabled = true (ya estaba) para funcionar.
-// ═══════════════════════════════════════════════════════════════════════════
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -39,7 +29,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
-            isShrinkResources = true    // ← NUEVO: elimina recursos no usados en release
+            isShrinkResources = true    // ← elimina recursos no usados en release
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -53,11 +43,13 @@ android {
         buildConfig = true
     }
 }
+
 kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
+
 configurations.all {
     resolutionStrategy {
         force("androidx.browser:browser:1.8.0")
@@ -87,6 +79,13 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.hilt.work)
     ksp(libs.hilt.work.compiler)
+
+    // ── FIX: Gradle 9 + KSP + Hilt-Work ────────────────────────────────────
+    // KSP intenta procesar source sets de test. Sin estos, busca 'testClasses'
+    // (tarea del plugin Java) que AGP no registra → "testClasses not found".
+    kspTest(libs.hilt.compiler)
+    kspAndroidTest(libs.hilt.compiler)
+    // ────────────────────────────────────────────────────────────────────────
 
     // Supabase
     implementation(libs.supabase.auth)

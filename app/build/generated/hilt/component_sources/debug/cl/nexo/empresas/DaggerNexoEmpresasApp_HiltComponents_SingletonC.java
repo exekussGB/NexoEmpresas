@@ -7,7 +7,9 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.SavedStateHandle;
 import androidx.lifecycle.ViewModel;
 import cl.nexo.empresas.core.di.SupabaseModule_ProvideSupabaseClientFactory;
+import cl.nexo.empresas.core.di.SupabaseModule_ProvideSupabaseSessionManagerFactory;
 import cl.nexo.empresas.core.session.SessionManager;
+import cl.nexo.empresas.core.session.SupabaseSessionManager;
 import cl.nexo.empresas.core.session.TenantManager;
 import cl.nexo.empresas.data.repository.AlertasRepositoryImpl;
 import cl.nexo.empresas.data.repository.AuthRepositoryImpl;
@@ -688,6 +690,8 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
 
     private final SingletonCImpl singletonCImpl = this;
 
+    Provider<SupabaseSessionManager> provideSupabaseSessionManagerProvider;
+
     Provider<SupabaseClient> provideSupabaseClientProvider;
 
     Provider<TenantManager> tenantManagerProvider;
@@ -730,22 +734,23 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
 
     @SuppressWarnings("unchecked")
     private void initialize(final ApplicationContextModule applicationContextModuleParam) {
+      this.provideSupabaseSessionManagerProvider = DoubleCheck.provider(new SwitchingProvider<SupabaseSessionManager>(singletonCImpl, 2));
       this.provideSupabaseClientProvider = DoubleCheck.provider(new SwitchingProvider<SupabaseClient>(singletonCImpl, 1));
-      this.tenantManagerProvider = DoubleCheck.provider(new SwitchingProvider<TenantManager>(singletonCImpl, 3));
-      this.sessionManagerProvider = DoubleCheck.provider(new SwitchingProvider<SessionManager>(singletonCImpl, 2));
+      this.tenantManagerProvider = DoubleCheck.provider(new SwitchingProvider<TenantManager>(singletonCImpl, 4));
+      this.sessionManagerProvider = DoubleCheck.provider(new SwitchingProvider<SessionManager>(singletonCImpl, 3));
       this.documentosRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<DocumentosRepositoryImpl>(singletonCImpl, 0));
-      this.contactosRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 4);
+      this.contactosRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 5);
       this.bindContactosRepositoryProvider = DoubleCheck.provider((Provider) (contactosRepositoryImplProvider));
-      this.cuentasCorrientesRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 5);
+      this.cuentasCorrientesRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 6);
       this.bindCuentasCorrientesRepositoryProvider = DoubleCheck.provider((Provider) (cuentasCorrientesRepositoryImplProvider));
-      this.alertasRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<AlertasRepositoryImpl>(singletonCImpl, 6));
-      this.authRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 7);
+      this.alertasRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<AlertasRepositoryImpl>(singletonCImpl, 7));
+      this.authRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 8);
       this.bindAuthRepositoryProvider = DoubleCheck.provider((Provider) (authRepositoryImplProvider));
-      this.chequesRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<ChequesRepositoryImpl>(singletonCImpl, 8));
-      this.dashboardRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<DashboardRepositoryImpl>(singletonCImpl, 9));
-      this.empresasRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 10);
+      this.chequesRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<ChequesRepositoryImpl>(singletonCImpl, 9));
+      this.dashboardRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<DashboardRepositoryImpl>(singletonCImpl, 10));
+      this.empresasRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 11);
       this.bindEmpresasRepositoryProvider = DoubleCheck.provider((Provider) (empresasRepositoryImplProvider));
-      this.graficosRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 11);
+      this.graficosRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 12);
       this.bindGraficosRepositoryProvider = DoubleCheck.provider((Provider) (graficosRepositoryImplProvider));
     }
 
@@ -786,36 +791,39 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
           return (T) new DocumentosRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.sessionManagerProvider.get());
 
           case 1: // io.github.jan.supabase.SupabaseClient
-          return (T) SupabaseModule_ProvideSupabaseClientFactory.provideSupabaseClient(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
+          return (T) SupabaseModule_ProvideSupabaseClientFactory.provideSupabaseClient(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule), singletonCImpl.provideSupabaseSessionManagerProvider.get());
 
-          case 2: // cl.nexo.empresas.core.session.SessionManager
+          case 2: // cl.nexo.empresas.core.session.SupabaseSessionManager
+          return (T) SupabaseModule_ProvideSupabaseSessionManagerFactory.provideSupabaseSessionManager(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
+
+          case 3: // cl.nexo.empresas.core.session.SessionManager
           return (T) new SessionManager(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.tenantManagerProvider.get());
 
-          case 3: // cl.nexo.empresas.core.session.TenantManager
+          case 4: // cl.nexo.empresas.core.session.TenantManager
           return (T) new TenantManager();
 
-          case 4: // cl.nexo.empresas.data.repository.ContactosRepositoryImpl
+          case 5: // cl.nexo.empresas.data.repository.ContactosRepositoryImpl
           return (T) new ContactosRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get());
 
-          case 5: // cl.nexo.empresas.data.repository.CuentasCorrientesRepositoryImpl
+          case 6: // cl.nexo.empresas.data.repository.CuentasCorrientesRepositoryImpl
           return (T) new CuentasCorrientesRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get());
 
-          case 6: // cl.nexo.empresas.data.repository.AlertasRepositoryImpl
+          case 7: // cl.nexo.empresas.data.repository.AlertasRepositoryImpl
           return (T) new AlertasRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.sessionManagerProvider.get());
 
-          case 7: // cl.nexo.empresas.data.repository.AuthRepositoryImpl
+          case 8: // cl.nexo.empresas.data.repository.AuthRepositoryImpl
           return (T) new AuthRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get());
 
-          case 8: // cl.nexo.empresas.data.repository.ChequesRepositoryImpl
+          case 9: // cl.nexo.empresas.data.repository.ChequesRepositoryImpl
           return (T) new ChequesRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.sessionManagerProvider.get());
 
-          case 9: // cl.nexo.empresas.data.repository.DashboardRepositoryImpl
+          case 10: // cl.nexo.empresas.data.repository.DashboardRepositoryImpl
           return (T) new DashboardRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.sessionManagerProvider.get());
 
-          case 10: // cl.nexo.empresas.data.repository.EmpresasRepositoryImpl
+          case 11: // cl.nexo.empresas.data.repository.EmpresasRepositoryImpl
           return (T) new EmpresasRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get());
 
-          case 11: // cl.nexo.empresas.data.repository.GraficosRepositoryImpl
+          case 12: // cl.nexo.empresas.data.repository.GraficosRepositoryImpl
           return (T) new GraficosRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get());
 
           default: throw new AssertionError(id);
