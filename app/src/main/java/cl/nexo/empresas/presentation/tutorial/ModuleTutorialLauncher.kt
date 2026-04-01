@@ -14,10 +14,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * ViewModel shared for tutorial launching.
- * Each screen passes its TutorialModule; the VM checks if it was completed.
- */
 @HiltViewModel
 class ModuleTutorialViewModel @Inject constructor(
     private val tutorialManager: TutorialManager
@@ -34,13 +30,16 @@ class ModuleTutorialViewModel @Inject constructor(
         }
     }
 
-    fun dismiss() {
-        _showTutorial.value = null
+    fun completeTutorial(module: TutorialModule) {
+        viewModelScope.launch {
+            tutorialManager.markTutorialCompleted(module)
+            _showTutorial.value = null
+        }
     }
 }
 
 /**
- * Drop this composable into any screen's composable to auto-launch
+ * Drop this composable into any screen to auto-launch
  * the tutorial the first time the user visits.
  *
  * Usage:
@@ -60,7 +59,7 @@ fun ModuleTutorialLauncher(
     if (current == module) {
         TutorialOverlay(
             module = module,
-            onFinish = { viewModel.dismiss() }
+            onFinish = { viewModel.completeTutorial(module) }
         )
     }
 }

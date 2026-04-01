@@ -1,4 +1,4 @@
-#Wed Apr 01 17:12:51 CLST 2026
+#Wed Apr 01 17:53:58 CLST 2026
 base.0=C\:\\Users\\exeku\\AndroidStudioProjects\\NexoEmpresas\\app\\build\\intermediates\\dex\\debug\\mergeExtDexDebug\\classes.dex
 base.1=C\:\\Users\\exeku\\AndroidStudioProjects\\NexoEmpresas\\app\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\0\\classes.dex
 base.10=C\:\\Users\\exeku\\AndroidStudioProjects\\NexoEmpresas\\app\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\3\\classes.dex
