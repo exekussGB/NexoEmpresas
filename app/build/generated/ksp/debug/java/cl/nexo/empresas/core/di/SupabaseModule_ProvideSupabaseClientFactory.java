@@ -1,7 +1,6 @@
 package cl.nexo.empresas.core.di;
 
 import android.content.Context;
-import cl.nexo.empresas.core.session.SupabaseSessionManager;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.Factory;
 import dagger.internal.Preconditions;
@@ -30,26 +29,21 @@ import javax.annotation.processing.Generated;
 public final class SupabaseModule_ProvideSupabaseClientFactory implements Factory<SupabaseClient> {
   private final Provider<Context> contextProvider;
 
-  private final Provider<SupabaseSessionManager> sessionManagerProvider;
-
-  private SupabaseModule_ProvideSupabaseClientFactory(Provider<Context> contextProvider,
-      Provider<SupabaseSessionManager> sessionManagerProvider) {
+  private SupabaseModule_ProvideSupabaseClientFactory(Provider<Context> contextProvider) {
     this.contextProvider = contextProvider;
-    this.sessionManagerProvider = sessionManagerProvider;
   }
 
   @Override
   public SupabaseClient get() {
-    return provideSupabaseClient(contextProvider.get(), sessionManagerProvider.get());
+    return provideSupabaseClient(contextProvider.get());
   }
 
   public static SupabaseModule_ProvideSupabaseClientFactory create(
-      Provider<Context> contextProvider, Provider<SupabaseSessionManager> sessionManagerProvider) {
-    return new SupabaseModule_ProvideSupabaseClientFactory(contextProvider, sessionManagerProvider);
+      Provider<Context> contextProvider) {
+    return new SupabaseModule_ProvideSupabaseClientFactory(contextProvider);
   }
 
-  public static SupabaseClient provideSupabaseClient(Context context,
-      SupabaseSessionManager sessionManager) {
-    return Preconditions.checkNotNullFromProvides(SupabaseModule.INSTANCE.provideSupabaseClient(context, sessionManager));
+  public static SupabaseClient provideSupabaseClient(Context context) {
+    return Preconditions.checkNotNullFromProvides(SupabaseModule.INSTANCE.provideSupabaseClient(context));
   }
 }

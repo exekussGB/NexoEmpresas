@@ -12,7 +12,6 @@ import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material.icons.filled.ContactPhone
 import androidx.compose.material.icons.filled.Contacts
-import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.DataObject
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Description
@@ -21,13 +20,16 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Pin
 import androidx.compose.material.icons.filled.PlayArrow
@@ -40,9 +42,11 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.ui.graphics.Color
 
 object TutorialSteps {
@@ -52,8 +56,10 @@ object TutorialSteps {
         TutorialModule.EMPRESA_SETUP -> empresaSetupSteps()
         TutorialModule.EMPRESA_MIEMBROS -> empresaMiembrosSteps()
         TutorialModule.HUB -> hubSteps()
-        TutorialModule.DASHBOARD -> dashboardSteps()
-        TutorialModule.DOCUMENTOS -> documentosSteps()
+        TutorialModule.RESUMEN -> resumenSteps()
+        TutorialModule.INGRESAR_DOC -> ingresarDocSteps()
+        TutorialModule.POR_PAGAR -> porPagarSteps()
+        TutorialModule.POR_COBRAR -> porCobrarSteps()
         TutorialModule.CHEQUES -> chequesSteps()
         TutorialModule.CONTACTOS -> contactosSteps()
         TutorialModule.CUENTAS -> cuentasSteps()
@@ -165,25 +171,18 @@ object TutorialSteps {
             iconBgColor = Color(0xFFE3F2FD)
         ),
         TutorialStep(
-            title = "Documentos (CxC / CxP)",
-            description = "Registra facturas por cobrar (ingresos) y por pagar (egresos). El botón diferencia automáticamente el tipo.",
+            title = "Módulos disponibles",
+            description = "Cada botón te lleva a una sección diferente: documentos, cheques, cuentas, contactos, simulador y más.",
             icon = Icons.Default.Description,
             iconColor = Color(0xFF2E7D32),
             iconBgColor = Color(0xFFE8F5E9)
         ),
         TutorialStep(
-            title = "Cheques y Cuentas",
-            description = "Lleva el control de cheques recibidos/emitidos y los saldos de tus cuentas corrientes.",
-            icon = Icons.Default.AccountBalance,
+            title = "Resumen y Gráficos",
+            description = "Usa 'Resumen' para ver el estado financiero general y 'Opciones' para acceder a gráficos, alertas y tutoriales.",
+            icon = Icons.Default.BarChart,
             iconColor = Color(0xFF6A1B9A),
             iconBgColor = Color(0xFFF3E5F5)
-        ),
-        TutorialStep(
-            title = "Gráficos y Dashboard",
-            description = "Visualiza el estado financiero de tu empresa: flujo de caja, documentos pendientes y evolución mensual.",
-            icon = Icons.Default.BarChart,
-            iconColor = Color(0xFFF57F17),
-            iconBgColor = Color(0xFFFFF8E1)
         ),
         TutorialStep(
             title = "Escáner DTE",
@@ -194,24 +193,27 @@ object TutorialSteps {
         )
     )
 
-    private fun dashboardSteps() = listOf(
+    // ════════════════════════════════════════
+    // RESUMEN FINANCIERO (ex-Dashboard)
+    // ════════════════════════════════════════
+    private fun resumenSteps() = listOf(
         TutorialStep(
-            title = "Panel financiero",
-            description = "Resumen ejecutivo del estado de tu empresa: total por cobrar, total por pagar, saldo de cuentas y flujo del mes.",
-            icon = Icons.Default.Dashboard,
+            title = "Resumen Financiero",
+            description = "Aquí ves un panorama completo de tu empresa: total por cobrar, total por pagar, saldo de cuentas y movimientos del mes.",
+            icon = Icons.Default.TrendingUp,
             iconColor = Color(0xFF1565C0),
             iconBgColor = Color(0xFFE3F2FD)
         ),
         TutorialStep(
-            title = "Indicadores clave",
-            description = "Los KPIs se calculan desde tus documentos activos. Un documento pagado deja de sumarse al pendiente inmediatamente.",
-            icon = Icons.Default.TrendingUp,
+            title = "Indicadores principales",
+            description = "Los montos se actualizan automáticamente. Cuando marcas un documento como pagado, se refleja al instante en los totales.",
+            icon = Icons.Default.AttachMoney,
             iconColor = Color(0xFF2E7D32),
             iconBgColor = Color(0xFFE8F5E9)
         ),
         TutorialStep(
-            title = "Función RPC",
-            description = "Los totales del dashboard se calculan en el servidor para mayor eficiencia y consistencia de los datos.",
+            title = "Datos siempre al día",
+            description = "Los totales se calculan directamente desde tus datos en la nube, asegurando que siempre veas cifras exactas y actualizadas.",
             icon = Icons.Default.Cloud,
             iconColor = Color(0xFF6A1B9A),
             iconBgColor = Color(0xFFF3E5F5)
@@ -225,48 +227,105 @@ object TutorialSteps {
         )
     )
 
-    private fun documentosSteps() = listOf(
+    // ════════════════════════════════════════
+    // INGRESAR DOCUMENTO
+    // ════════════════════════════════════════
+    private fun ingresarDocSteps() = listOf(
         TutorialStep(
-            title = "Documentos: ingreso y egreso",
-            description = "Los documentos son el corazón de la app. Registra facturas que te deben (ingreso) y que debes pagar (egreso).",
-            icon = Icons.Default.Description,
+            title = "Ingresar Documento",
+            description = "Aquí registras nuevas facturas, boletas o notas de crédito. Elige si es un ingreso (te deben a ti) o un egreso (tú debes).",
+            icon = Icons.Default.NoteAdd,
             iconColor = Color(0xFF1565C0),
             iconBgColor = Color(0xFFE3F2FD)
         ),
         TutorialStep(
-            title = "Agregar documento",
-            description = "Al crear un documento indica el tipo (factura, boleta, nota de crédito), número, monto, fecha de vencimiento y contacto asociado.",
-            icon = Icons.Default.NoteAdd,
+            title = "Datos del documento",
+            description = "Completa el número de factura, monto, fecha de vencimiento y contacto asociado. Los campos con * son obligatorios.",
+            icon = Icons.Default.Edit,
             iconColor = Color(0xFF2E7D32),
             iconBgColor = Color(0xFFE8F5E9)
         ),
         TutorialStep(
-            title = "Número de factura",
-            description = "El número de factura acepta solo dígitos. Es requerido y debe ser único para evitar duplicados.",
-            icon = Icons.Default.Pin,
-            iconColor = Color(0xFF00695C),
-            iconBgColor = Color(0xFFE0F7FA)
+            title = "Escaneo rápido",
+            description = "¿Tienes la factura impresa? Usa el botón del escáner (📷) junto al número de factura para leer el código PDF417 y llenar los datos automáticamente.",
+            icon = Icons.Default.QrCodeScanner,
+            iconColor = Color(0xFF6A1B9A),
+            iconBgColor = Color(0xFFF3E5F5)
         ),
         TutorialStep(
-            title = "Pago relacionado",
-            description = "Cuando cobres o pagues una factura, crea un documento de pago vinculado. El sistema marcará el original como pagado automáticamente.",
+            title = "Categorías y notas",
+            description = "Clasifica el documento con una categoría predefinida o crea una personalizada. Agrega notas para recordar detalles importantes.",
+            icon = Icons.Default.Category,
+            iconColor = Color(0xFFF57F17),
+            iconBgColor = Color(0xFFFFF8E1)
+        )
+    )
+
+    // ════════════════════════════════════════
+    // POR PAGAR
+    // ════════════════════════════════════════
+    private fun porPagarSteps() = listOf(
+        TutorialStep(
+            title = "Documentos Por Pagar",
+            description = "Aquí están todas las facturas y cuentas que tu empresa debe pagar. Se ordenan por fecha de vencimiento.",
+            icon = Icons.Default.TrendingDown,
+            iconColor = Color(0xFFC62828),
+            iconBgColor = Color(0xFFFFEBEE)
+        ),
+        TutorialStep(
+            title = "Estados del documento",
+            description = "Cada documento puede estar Pendiente, Pagado o Vencido. Los vencidos se marcan en rojo para que no se te pasen.",
+            icon = Icons.Default.Schedule,
+            iconColor = Color(0xFF2E7D32),
+            iconBgColor = Color(0xFFE8F5E9)
+        ),
+        TutorialStep(
+            title = "Registrar pago",
+            description = "Cuando pagues una factura, crea un documento de pago vinculado. El sistema marca el original como pagado automáticamente.",
             icon = Icons.Default.Payment,
             iconColor = Color(0xFF6A1B9A),
             iconBgColor = Color(0xFFF3E5F5)
         ),
         TutorialStep(
-            title = "Filtros y búsqueda",
-            description = "Filtra por estado (pendiente / pagado / vencido), rango de fechas o contacto para encontrar cualquier documento rápidamente.",
+            title = "Filtrar y buscar",
+            description = "Filtra por estado (pendiente, pagado, vencido), rango de fechas o contacto para encontrar cualquier documento rápidamente.",
             icon = Icons.Default.FilterList,
             iconColor = Color(0xFFF57F17),
             iconBgColor = Color(0xFFFFF8E1)
+        )
+    )
+
+    // ════════════════════════════════════════
+    // POR COBRAR
+    // ════════════════════════════════════════
+    private fun porCobrarSteps() = listOf(
+        TutorialStep(
+            title = "Documentos Por Cobrar",
+            description = "Aquí están todas las facturas que te deben a ti. Lleva el control de tus ingresos pendientes.",
+            icon = Icons.Default.TrendingUp,
+            iconColor = Color(0xFF2E7D32),
+            iconBgColor = Color(0xFFE8F5E9)
         ),
         TutorialStep(
-            title = "Categorías personalizadas",
-            description = "Puedes crear categorías propias además de las predeterminadas para organizar tus documentos según el flujo de tu empresa.",
-            icon = Icons.Default.Category,
-            iconColor = Color(0xFFC62828),
-            iconBgColor = Color(0xFFFFEBEE)
+            title = "Seguimiento de cobros",
+            description = "Revisa qué clientes tienen facturas pendientes y cuáles están por vencer. Los documentos vencidos se destacan en rojo.",
+            icon = Icons.Default.PersonSearch,
+            iconColor = Color(0xFF1565C0),
+            iconBgColor = Color(0xFFE3F2FD)
+        ),
+        TutorialStep(
+            title = "Registrar cobro",
+            description = "Cuando un cliente te pague, crea un documento de cobro vinculado. El original se marcará como cobrado automáticamente.",
+            icon = Icons.Default.AttachMoney,
+            iconColor = Color(0xFF6A1B9A),
+            iconBgColor = Color(0xFFF3E5F5)
+        ),
+        TutorialStep(
+            title = "Filtrar y buscar",
+            description = "Usa los filtros por estado, fecha o contacto para encontrar rápidamente lo que necesitas.",
+            icon = Icons.Default.FilterList,
+            iconColor = Color(0xFFF57F17),
+            iconBgColor = Color(0xFFFFF8E1)
         )
     )
 
@@ -280,7 +339,7 @@ object TutorialSteps {
         ),
         TutorialStep(
             title = "Datos del cheque",
-            description = "Ingresa número de cheque, banco, fecha de cobro/pago y monto. La fecha es especialmente importante para proyección de flujo de caja.",
+            description = "Ingresa número de cheque, banco, fecha de cobro/pago y monto. La fecha es clave para proyectar tu flujo de caja.",
             icon = Icons.Default.Edit,
             iconColor = Color(0xFF2E7D32),
             iconBgColor = Color(0xFFE8F5E9)
@@ -293,8 +352,8 @@ object TutorialSteps {
             iconBgColor = Color(0xFFF3E5F5)
         ),
         TutorialStep(
-            title = "Orden de cobro",
-            description = "Los cheques se ordenan por fecha ascendente para que siempre veas primero los que vencen antes.",
+            title = "Orden por vencimiento",
+            description = "Los cheques se ordenan por fecha para que siempre veas primero los que vencen antes.",
             icon = Icons.Default.Sort,
             iconColor = Color(0xFFF57F17),
             iconBgColor = Color(0xFFFFF8E1)
@@ -304,21 +363,21 @@ object TutorialSteps {
     private fun contactosSteps() = listOf(
         TutorialStep(
             title = "Clientes y proveedores",
-            description = "Crea una ficha por cada cliente o proveedor. Asocia documentos y cheques a sus contactos para historial completo.",
+            description = "Crea una ficha por cada cliente o proveedor. Asocia documentos y cheques a sus contactos para tener un historial completo.",
             icon = Icons.Default.Contacts,
             iconColor = Color(0xFF1565C0),
             iconBgColor = Color(0xFFE3F2FD)
         ),
         TutorialStep(
             title = "Validación de RUT",
-            description = "El RUT se autoformatea mientras escribes (XX.XXX.XXX-X) y se valida con el algoritmo oficial chileno.",
+            description = "El RUT se formatea automáticamente (XX.XXX.XXX-X) y se valida con el algoritmo oficial chileno.",
             icon = Icons.Default.Verified,
             iconColor = Color(0xFF2E7D32),
             iconBgColor = Color(0xFFE8F5E9)
         ),
         TutorialStep(
             title = "Búsqueda rápida",
-            description = "Busca por nombre o RUT desde la lista de contactos. El historial de documentos por contacto está disponible en su perfil.",
+            description = "Busca por nombre o RUT desde la lista. El historial de documentos de cada contacto está disponible en su perfil.",
             icon = Icons.Default.Search,
             iconColor = Color(0xFF6A1B9A),
             iconBgColor = Color(0xFFF3E5F5)
@@ -341,7 +400,7 @@ object TutorialSteps {
             iconBgColor = Color(0xFFE3F2FD)
         ),
         TutorialStep(
-            title = "Saldo actual",
+            title = "Saldo actualizado",
             description = "El saldo se actualiza automáticamente cuando registras depósitos o egresos asociados a la cuenta.",
             icon = Icons.Default.AttachMoney,
             iconColor = Color(0xFF2E7D32),
@@ -389,15 +448,15 @@ object TutorialSteps {
             iconBgColor = Color(0xFFE3F2FD)
         ),
         TutorialStep(
-            title = "Worker en background",
-            description = "Las alertas se verifican periódicamente incluso cuando la app está cerrada, gracias al sistema de verificación automática.",
+            title = "Verificación automática",
+            description = "Las alertas se revisan periódicamente incluso cuando la app está cerrada, para que no se te pase ningún vencimiento.",
             icon = Icons.Default.Schedule,
             iconColor = Color(0xFF2E7D32),
             iconBgColor = Color(0xFFE8F5E9)
         ),
         TutorialStep(
-            title = "Notificaciones push",
-            description = "Si tu dispositivo tiene internet, también puedes recibir alertas instantáneas cuando un documento está por vencer.",
+            title = "Notificaciones en tu celular",
+            description = "Si tu dispositivo tiene internet, recibirás una notificación directa cuando un documento esté por vencer.",
             icon = Icons.Default.PhoneAndroid,
             iconColor = Color(0xFF6A1B9A),
             iconBgColor = Color(0xFFF3E5F5)
@@ -406,56 +465,59 @@ object TutorialSteps {
 
     private fun scannerSteps() = listOf(
         TutorialStep(
-            title = "Escáner de documentos DTE",
-            description = "Lee documentos tributarios electrónicos. Apunta la cámara al código PDF417 que aparece en la parte inferior de la factura impresa.",
+            title = "Escáner de documentos",
+            description = "Lee documentos tributarios electrónicos. Apunta la cámara al código de barras que aparece en la parte inferior de la factura impresa.",
             icon = Icons.Default.QrCodeScanner,
             iconColor = Color(0xFF1565C0),
             iconBgColor = Color(0xFFE3F2FD)
         ),
         TutorialStep(
             title = "Datos extraídos",
-            description = "El escáner extrae automáticamente: tipo de documento, folio, RUT emisor, RUT receptor, monto neto, IVA y total.",
+            description = "El escáner extrae automáticamente: tipo de documento, número de folio, RUT del emisor y receptor, monto neto, IVA y total.",
             icon = Icons.Default.DataObject,
             iconColor = Color(0xFF2E7D32),
             iconBgColor = Color(0xFFE8F5E9)
         ),
         TutorialStep(
-            title = "Crear documento desde scan",
+            title = "Crear documento directo",
             description = "Una vez escaneado, puedes crear un documento directamente con los datos extraídos. Revisa y confirma antes de guardar.",
             icon = Icons.Default.NoteAdd,
             iconColor = Color(0xFF6A1B9A),
             iconBgColor = Color(0xFFF3E5F5)
-        ),
-        TutorialStep(
-            title = "Simulador de datos",
-            description = "Si no tienes un documento físico, usa el Simulador para ingresar datos manualmente y probar el flujo completo.",
-            icon = Icons.Default.Calculate,
-            iconColor = Color(0xFFF57F17),
-            iconBgColor = Color(0xFFFFF8E1)
         )
     )
 
+    // ════════════════════════════════════════
+    // SIMULADOR DE CONTRATACIÓN (reescrito)
+    // ════════════════════════════════════════
     private fun simuladorSteps() = listOf(
         TutorialStep(
-            title = "Simulador financiero",
-            description = "Proyecta diferentes escenarios para tu empresa: ¿qué pasa si aumentas tus cobros un 20%?",
-            icon = Icons.Default.Calculate,
+            title = "¿Cuánto cuesta contratar?",
+            description = "Este simulador te muestra el costo total real de contratar a un trabajador. Ingresa las pretensiones de renta del candidato y obtén el desglose completo.",
+            icon = Icons.Default.Work,
             iconColor = Color(0xFF1565C0),
             iconBgColor = Color(0xFFE3F2FD)
         ),
         TutorialStep(
-            title = "Variables ajustables",
-            description = "Modifica ingresos estimados, egresos planificados y flujo de caja proyectado. El simulador recalcula todo en tiempo real.",
-            icon = Icons.Default.Tune,
+            title = "Pretensión de renta",
+            description = "Ingresa el sueldo base que pide el candidato. El simulador calculará automáticamente todos los costos asociados.",
+            icon = Icons.Default.MonetizationOn,
             iconColor = Color(0xFF2E7D32),
             iconBgColor = Color(0xFFE8F5E9)
         ),
         TutorialStep(
-            title = "Sin efecto en datos reales",
-            description = "Las simulaciones son solo proyecciones. No modifican ni afectan ningún documento, cheque o cuenta real de tu empresa.",
-            icon = Icons.Default.Info,
+            title = "Ajusta los parámetros",
+            description = "Selecciona el tipo de contrato, la AFP, si usa Fonasa o Isapre, y el tipo de gratificación. Cada cambio recalcula el resultado al instante.",
+            icon = Icons.Default.HealthAndSafety,
             iconColor = Color(0xFF6A1B9A),
             iconBgColor = Color(0xFFF3E5F5)
+        ),
+        TutorialStep(
+            title = "Resultado completo",
+            description = "Verás el costo total para tu empresa, el sueldo líquido del trabajador, los descuentos legales (AFP, salud, impuestos) y los costos adicionales del empleador (SIS, mutual, cesantía).",
+            icon = Icons.Default.Calculate,
+            iconColor = Color(0xFFF57F17),
+            iconBgColor = Color(0xFFFFF8E1)
         )
     )
 }

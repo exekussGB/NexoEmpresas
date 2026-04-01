@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import cl.nexo.empresas.core.tutorial.TutorialModule
 import cl.nexo.empresas.presentation.alertas.AlertasConfigScreen
 import cl.nexo.empresas.presentation.auth.LoginScreen
 import cl.nexo.empresas.presentation.auth.RegisterScreen
@@ -19,6 +20,7 @@ import cl.nexo.empresas.presentation.hub.HubEmpresaScreen
 import cl.nexo.empresas.presentation.settings.SettingsScreen
 import cl.nexo.empresas.presentation.scanner.ScannerScreen
 import cl.nexo.empresas.presentation.simulador.SimuladorScreen
+import cl.nexo.empresas.presentation.tutorial.ModuleTutorialLauncher
 import cl.nexo.empresas.presentation.tutorial.TutorialListScreen
 
 @Composable
@@ -32,22 +34,36 @@ fun AppNavGraph(
     ) {
         composable(Screen.Login.route) {
             LoginScreen(
-                onLoginSuccess = { navController.navigate(Screen.Empresas.route) { popUpTo(Screen.Login.route) { inclusive = true } } },
+                onLoginSuccess = {
+                    navController.navigate(Screen.Empresas.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
                 onNavigateToRegister = { navController.navigate(Screen.Register.route) }
             )
         }
 
         composable(Screen.Register.route) {
             RegisterScreen(
-                onRegisterSuccess = { navController.navigate(Screen.Empresas.route) { popUpTo(Screen.Login.route) { inclusive = true } } },
+                onRegisterSuccess = {
+                    navController.navigate(Screen.Empresas.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
                 onNavigateToLogin = { navController.popBackStack() }
             )
         }
 
         composable(Screen.Empresas.route) {
             EmpresasScreen(
-                onEmpresaSelected = { navController.navigate(Screen.Hub.route) { popUpTo(Screen.Empresas.route) { inclusive = true } } }
+                onEmpresaSelected = {
+                    navController.navigate(Screen.Hub.route) {
+                        popUpTo(Screen.Empresas.route) { inclusive = true }
+                    }
+                }
             )
+            // Tutorial: Crear Empresa
+            ModuleTutorialLauncher(TutorialModule.EMPRESA_SETUP)
         }
 
         composable(Screen.Hub.route) {
@@ -59,6 +75,7 @@ fun AppNavGraph(
                     }
                 }
             )
+            // Onboarding + Hub tutorials are handled in HubEmpresaScreen itself
         }
 
         composable(Screen.Dashboard.route) {
@@ -66,6 +83,17 @@ fun AppNavGraph(
                 onBack = { navController.popBackStack() },
                 onVerGraficos = { navController.navigate(Screen.Graficos.route) }
             )
+            // Tutorial: Resumen Financiero
+            ModuleTutorialLauncher(TutorialModule.RESUMEN)
+        }
+
+        composable(Screen.AddDocumento.route) {
+            AddDocumentoScreen(
+                navController = navController,
+                onBack = { navController.popBackStack() }
+            )
+            // Tutorial: Ingresar Documento
+            ModuleTutorialLauncher(TutorialModule.INGRESAR_DOC)
         }
 
         composable(Screen.CuentasCobrar.route) {
@@ -74,6 +102,8 @@ fun AppNavGraph(
                 onBack = { navController.popBackStack() },
                 onAddDocumento = { navController.navigate(Screen.AddDocumento.route) }
             )
+            // Tutorial: Por Cobrar
+            ModuleTutorialLauncher(TutorialModule.POR_COBRAR)
         }
 
         composable(Screen.CuentasPagar.route) {
@@ -82,43 +112,48 @@ fun AppNavGraph(
                 onBack = { navController.popBackStack() },
                 onAddDocumento = { navController.navigate(Screen.AddDocumento.route) }
             )
+            // Tutorial: Por Pagar
+            ModuleTutorialLauncher(TutorialModule.POR_PAGAR)
         }
 
         composable(Screen.Cheques.route) {
             ChequesScreen(
                 onBack = { navController.popBackStack() }
             )
-        }
-
-        composable(Screen.AddDocumento.route) {
-            AddDocumentoScreen(
-                navController = navController,
-                onBack = { navController.popBackStack() }
-            )
+            // Tutorial: Cheques
+            ModuleTutorialLauncher(TutorialModule.CHEQUES)
         }
 
         composable(Screen.Graficos.route) {
             GraficosScreen(
                 onBack = { navController.popBackStack() }
             )
+            // Tutorial: Gráficos
+            ModuleTutorialLauncher(TutorialModule.GRAFICOS)
         }
 
         composable(Screen.Cuentas.route) {
             CuentasCorrientesScreen(
                 onBack = { navController.popBackStack() }
             )
+            // Tutorial: Cuentas Corrientes
+            ModuleTutorialLauncher(TutorialModule.CUENTAS)
         }
 
         composable(Screen.Contactos.route) {
             ContactosScreen(
                 onBack = { navController.popBackStack() }
             )
+            // Tutorial: Contactos
+            ModuleTutorialLauncher(TutorialModule.CONTACTOS)
         }
 
         composable(Screen.Simulador.route) {
             SimuladorScreen(
                 onBack = { navController.popBackStack() }
             )
+            // Tutorial: Simulador de Contratación
+            ModuleTutorialLauncher(TutorialModule.SIMULADOR)
         }
 
         composable(Screen.Opciones.route) {
@@ -132,12 +167,16 @@ fun AppNavGraph(
                 onAlertas = { navController.navigate(Screen.Alertas.route) },
                 onTutoriales = { navController.navigate(Screen.TutorialList.route) }
             )
+            // Tutorial: Miembros y Roles
+            ModuleTutorialLauncher(TutorialModule.EMPRESA_MIEMBROS)
         }
 
         composable(Screen.Alertas.route) {
             AlertasConfigScreen(
                 onBack = { navController.popBackStack() }
             )
+            // Tutorial: Alertas
+            ModuleTutorialLauncher(TutorialModule.ALERTAS)
         }
 
         composable(Screen.Scanner.route) {
@@ -150,6 +189,8 @@ fun AppNavGraph(
                 },
                 onBack = { navController.popBackStack() }
             )
+            // Tutorial: Escáner DTE
+            ModuleTutorialLauncher(TutorialModule.SCANNER)
         }
 
         composable(Screen.TutorialList.route) {

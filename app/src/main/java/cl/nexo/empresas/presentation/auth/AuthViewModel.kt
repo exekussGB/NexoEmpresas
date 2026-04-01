@@ -5,26 +5,55 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cl.nexo.empresas.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val supabaseClient: SupabaseClient
 ) : ViewModel() {
 
-    val isLoggedIn = mutableStateOf(authRepository.isLoggedIn())
+    /** true = logged in, false = not logged in, null = still checking */
+    val isLoggedIn = mutableStateOf<Boolean?>(null)
 
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
     val uiState: StateFlow<AuthUiState> = _uiState
+
+    init {
+        checkSession()
+    }
+
+    /**
+     * Waits for the Supabase SDK to finish loading the session from DataStore.
+     * SessionStatus.Authenticated means a valid (or refreshable) session exists.
+     */
+    private fun checkSession() {
+        viewModelScope.launch {
+            try {
+                // Wait for the SDK to resolve session status (loaded from DataStore + refresh)
+                val status = supabaseClient.auth.sessionStatus.first { it !is SessionStatus.LoadingFromStorage }
+                isLoggedIn.value = status is SessionStatus.Authenticated
+            } catch (e: Exception) {
+                isLoggedIn.value = false
+            }
+        }
+    }
 
     fun login(email: String, password: String) {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             authRepository.login(email, password)
-                .onSuccess { _uiState.value = AuthUiState.Success }
+                .onSuccess {
+                    isLoggedIn.value = true
+                    _uiState.value = AuthUiState.Success
+                }
                 .onFailure { e -> _uiState.value = AuthUiState.Error(parseLoginError(e)) }
         }
     }
@@ -36,7 +65,10 @@ class AuthViewModel @Inject constructor(
                 .onSuccess {
                     // Intentar login automático después del registro
                     authRepository.login(email, password)
-                        .onSuccess { _uiState.value = AuthUiState.Success }
+                        .onSuccess {
+                            isLoggedIn.value = true
+                            _uiState.value = AuthUiState.Success
+                        }
                         .onFailure { _uiState.value = AuthUiState.EmailPendingConfirmation }
                 }
                 .onFailure { e -> _uiState.value = AuthUiState.Error(parseRegisterError(e)) }
@@ -82,9 +114,9 @@ class AuthViewModel @Inject constructor(
 }
 
 sealed class AuthUiState {
-    data object Idle                    : AuthUiState()
-    data object Loading                 : AuthUiState()
-    data object Success                 : AuthUiState()
+    data object Idle : AuthUiState()
+    data object Loading : AuthUiState()
+    data object Success : AuthUiState()
     data object EmailPendingConfirmation : AuthUiState()
-    data class  Error(val message: String) : AuthUiState()
+    data class Error(val message: String) : AuthUiState()
 }
