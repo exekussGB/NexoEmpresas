@@ -38,7 +38,7 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 // Wait for the SDK to resolve session status (loaded from DataStore + refresh)
-                val status = supabaseClient.auth.sessionStatus.first { it !is SessionStatus.LoadingFromStorage }
+                val status = supabaseClient.auth.sessionStatus.first { it !is SessionStatus.Initializing }
                 isLoggedIn.value = status is SessionStatus.Authenticated
             } catch (e: Exception) {
                 isLoggedIn.value = false
