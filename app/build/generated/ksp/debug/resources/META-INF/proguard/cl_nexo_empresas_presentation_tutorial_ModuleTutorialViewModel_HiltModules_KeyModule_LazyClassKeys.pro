@@ -1,1 +1,0 @@
--keep,allowobfuscation,allowshrinking class cl.nexo.empresas.presentation.tutorial.ModuleTutorialViewModel
