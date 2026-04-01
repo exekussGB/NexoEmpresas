@@ -1,3 +1,13 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// NexoEmpresas — app/build.gradle.kts
+// ═══════════════════════════════════════════════════════════════════════════
+// CAMBIO vs versión anterior:
+//   buildTypes > release:
+//     + isShrinkResources = true   ← NUEVO (seguridad + tamaño APK)
+//       Elimina recursos no referenciados del APK de producción.
+//       Requiere isMinifyEnabled = true (ya estaba) para funcionar.
+// ═══════════════════════════════════════════════════════════════════════════
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,8 +15,8 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.google.services)   // Firebase
-    id("kotlin-parcelize")   // ← NUEVO: para @Parcelize en DteScanResult
+    alias(libs.plugins.google.services) // Firebase
+    id("kotlin-parcelize")
 }
 
 android {
@@ -21,15 +31,15 @@ android {
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Lee credenciales de local.properties
         val localProps = com.android.build.gradle.internal.cxx.configure.gradleLocalProperties(rootDir, providers)
-        buildConfigField("String", "SUPABASE_URL",  "\"${localProps.getProperty("SUPABASE_URL", "")}\"")
+        buildConfigField("String", "SUPABASE_URL", "\"${localProps.getProperty("SUPABASE_URL", "")}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${localProps.getProperty("SUPABASE_ANON_KEY", "")}\"")
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true    // ← NUEVO: elimina recursos no usados en release
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -100,11 +110,8 @@ dependencies {
 
     debugImplementation(libs.androidx.compose.ui.tooling)
 
-    // ── Módulo Scanner PDF417 ───────────────────────────────────────────────────
-// ML Kit — barcode scanning con soporte nativo PDF417 (sin modelo de descarga)
+    // Scanner PDF417
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
-
-// CameraX — acceso a cámara en Jetpack Compose
     implementation("androidx.camera:camera-camera2:1.4.1")
     implementation("androidx.camera:camera-lifecycle:1.4.1")
     implementation("androidx.camera:camera-view:1.4.1")

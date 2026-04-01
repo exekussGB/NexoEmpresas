@@ -1,11 +1,24 @@
+# ─── Android / Gradle ───────────────────────────────────────────────────────
 *.iml
-.gradle/
+.gradle
 /local.properties
-/.idea/
+/.idea
 .DS_Store
-/build/
-/captures/
-.externalNativeBuild/
-.cxx/
+/build                  # ← raíz del proyecto
+app/build               # ← artefactos compilados de la app  ← AÑADIDO (estaba commiteado)
+*/build                 # ← cualquier otro módulo
+/captures
+.externalNativeBuild
+.cxx
 *.keystore
-google-services.json
+!debug.keystore
+
+# ─── Kotlin / Java ──────────────────────────────────────────────────────────
+*.class
+*.jar (no incluir JARs locales salvo los de libs/)
+
+# ─── Google Services / Firebase ─────────────────────────────────────────────
+google-services.json    # no exponer en repos públicos
+
+# ─── Supabase / Secretos ────────────────────────────────────────────────────
+local.properties        # contiene SUPABASE_URL y SUPABASE_ANON_KEY

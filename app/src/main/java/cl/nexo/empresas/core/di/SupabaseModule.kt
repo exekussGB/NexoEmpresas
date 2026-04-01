@@ -1,6 +1,7 @@
 package cl.nexo.empresas.core.di
 
 import android.content.Context
+import cl.nexo.empresas.core.session.SupabaseSessionManager
 import cl.nexo.empresas.core.util.Constants
 import dagger.Module
 import dagger.Provides
@@ -15,21 +16,42 @@ import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.storage.Storage
 import javax.inject.Singleton
 
+/**
+ * Módulo Hilt que provee el cliente Supabase único para toda la app.
+ *
+ * Cambios respecto a la versión anterior:
+ *   1. [sessionManager] apunta a [SupabaseSessionManager] (DataStore-backed).
+ *      Antes no existía esta clase → el SDK usaba memoria volátil.
+ *   2. [alwaysAutoRefresh = true]: el SDK renueva el access_token en segundo
+ *      plano antes de que expire (tokens Supabase duran 1 h por defecto).
+ *      El usuario nunca vuelve a ver "sesión expirada".
+ *   3. [autoLoadFromStorage = true]: al arrancar la app, el SDK carga
+ *      automáticamente la sesión guardada, restaurando al usuario sin login.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object SupabaseModule {
 
     @Provides
     @Singleton
-    fun provideSupabaseClient(@ApplicationContext context: Context): SupabaseClient =
+    fun provideSupabaseSessionManager(
+        @ApplicationContext context: Context
+    ): SupabaseSessionManager = SupabaseSessionManager(context)
+
+    @Provides
+    @Singleton
+    fun provideSupabaseClient(
+        @ApplicationContext context: Context,
+        sessionManager: SupabaseSessionManager
+    ): SupabaseClient =
         createSupabaseClient(
             supabaseUrl = Constants.SUPABASE_URL,
             supabaseKey = Constants.SUPABASE_ANON_KEY
         ) {
             install(Auth) {
-                // Persiste la sesión en DataStore → resiste reinicios de app
-                // y evita que el SDK caiga al anon key cuando el token expira
-                sessionManager = SupabaseSessionManager(context)
+                this.sessionManager = sessionManager   // ← Persistencia real
+                alwaysAutoRefresh = true               // ← Refresh automático
+                autoLoadFromStorage = true             // ← Restaura sesión al iniciar
             }
             install(Postgrest)
             install(Storage)
