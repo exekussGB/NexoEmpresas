@@ -19,8 +19,9 @@ import cl.nexo.empresas.presentation.documentos.DocumentosScreen
 import cl.nexo.empresas.presentation.empresas.EmpresasScreen
 import cl.nexo.empresas.presentation.graficos.GraficosScreen
 import cl.nexo.empresas.presentation.hub.HubEmpresaScreen
-import cl.nexo.empresas.presentation.settings.SettingsScreen
 import cl.nexo.empresas.presentation.scanner.ScannerScreen
+import cl.nexo.empresas.presentation.settings.SettingsScreen
+import cl.nexo.empresas.presentation.settings.TeamMembersScreen
 import cl.nexo.empresas.presentation.simulador.SimuladorScreen
 
 @Composable
@@ -34,7 +35,11 @@ fun AppNavGraph(
     ) {
         composable(Screen.Login.route) {
             LoginScreen(
-                onLoginSuccess = { navController.navigate(Screen.Empresas.route) { popUpTo(Screen.Login.route) { inclusive = true } } },
+                onLoginSuccess = {
+                    navController.navigate(Screen.Empresas.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
                 onNavigateToRegister = { navController.navigate(Screen.Register.route) },
                 onNavigateToForgotPassword = { navController.navigate(Screen.ForgotPassword.route) }
             )
@@ -42,7 +47,11 @@ fun AppNavGraph(
 
         composable(Screen.Register.route) {
             RegisterScreen(
-                onRegisterSuccess = { navController.navigate(Screen.Empresas.route) { popUpTo(Screen.Login.route) { inclusive = true } } },
+                onRegisterSuccess = {
+                    navController.navigate(Screen.Empresas.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
                 onNavigateToLogin = { navController.popBackStack() }
             )
         }
@@ -81,7 +90,11 @@ fun AppNavGraph(
 
         composable(Screen.Empresas.route) {
             EmpresasScreen(
-                onEmpresaSelected = { navController.navigate(Screen.Hub.route) { popUpTo(Screen.Empresas.route) { inclusive = true } } }
+                onEmpresaSelected = {
+                    navController.navigate(Screen.Hub.route) {
+                        popUpTo(Screen.Empresas.route) { inclusive = true }
+                    }
+                }
             )
         }
 
@@ -91,6 +104,11 @@ fun AppNavGraph(
                 onLogout = {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
+                    }
+                },
+                onBackToEmpresas = {
+                    navController.navigate(Screen.Empresas.route) {
+                        popUpTo(Screen.Hub.route) { inclusive = true }
                     }
                 }
             )
@@ -164,7 +182,8 @@ fun AppNavGraph(
                         popUpTo(0) { inclusive = true }
                     }
                 },
-                onAlertas = { navController.navigate(Screen.Alertas.route) }
+                onAlertas = { navController.navigate(Screen.Alertas.route) },
+                onTeamMembers = { navController.navigate(Screen.TeamMembers.route) }
             )
         }
 
@@ -182,6 +201,12 @@ fun AppNavGraph(
                         ?.set("dte_scan_result", result)
                     navController.popBackStack()
                 },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.TeamMembers.route) {
+            TeamMembersScreen(
                 onBack = { navController.popBackStack() }
             )
         }

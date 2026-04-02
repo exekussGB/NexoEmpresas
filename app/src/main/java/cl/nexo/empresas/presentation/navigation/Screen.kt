@@ -25,4 +25,6 @@ sealed class Screen(val route: String) {
         fun route(email: String) = "verify_otp/${android.net.Uri.encode(email)}"
     }
     data object ResetPassword : Screen("reset_password")
+
+    data object TeamMembers : Screen("team_members")
 }
