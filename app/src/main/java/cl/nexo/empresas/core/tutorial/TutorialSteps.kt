@@ -179,7 +179,7 @@ object TutorialSteps {
         ),
         TutorialStep(
             title = "Resumen y Gráficos",
-            description = "Usa 'Resumen' para ver el estado financiero general y 'Opciones' para acceder a gráficos, alertas y guías de uso.",
+            description = "Accede a los gráficos desde 'Resumen'. En 'Opciones' encontrarás alertas, miembros del equipo y guías de uso.",
             icon = Icons.Default.BarChart,
             iconColor = Color(0xFF6A1B9A),
             iconBgColor = Color(0xFFF3E5F5)
@@ -346,7 +346,7 @@ object TutorialSteps {
         ),
         TutorialStep(
             title = "Estados de cheque",
-            description = "Un cheque puede estar: Pendiente → En cobro → Cobrado/Depositado o Rechazado. Actualiza el estado a medida que avanza el proceso.",
+            description = "Un cheque puede estar: Pendiente → Cobrado o Rechazado. Actualiza el estado a medida que avanza el proceso.",
             icon = Icons.Default.Sync,
             iconColor = Color(0xFF6A1B9A),
             iconBgColor = Color(0xFFF3E5F5)

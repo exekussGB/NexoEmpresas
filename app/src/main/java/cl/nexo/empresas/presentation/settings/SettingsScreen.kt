@@ -11,7 +11,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
@@ -52,7 +51,6 @@ fun SettingsScreen(
 
     // Diálogos de confirmación
     var showInviteConfirmDialog by remember { mutableStateOf(false) }
-    var showAcceptDialog by remember { mutableStateOf<cl.nexo.empresas.data.model.InvitacionPendiente?>(null) }
     var showRejectDialog by remember { mutableStateOf<cl.nexo.empresas.data.model.InvitacionPendiente?>(null) }
     var showAcceptReceivedDialog by remember { mutableStateOf<InvitacionRecibida?>(null) }
     var showRejectReceivedDialog by remember { mutableStateOf<InvitacionRecibida?>(null) }
@@ -98,45 +96,23 @@ fun SettingsScreen(
         )
     }
 
-    // Diálogo de confirmación de aceptar invitación
-    showAcceptDialog?.let { inv ->
-        AlertDialog(
-            onDismissRequest = { showAcceptDialog = null },
-            title = { Text("Confirmar acceso") },
-            text = { Text("¿Confirmar acceso para ${inv.emailInvitado}?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showAcceptDialog = null
-                    viewModel.aceptarInvitacion(inv)
-                }) {
-                    Text("Confirmar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAcceptDialog = null }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
-
-    // Diálogo de confirmación de rechazar invitación
+    // Diálogo de confirmación de rechazar/cancelar invitación enviada
     showRejectDialog?.let { inv ->
         AlertDialog(
             onDismissRequest = { showRejectDialog = null },
-            title = { Text("Rechazar invitación") },
-            text = { Text("¿Rechazar invitación de ${inv.emailInvitado}?") },
+            title = { Text("Cancelar invitación") },
+            text = { Text("¿Cancelar la invitación enviada a ${inv.emailInvitado}?") },
             confirmButton = {
                 TextButton(onClick = {
                     showRejectDialog = null
                     viewModel.rechazarInvitacion(inv)
                 }) {
-                    Text("Rechazar")
+                    Text("Cancelar invitación")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showRejectDialog = null }) {
-                    Text("Cancelar")
+                    Text("Volver")
                 }
             }
         )
@@ -246,7 +222,11 @@ fun SettingsScreen(
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            text = if (userRole == "owner") "Propietario" else "Visualizador",
+                            text = when (userRole) {
+                                "owner" -> "Propietario"
+                                "admin" -> "Administrador"
+                                else -> "Visualizador"
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -345,15 +325,20 @@ fun SettingsScreen(
                                 onClick = {},
                                 label = {
                                     Text(
-                                        text = if (userRole == "owner") "Propietario" else "Visualizador",
+                                        text = when (userRole) {
+                                            "owner" -> "Propietario"
+                                            "admin" -> "Administrador"
+                                            else -> "Visualizador"
+                                        },
                                         style = MaterialTheme.typography.labelMedium
                                     )
                                 },
                                 colors = SuggestionChipDefaults.suggestionChipColors(
-                                    containerColor = if (userRole == "owner")
-                                        MaterialTheme.colorScheme.primaryContainer
-                                    else
-                                        MaterialTheme.colorScheme.secondaryContainer
+                                    containerColor = when (userRole) {
+                                        "owner" -> MaterialTheme.colorScheme.primaryContainer
+                                        "admin" -> Color(0xFFE8F5E9)
+                                        else -> MaterialTheme.colorScheme.secondaryContainer
+                                    }
                                 )
                             )
                         }
@@ -439,27 +424,16 @@ fun SettingsScreen(
                                                 fontWeight = FontWeight.Medium
                                             )
                                             Text(
-                                                text = "Pendiente",
+                                                text = "Esperando que el usuario acepte",
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
-                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            IconButton(
-                                                onClick = { showAcceptDialog = inv }
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Check,
-                                                    contentDescription = "Aceptar",
-                                                    tint = Color(0xFF2E7D32)
-                                                )
-                                            }
-                                            IconButton(
-                                                onClick = { showRejectDialog = inv }
-                                            ) {
+                                        Row {
+                                            IconButton(onClick = { showRejectDialog = inv }) {
                                                 Icon(
                                                     imageVector = Icons.Default.Close,
-                                                    contentDescription = "Rechazar",
+                                                    contentDescription = "Cancelar invitación",
                                                     tint = Color(0xFFC62828)
                                                 )
                                             }

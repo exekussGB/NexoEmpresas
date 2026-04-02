@@ -174,38 +174,6 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun aceptarInvitacion(invitacion: InvitacionPendiente) {
-        viewModelScope.launch {
-            _inviteState.value = InviteState.Loading
-            runCatching {
-                supabase.auth.awaitInitialization()
-
-                // Llamar a la función RPC que resuelve el user_id y crea el membership
-                val result = supabase.postgrest.rpc(
-                    "aceptar_invitacion",
-                    buildJsonObject {
-                        put("p_invitacion_id", invitacion.id)
-                    }
-                ).decodeAs<Boolean>()
-
-                if (!result) {
-                    // El usuario aún no se registra, pero la invitación quedó aceptada
-                    // Se asignará automáticamente cuando se registre
-                }
-                result
-            }.onSuccess { registered ->
-                val msg = if (registered)
-                    "Acceso confirmado para ${invitacion.emailInvitado}"
-                else
-                    "Invitación aceptada. ${invitacion.emailInvitado} recibirá acceso cuando se registre."
-                _inviteState.value = InviteState.Success(msg)
-                loadInvitaciones()
-            }.onFailure { e ->
-                _inviteState.value = InviteState.Error("Error al aceptar invitación: ${e.message}")
-            }
-        }
-    }
-
     fun rechazarInvitacion(invitacion: InvitacionPendiente) {
         viewModelScope.launch {
             _inviteState.value = InviteState.Loading
