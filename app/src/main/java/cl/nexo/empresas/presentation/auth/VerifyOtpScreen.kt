@@ -75,7 +75,7 @@ fun VerifyOtpScreen(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Enviamos un código de 6 dígitos a:",
+                "Enviamos un código de 8 dígitos a:",
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center
             )
@@ -92,7 +92,7 @@ fun VerifyOtpScreen(
             OutlinedTextField(
                 value = code,
                 onValueChange = { newValue ->
-                    if (newValue.length <= 6 && newValue.all { it.isDigit() }) {
+                    if (newValue.length <= 8 && newValue.all { it.isDigit() }) {
                         code = newValue
                     }
                 },
@@ -117,7 +117,7 @@ fun VerifyOtpScreen(
             Button(
                 onClick = { vm.verifyOtp(email, code) },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
-                enabled = code.length == 6 && state !is AuthUiState.Loading
+                enabled = code.length == 8 && state !is AuthUiState.Loading
             ) {
                 if (state is AuthUiState.Loading)
                     CircularProgressIndicator(modifier = Modifier.size(20.dp))

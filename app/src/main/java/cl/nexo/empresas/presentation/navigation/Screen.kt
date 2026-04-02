@@ -3,11 +3,6 @@ package cl.nexo.empresas.presentation.navigation
 sealed class Screen(val route: String) {
     data object Login : Screen("login")
     data object Register : Screen("register")
-    data object ForgotPassword : Screen("forgot_password")
-    data object VerifyOtp : Screen("verify_otp/{email}") {
-        fun route(email: String) = "verify_otp/${java.net.URLEncoder.encode(email, "UTF-8")}"
-    }
-    data object ResetPassword : Screen("reset_password")
     data object Empresas : Screen("empresas")
     data object Hub : Screen("hub")
     data object Dashboard : Screen("dashboard")
@@ -22,9 +17,12 @@ sealed class Screen(val route: String) {
     data object Alertas : Screen("alertas")
     data object Simulador : Screen("simulador")
     data object Scanner : Screen("scanner")
-    data object TutorialList : Screen("tutorial_list")
-    data object TeamMembers : Screen("team_members")
     data object DocumentoDetail : Screen("documento/{documentoId}") {
         fun route(id: String) = "documento/$id"
     }
+    data object ForgotPassword : Screen("forgot_password")
+    data object VerifyOtp : Screen("verify_otp/{email}") {
+        fun route(email: String) = "verify_otp/${android.net.Uri.encode(email)}"
+    }
+    data object ResetPassword : Screen("reset_password")
 }
