@@ -6,12 +6,27 @@ import org.xmlpull.v1.XmlPullParserFactory
 import java.io.StringReader
 
 /**
- * Parsea el XML del Timbre Electrónico (TED) extraído de un código PDF417.
+ * Parsea el XML del Timbre Electrónico (TED) extraído de un código PDF417,
+ * y también URLs de QR del SII chileno.
  * Usa XmlPullParser incluido en el SDK de Android — sin dependencias extra.
  */
 object TedParser {
 
-    fun parse(rawContent: String): DteScanResult? = try {
+    /**
+     * Punto de entrada principal: intenta parsear como TED XML (PDF417) y luego como QR URL (SII).
+     */
+    fun parse(rawContent: String): DteScanResult? {
+        // Try XML TED first (PDF417)
+        parseTedXml(rawContent)?.let { return it }
+        // Try QR URL (SII)
+        parseQrUrl(rawContent)?.let { return it }
+        return null
+    }
+
+    /**
+     * Parsea el XML del TED desde un código PDF417.
+     */
+    private fun parseTedXml(rawContent: String): DteScanResult? = try {
         // El contenido puede tener bytes binarios antes del XML — buscar <TED
         val xmlStart = rawContent.indexOf("<TED")
         if (xmlStart < 0) return null
@@ -68,14 +83,71 @@ object TedParser {
     }
 
     /**
+     * Parsea URL de QR del SII chileno.
+     * Formato típico: https://...sii.cl/...?RUT=...-K&DV=K&FOLIO=123&FECHA=2024-01-15&MONTO=50000&TIPO=33
+     * or: https://palena.sii.cl/cgi_dte/UPL/DTEauth?...
+     */
+    fun parseQrUrl(rawContent: String): DteScanResult? = try {
+        val content = rawContent.trim()
+        if (!content.contains("sii.cl", ignoreCase = true) &&
+            !content.startsWith("http", ignoreCase = true)) return null
+
+        // Extract parameters from URL
+        val params = mutableMapOf<String, String>()
+        val queryStart = content.indexOf('?')
+        if (queryStart >= 0) {
+            content.substring(queryStart + 1).split('&').forEach { param ->
+                val parts = param.split('=', limit = 2)
+                if (parts.size == 2) {
+                    params[parts[0].uppercase()] = java.net.URLDecoder.decode(parts[1], "UTF-8")
+                }
+            }
+        }
+
+        val rut   = params["RUT"] ?: ""
+        val folio = params["FOLIO"] ?: ""
+        val fecha = params["FECHA"] ?: ""
+        val monto = params["MONTO"]?.toLongOrNull() ?: 0L
+        val tipo  = params["TIPO"]?.toIntOrNull() ?: 0
+
+        if (folio.isEmpty() || monto == 0L) null
+        else DteScanResult(
+            rutEmisor     = rut,
+            rutReceptor   = "",  // QR usually doesn't have receiver RUT
+            tipoDocumento = tipo,
+            folio         = folio,
+            fechaEmision  = fecha,
+            montoTotal    = monto,
+            descripcion   = "Escaneado desde QR",
+            tipoNexo      = DteScanResult.derivarTipo(tipo)
+        )
+    } catch (e: Exception) {
+        null
+    }
+
+    /**
      * Diagnóstico amigable: explica POR QUÉ el código no se pudo parsear.
      * Se usa para mostrar feedback al usuario en la pantalla del scanner.
      */
     fun diagnose(rawContent: String): String {
+        val content = rawContent.trim()
+
+        // Check if it's a URL but not SII
+        if (content.startsWith("http", ignoreCase = true) &&
+            !content.contains("sii.cl", ignoreCase = true)) {
+            return "Código QR detectado pero no es del SII.\nSolo se pueden escanear facturas electrónicas chilenas."
+        }
+
+        // Check if it's a SII URL but missing data
+        if (content.contains("sii.cl", ignoreCase = true)) {
+            return "QR del SII detectado pero faltan datos necesarios.\nIntenta escanear el código PDF417 (barra rectangular)."
+        }
+
+        // Original TED diagnosis
         // 1. ¿Contiene XML del TED?
         val xmlStart = rawContent.indexOf("<TED")
         if (xmlStart < 0) {
-            return "Código detectado pero no contiene un Timbre Electrónico (TED).\nAsegúrate de apuntar al código PDF417 de una factura electrónica del SII."
+            return "Código detectado pero no contiene un Timbre Electrónico (TED).\nAsegúrate de apuntar al código PDF417 o QR de una factura electrónica del SII."
         }
 
         // 2. Intentar parsear y dar razón específica

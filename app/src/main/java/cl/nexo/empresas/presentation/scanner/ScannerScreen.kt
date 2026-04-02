@@ -8,11 +8,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +31,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -51,6 +54,12 @@ fun ScannerScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val haptic         = LocalHapticFeedback.current
     val state          by viewModel.state.collectAsState()
+
+    // ── Gallery state ─────────────────────────────────────────────────────
+    var isProcessingGallery by remember { mutableStateOf(false) }
+
+    // ── Frame counter (proves scanner is actively working) ────────────────
+    var framesAnalyzed by remember { mutableIntStateOf(0) }
 
     // ── Permiso de cámara ───────────────────────────────────────────────────
     var hasCameraPermission by remember {
@@ -97,9 +106,47 @@ fun ScannerScreen(
     val barcodeScanner = remember {
         BarcodeScanning.getClient(
             BarcodeScannerOptions.Builder()
-                .setBarcodeFormats(Barcode.FORMAT_PDF417)
+                .setBarcodeFormats(Barcode.FORMAT_PDF417, Barcode.FORMAT_QR_CODE)
                 .build()
         )
+    }
+
+    // ── Gallery picker ────────────────────────────────────────────────────
+    val galleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            isProcessingGallery = true
+            viewModel.reset() // Clear any previous ParseFailed state
+            try {
+                val image = InputImage.fromFilePath(context, uri)
+                barcodeScanner.process(image)
+                    .addOnSuccessListener { barcodes ->
+                        val barcode = barcodes.firstOrNull()
+                        if (barcode != null) {
+                            val raw = barcode.rawValue ?: ""
+                            // Try TED XML first (PDF417), then QR URL
+                            val result = TedParser.parse(raw)
+                            if (result != null) {
+                                viewModel.onBarcodeDetected(result)
+                            } else {
+                                val reason = TedParser.diagnose(raw)
+                                viewModel.onParseFailed(reason)
+                            }
+                        } else {
+                            viewModel.onParseFailed("No se encontró ningún código de barras en la imagen.\nIntenta con una foto más nítida del código.")
+                        }
+                        isProcessingGallery = false
+                    }
+                    .addOnFailureListener { e ->
+                        viewModel.onParseFailed("Error al procesar imagen: ${e.message}")
+                        isProcessingGallery = false
+                    }
+            } catch (e: Exception) {
+                viewModel.onParseFailed("Error al leer imagen: ${e.message}")
+                isProcessingGallery = false
+            }
+        }
     }
 
     DisposableEffect(lifecycleOwner, hasCameraPermission) {
@@ -121,6 +168,7 @@ fun ScannerScreen(
                     analysis.setAnalyzer(ContextCompat.getMainExecutor(context)) { imageProxy ->
                         val mediaImage = imageProxy.image
                         if (mediaImage != null && state is ScannerState.Scanning) {
+                            framesAnalyzed++
                             val image = InputImage.fromMediaImage(
                                 mediaImage,
                                 imageProxy.imageInfo.rotationDegrees
@@ -236,9 +284,73 @@ fun ScannerScreen(
                         isParseFailed = state is ScannerState.ParseFailed
                     )
 
+                    // Scanning indicator - frame counter + pulsing dot
+                    if (state is ScannerState.Scanning) {
+                        val infiniteTransition = rememberInfiniteTransition(label = "scan_pulse")
+                        val alpha by infiniteTransition.animateFloat(
+                            initialValue = 0.3f,
+                            targetValue = 1f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(800, easing = EaseInOut),
+                                repeatMode = RepeatMode.Reverse
+                            ),
+                            label = "pulse_alpha"
+                        )
+                        Row(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(top = 8.dp, end = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Canvas(modifier = Modifier.size(10.dp)) {
+                                drawCircle(
+                                    color = Color.Red,
+                                    alpha = alpha
+                                )
+                            }
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = "Frames: $framesAnalyzed",
+                                color = Color.White.copy(alpha = 0.7f),
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+
+                    // Gallery button - positioned above the status message
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 110.dp)
+                            .padding(horizontal = 32.dp)
+                    ) {
+                        FilledTonalButton(
+                            onClick = { galleryLauncher.launch("image/*") },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !isProcessingGallery
+                        ) {
+                            if (isProcessingGallery) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("Procesando imagen...")
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Filled.Image,
+                                    contentDescription = null
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("Subir desde galería")
+                            }
+                        }
+                    }
+
                     // Mensaje de estado
                     val statusText = when (state) {
-                        is ScannerState.Scanning    -> "Apunta al código PDF417 de la factura\n(esquina inferior del documento)"
+                        is ScannerState.Scanning    -> "Apunta al código de barras o QR de la factura\n(esquina inferior del documento)"
                         is ScannerState.Found       -> "✅ Factura detectada"
                         is ScannerState.Error       -> "⚠️ ${(state as ScannerState.Error).message}"
                         is ScannerState.ParseFailed -> "⚠️ ${(state as ScannerState.ParseFailed).reason}"
