@@ -9,7 +9,6 @@ import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -48,10 +47,10 @@ fun ScannerScreen(
     onBack: () -> Unit,
     viewModel: ScannerViewModel = hiltViewModel()
 ) {
-    val context       = LocalContext.current
+    val context        = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val haptic        = LocalHapticFeedback.current
-    val state         by viewModel.state.collectAsState()
+    val haptic         = LocalHapticFeedback.current
+    val state          by viewModel.state.collectAsState()
 
     // ── Permiso de cámara ───────────────────────────────────────────────────
     var hasCameraPermission by remember {
@@ -73,6 +72,14 @@ fun ScannerScreen(
         if (state is ScannerState.Found) {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             onScanned((state as ScannerState.Found).result)
+        }
+    }
+
+    // ── Auto-reset tras ParseFailed para reintentar ─────────────────────────
+    LaunchedEffect(state) {
+        if (state is ScannerState.ParseFailed) {
+            kotlinx.coroutines.delay(3000) // Mostrar mensaje 3 segundos
+            viewModel.reset()
         }
     }
 
@@ -113,16 +120,23 @@ fun ScannerScreen(
                 .also { analysis ->
                     analysis.setAnalyzer(ContextCompat.getMainExecutor(context)) { imageProxy ->
                         val mediaImage = imageProxy.image
-                        if (mediaImage != null && state !is ScannerState.Found) {
+                        if (mediaImage != null && state is ScannerState.Scanning) {
                             val image = InputImage.fromMediaImage(
                                 mediaImage,
                                 imageProxy.imageInfo.rotationDegrees
                             )
                             barcodeScanner.process(image)
                                 .addOnSuccessListener { barcodes ->
-                                    barcodes.firstOrNull()?.rawValue?.let { raw ->
-                                        TedParser.parse(raw)?.let { result ->
+                                    val barcode = barcodes.firstOrNull()
+                                    if (barcode != null) {
+                                        val raw = barcode.rawValue ?: ""
+                                        val result = TedParser.parse(raw)
+                                        if (result != null) {
                                             viewModel.onBarcodeDetected(result)
+                                        } else {
+                                            // ── Diagnóstico: código detectado pero no es DTE válido ──
+                                            val reason = TedParser.diagnose(raw)
+                                            viewModel.onParseFailed(reason)
                                         }
                                     }
                                 }
@@ -218,14 +232,21 @@ fun ScannerScreen(
 
                     // Overlay oscuro con ventana transparente
                     ScannerOverlay(
-                        isDetected = state is ScannerState.Found
+                        isDetected = state is ScannerState.Found,
+                        isParseFailed = state is ScannerState.ParseFailed
                     )
 
                     // Mensaje de estado
                     val statusText = when (state) {
-                        is ScannerState.Scanning -> "Apunta al código PDF417 de la factura\n(esquina inferior del documento)"
-                        is ScannerState.Found    -> "✅ Factura detectada"
-                        is ScannerState.Error    -> "⚠️ ${(state as ScannerState.Error).message}"
+                        is ScannerState.Scanning    -> "Apunta al código PDF417 de la factura\n(esquina inferior del documento)"
+                        is ScannerState.Found       -> "✅ Factura detectada"
+                        is ScannerState.Error       -> "⚠️ ${(state as ScannerState.Error).message}"
+                        is ScannerState.ParseFailed -> "⚠️ ${(state as ScannerState.ParseFailed).reason}"
+                    }
+                    val statusBg = when (state) {
+                        is ScannerState.ParseFailed -> Color(0xFFE65100).copy(alpha = 0.85f) // naranja oscuro
+                        is ScannerState.Found       -> Color(0xFF2E7D32).copy(alpha = 0.85f) // verde
+                        else                        -> Color.Black.copy(alpha = 0.65f)
                     }
                     Box(
                         modifier = Modifier
@@ -236,7 +257,7 @@ fun ScannerScreen(
                     ) {
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = Color.Black.copy(alpha = 0.65f),
+                            color = statusBg,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
@@ -259,8 +280,15 @@ fun ScannerScreen(
  * El PDF417 es rectangular apaisado — el marco refleja esa proporción.
  */
 @Composable
-private fun ScannerOverlay(isDetected: Boolean) {
-    val frameColor = if (isDetected) Color(0xFF4CAF50) else Color.White
+private fun ScannerOverlay(
+    isDetected: Boolean,
+    isParseFailed: Boolean = false
+) {
+    val frameColor = when {
+        isDetected    -> Color(0xFF4CAF50) // verde
+        isParseFailed -> Color(0xFFFF9800) // naranja
+        else          -> Color.White
+    }
     Canvas(modifier = Modifier.fillMaxSize()) {
         val canvasWidth  = size.width
         val canvasHeight = size.height
@@ -294,7 +322,7 @@ private fun ScannerOverlay(isDetected: Boolean) {
 
         // Esquinas decorativas
         val cornerLen = 24.dp.toPx()
-        val stroke = Stroke(width = 5.dp.toPx())
+        val cornerStrokeWidth = 5.dp.toPx()
         val corners = listOf(
             Offset(frameLeft, frameTop),
             Offset(frameLeft + frameWidth, frameTop),
@@ -302,19 +330,10 @@ private fun ScannerOverlay(isDetected: Boolean) {
             Offset(frameLeft + frameWidth, frameTop + frameHeight)
         )
         corners.forEachIndexed { idx, corner ->
-            val cornerStrokeWidth = 5.dp.toPx()
-            val corners = listOf(
-                Offset(frameLeft, frameTop),
-                Offset(frameLeft + frameWidth, frameTop),
-                Offset(frameLeft, frameTop + frameHeight),
-                Offset(frameLeft + frameWidth, frameTop + frameHeight)
-            )
-            corners.forEachIndexed { idx, corner ->
-                val signX = if (idx % 2 == 0) 1f else -1f
-                val signY = if (idx < 2) 1f else -1f
-                drawLine(frameColor, corner, corner.copy(x = corner.x + signX * cornerLen), strokeWidth = cornerStrokeWidth)
-                drawLine(frameColor, corner, corner.copy(y = corner.y + signY * cornerLen), strokeWidth = cornerStrokeWidth)
-            }
+            val signX = if (idx % 2 == 0) 1f else -1f
+            val signY = if (idx < 2) 1f else -1f
+            drawLine(frameColor, corner, corner.copy(x = corner.x + signX * cornerLen), strokeWidth = cornerStrokeWidth)
+            drawLine(frameColor, corner, corner.copy(y = corner.y + signY * cornerLen), strokeWidth = cornerStrokeWidth)
         }
     }
 }

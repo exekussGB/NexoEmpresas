@@ -66,4 +66,56 @@ object TedParser {
     } catch (e: Exception) {
         null // XML malformado o no es un DTE chileno
     }
+
+    /**
+     * Diagnóstico amigable: explica POR QUÉ el código no se pudo parsear.
+     * Se usa para mostrar feedback al usuario en la pantalla del scanner.
+     */
+    fun diagnose(rawContent: String): String {
+        // 1. ¿Contiene XML del TED?
+        val xmlStart = rawContent.indexOf("<TED")
+        if (xmlStart < 0) {
+            return "Código detectado pero no contiene un Timbre Electrónico (TED).\nAsegúrate de apuntar al código PDF417 de una factura electrónica del SII."
+        }
+
+        // 2. Intentar parsear y dar razón específica
+        return try {
+            val xmlStr = rawContent.substring(xmlStart)
+            val factory = XmlPullParserFactory.newInstance()
+            val parser = factory.newPullParser()
+            parser.setInput(StringReader(xmlStr))
+
+            var folio = ""
+            var monto = 0L
+            var currentTag = ""
+
+            var eventType = parser.eventType
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                when (eventType) {
+                    XmlPullParser.START_TAG -> currentTag = parser.name ?: ""
+                    XmlPullParser.TEXT -> {
+                        val text = parser.text?.trim() ?: ""
+                        when (currentTag) {
+                            "F"   -> folio = text
+                            "MNT" -> monto = text.toLongOrNull() ?: 0L
+                        }
+                    }
+                }
+                eventType = parser.next()
+            }
+
+            when {
+                folio.isEmpty() && monto == 0L ->
+                    "Timbre detectado pero no se encontró folio ni monto.\nEl documento podría estar dañado o ser un formato no soportado."
+                folio.isEmpty() ->
+                    "Timbre detectado pero falta el número de folio.\nIntenta escanear de nuevo con mejor iluminación."
+                monto == 0L ->
+                    "Timbre detectado (Folio: $folio) pero el monto es $0.\nEste tipo de documento podría no ser compatible."
+                else ->
+                    "Error desconocido al procesar el timbre. Intenta de nuevo."
+            }
+        } catch (e: Exception) {
+            "Código detectado pero el XML está dañado o incompleto.\nIntenta escanear de nuevo más lento y con buena luz."
+        }
+    }
 }

@@ -12,6 +12,8 @@ sealed class ScannerState {
     object Scanning : ScannerState()
     data class Found(val result: DteScanResult) : ScannerState()
     data class Error(val message: String) : ScannerState()
+    /** Código detectado pero no es un DTE válido */
+    data class ParseFailed(val reason: String) : ScannerState()
 }
 
 @HiltViewModel
@@ -24,6 +26,14 @@ class ScannerViewModel @Inject constructor() : ViewModel() {
     fun onBarcodeDetected(result: DteScanResult) {
         if (_state.value is ScannerState.Found) return // evitar doble disparo
         _state.value = ScannerState.Found(result)
+    }
+
+    /** Código PDF417 detectado pero no se pudo parsear como DTE */
+    fun onParseFailed(reason: String) {
+        // Solo mostrar si aún estamos escaneando (no sobreescribir Found)
+        if (_state.value is ScannerState.Scanning) {
+            _state.value = ScannerState.ParseFailed(reason)
+        }
     }
 
     fun onError(message: String) {
