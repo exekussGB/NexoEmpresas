@@ -101,6 +101,9 @@ fun AppNavGraph(
                     navController.navigate(Screen.Hub.route) {
                         popUpTo(Screen.Empresas.route) { inclusive = true }
                     }
+                },
+                onNavigateToSettings = {
+                    navController.navigate(Screen.Opciones.route)
                 }
             )
             ModuleTutorialLauncher(TutorialModule.EMPRESA_SETUP)

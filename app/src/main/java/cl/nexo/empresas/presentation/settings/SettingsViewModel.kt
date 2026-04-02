@@ -1,12 +1,5 @@
 package cl.nexo.empresas.presentation.settings
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import cl.nexo.empresas.core.session.SessionManager
-import cl.nexo.empresas.core.util.Constants
-import cl.nexo.empresas.data.model.Empresa
-import cl.nexo.empresas.data.model.EmpresaMember
-import cl.nexo.empresas.data.model.InvitacionPendiente
 import cl.nexo.empresas.domain.repository.EmpresasRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.SupabaseClient
@@ -21,6 +14,27 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import cl.nexo.empresas.core.session.SessionManager
+import cl.nexo.empresas.core.util.Constants
+import cl.nexo.empresas.data.model.Empresa
+import cl.nexo.empresas.data.model.EmpresaMember
+import cl.nexo.empresas.data.model.InvitacionPendiente
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class InvitacionRecibida(
+    val id: String = "",
+    @SerialName("empresa_id") val empresaId: String = "",
+    @SerialName("email_invitado") val emailInvitado: String = "",
+    val estado: String = "pendiente",
+    @SerialName("invitado_por") val invitadoPor: String = "",
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("empresa_nombre") val empresaNombre: String? = null
+)
+
 
 sealed class InviteState {
     data object Idle : InviteState()
@@ -52,12 +66,17 @@ class SettingsViewModel @Inject constructor(
     private val _invitaciones = MutableStateFlow<List<InvitacionPendiente>>(emptyList())
     val invitaciones: StateFlow<List<InvitacionPendiente>> = _invitaciones.asStateFlow()
 
+    // ── Invitaciones Recibidas (donde el usuario actual es el invitado) ───
+    private val _receivedInvitaciones = MutableStateFlow<List<InvitacionRecibida>>(emptyList())
+    val receivedInvitaciones: StateFlow<List<InvitacionRecibida>> = _receivedInvitaciones.asStateFlow()
+
     private val _inviteState = MutableStateFlow<InviteState>(InviteState.Idle)
     val inviteState: StateFlow<InviteState> = _inviteState.asStateFlow()
 
     init {
         loadEmpresa()
         loadInvitaciones()
+        loadReceivedInvitaciones()
     }
 
     private fun loadEmpresa() {
@@ -201,6 +220,60 @@ class SettingsViewModel @Inject constructor(
                 loadInvitaciones()
             }.onFailure { e ->
                 _inviteState.value = InviteState.Error("Error al rechazar invitación: ${e.message}")
+            }
+        }
+    }
+
+    fun loadReceivedInvitaciones() {
+        viewModelScope.launch {
+            runCatching {
+                supabase.auth.awaitInitialization()
+                supabase.postgrest.rpc("get_invitaciones_recibidas")
+                    .decodeList<InvitacionRecibida>()
+            }.onSuccess { list ->
+                _receivedInvitaciones.value = list
+            }.onFailure {
+                _receivedInvitaciones.value = emptyList()
+            }
+        }
+    }
+
+    fun acceptReceivedInvitation(invitacion: InvitacionRecibida) {
+        viewModelScope.launch {
+            _inviteState.value = InviteState.Loading
+            runCatching {
+                supabase.auth.awaitInitialization()
+                supabase.postgrest.rpc(
+                    "aceptar_invitacion",
+                    buildJsonObject {
+                        put("p_invitacion_id", invitacion.id)
+                    }
+                ).decodeAs<Boolean>()
+            }.onSuccess {
+                _inviteState.value = InviteState.Success("¡Te uniste a la empresa exitosamente!")
+                loadReceivedInvitaciones()
+            }.onFailure { e ->
+                _inviteState.value = InviteState.Error("Error al aceptar: ${e.message}")
+            }
+        }
+    }
+
+    fun rejectReceivedInvitation(invitacion: InvitacionRecibida) {
+        viewModelScope.launch {
+            _inviteState.value = InviteState.Loading
+            runCatching {
+                supabase.auth.awaitInitialization()
+                supabase.from(Constants.TABLE_INVITACIONES)
+                    .update({
+                        set("estado", "rechazada")
+                    }) {
+                        filter { eq("id", invitacion.id) }
+                    }
+            }.onSuccess {
+                _inviteState.value = InviteState.Success("Invitación rechazada")
+                loadReceivedInvitaciones()
+            }.onFailure { e ->
+                _inviteState.value = InviteState.Error("Error al rechazar: ${e.message}")
             }
         }
     }

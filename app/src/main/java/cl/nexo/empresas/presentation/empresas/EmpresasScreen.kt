@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +21,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun EmpresasScreen(
     onEmpresaSelected: () -> Unit,
+    onNavigateToSettings: () -> Unit = {},
     vm: EmpresasViewModel = hiltViewModel()
 ) {
     val state by vm.uiState.collectAsState()
@@ -29,7 +31,16 @@ fun EmpresasScreen(
     LaunchedEffect(Unit) { vm.loadEmpresas() }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Mis Empresas") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Mis Empresas") },
+                actions = {
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Opciones")
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = { vm.showCreateDialog(true) }) {
                 Icon(Icons.Default.Add, contentDescription = "Agregar empresa")

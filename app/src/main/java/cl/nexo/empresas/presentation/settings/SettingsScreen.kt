@@ -45,6 +45,7 @@ fun SettingsScreen(
     // Estados de invitación
     val invitaciones by viewModel.invitaciones.collectAsState()
     val inviteState by viewModel.inviteState.collectAsState()
+    val receivedInvitaciones by viewModel.receivedInvitaciones.collectAsState()
 
     // Estado local para el campo de email
     var emailInput by remember { mutableStateOf("") }
@@ -53,6 +54,8 @@ fun SettingsScreen(
     var showInviteConfirmDialog by remember { mutableStateOf(false) }
     var showAcceptDialog by remember { mutableStateOf<cl.nexo.empresas.data.model.InvitacionPendiente?>(null) }
     var showRejectDialog by remember { mutableStateOf<cl.nexo.empresas.data.model.InvitacionPendiente?>(null) }
+    var showAcceptReceivedDialog by remember { mutableStateOf<InvitacionRecibida?>(null) }
+    var showRejectReceivedDialog by remember { mutableStateOf<InvitacionRecibida?>(null) }
 
     // Snackbar
     val snackbarHostState = remember { SnackbarHostState() }
@@ -139,6 +142,50 @@ fun SettingsScreen(
         )
     }
 
+    // Diálogo de confirmación de aceptar invitación recibida
+    showAcceptReceivedDialog?.let { inv ->
+        AlertDialog(
+            onDismissRequest = { showAcceptReceivedDialog = null },
+            title = { Text("Unirse a empresa") },
+            text = { Text("¿Deseas aceptar la invitación y unirte a esta empresa?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showAcceptReceivedDialog = null
+                    viewModel.acceptReceivedInvitation(inv)
+                }) {
+                    Text("Aceptar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAcceptReceivedDialog = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    // Diálogo de confirmación de rechazar invitación recibida
+    showRejectReceivedDialog?.let { inv ->
+        AlertDialog(
+            onDismissRequest = { showRejectReceivedDialog = null },
+            title = { Text("Rechazar invitación") },
+            text = { Text("¿Estás seguro de rechazar esta invitación?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRejectReceivedDialog = null
+                    viewModel.rejectReceivedInvitation(inv)
+                }) {
+                    Text("Rechazar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRejectReceivedDialog = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -203,6 +250,66 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                }
+
+                // --- Invitaciones Recibidas (para el usuario actual) ---
+                if (receivedInvitaciones.isNotEmpty()) {
+                    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "📩 Invitaciones Recibidas",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "Te han invitado a unirte a las siguientes empresas:",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            HorizontalDivider()
+                            receivedInvitaciones.forEach { inv ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = inv.empresaNombre ?: "Empresa",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        Text(
+                                            text = "Pendiente de tu confirmación",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        FilledTonalButton(
+                                            onClick = { showAcceptReceivedDialog = inv },
+                                            colors = ButtonDefaults.filledTonalButtonColors(
+                                                containerColor = Color(0xFFE8F5E9)
+                                            )
+                                        ) {
+                                            Text("Unirme", color = Color(0xFF2E7D32))
+                                        }
+                                        OutlinedButton(
+                                            onClick = { showRejectReceivedDialog = inv }
+                                        ) {
+                                            Text("Rechazar", fontSize = 12.sp)
+                                        }
+                                    }
+                                }
+                                HorizontalDivider()
+                            }
+                        }
                     }
                 }
 
