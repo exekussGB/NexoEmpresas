@@ -19,6 +19,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import cl.nexo.empresas.data.model.CuentaDashboard
 import java.text.NumberFormat
 import java.util.Locale
+import cl.nexo.empresas.core.tutorial.TutorialModule
+import cl.nexo.empresas.presentation.tutorial.ModuleTutorialLauncher
 
 private fun Long.formatCLP(): String =
     NumberFormat.getCurrencyInstance(Locale("es", "CL")).format(this)
@@ -51,6 +53,7 @@ fun DashboardScreen(
             )
         }
     ) { paddingValues ->
+        ModuleTutorialLauncher(TutorialModule.RESUMEN)
         Box(
             modifier = Modifier
                 .fillMaxSize()

@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import cl.nexo.empresas.core.tutorial.TutorialModule
+import cl.nexo.empresas.presentation.tutorial.ModuleTutorialLauncher
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,6 +49,7 @@ fun EmpresasScreen(
             }
         }
     ) { padding ->
+        ModuleTutorialLauncher(TutorialModule.EMPRESA_SETUP)
         when (val s = state) {
             is EmpresasUiState.Loading -> Box(
                 Modifier.fillMaxSize().padding(padding),
@@ -128,10 +131,10 @@ fun CrearEmpresaDialog(
                     onValueChange = { newValue ->
                         nombre = newValue.filter { c ->
                             c.isLetter() || c.isWhitespace() || c.isDigit() ||
-                                c == '.' || c == ',' || c == '-' || c == '&' ||
-                                c == 'á' || c == 'é' || c == 'í' || c == 'ó' || c == 'ú' ||
-                                c == 'Á' || c == 'É' || c == 'Í' || c == 'Ó' || c == 'Ú' ||
-                                c == 'ñ' || c == 'Ñ'
+                                    c == '.' || c == ',' || c == '-' || c == '&' ||
+                                    c == 'á' || c == 'é' || c == 'í' || c == 'ó' || c == 'ú' ||
+                                    c == 'Á' || c == 'É' || c == 'Í' || c == 'Ó' || c == 'Ú' ||
+                                    c == 'ñ' || c == 'Ñ'
                         }
                     },
                     label = { Text("Nombre *") },

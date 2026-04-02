@@ -24,6 +24,8 @@ import cl.nexo.empresas.data.model.Documento
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import cl.nexo.empresas.core.tutorial.TutorialModule
+import cl.nexo.empresas.presentation.tutorial.ModuleTutorialLauncher
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,6 +79,7 @@ fun DocumentosScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
+        ModuleTutorialLauncher(if (tipo == "ingreso") TutorialModule.POR_COBRAR else TutorialModule.POR_PAGAR)
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
 
             // Filtro estado

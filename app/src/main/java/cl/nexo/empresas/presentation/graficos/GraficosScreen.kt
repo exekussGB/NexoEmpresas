@@ -26,6 +26,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import cl.nexo.empresas.data.model.GraficoData
 import cl.nexo.empresas.data.model.GraficoMensual
 import cl.nexo.empresas.data.model.SaldoCuentaMensual
+import cl.nexo.empresas.core.tutorial.TutorialModule
+import cl.nexo.empresas.presentation.tutorial.ModuleTutorialLauncher
 
 private val MESES_NOMBRE = listOf("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
 
@@ -56,6 +58,7 @@ fun GraficosScreen(
             )
         }
     ) { padding ->
+        ModuleTutorialLauncher(TutorialModule.GRAFICOS)
         Column(
             modifier = Modifier
                 .fillMaxSize()

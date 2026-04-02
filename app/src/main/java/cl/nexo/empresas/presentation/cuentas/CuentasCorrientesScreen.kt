@@ -17,6 +17,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import cl.nexo.empresas.data.model.CuentaCorriente
 import java.text.NumberFormat
 import java.util.Locale
+import cl.nexo.empresas.core.tutorial.TutorialModule
+import cl.nexo.empresas.presentation.tutorial.ModuleTutorialLauncher
 
 private val clpFormat = NumberFormat.getCurrencyInstance(Locale("es", "CL"))
 
@@ -65,6 +67,7 @@ fun CuentasCorrientesScreen(
             }
         }
     ) { padding ->
+        ModuleTutorialLauncher(TutorialModule.CUENTAS)
 
         Column(
             modifier = Modifier

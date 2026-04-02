@@ -31,6 +31,8 @@ import androidx.navigation.NavHostController
 import cl.nexo.empresas.data.model.DteScanResult
 import androidx.compose.material.icons.filled.QrCodeScanner
 import cl.nexo.empresas.presentation.navigation.Screen
+import cl.nexo.empresas.core.tutorial.TutorialModule
+import cl.nexo.empresas.presentation.tutorial.ModuleTutorialLauncher
 
 // Marca especial para activar modo «categoría personalizada»
 private const val NUEVA_CATEGORIA = "__nueva__"
@@ -88,6 +90,7 @@ fun AddDocumentoScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
+        ModuleTutorialLauncher(TutorialModule.INGRESAR_DOC)
         if (state.isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()

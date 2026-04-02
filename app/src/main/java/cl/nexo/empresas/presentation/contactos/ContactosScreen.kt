@@ -15,6 +15,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cl.nexo.empresas.data.model.Contacto
+import cl.nexo.empresas.core.tutorial.TutorialModule
+import cl.nexo.empresas.presentation.tutorial.ModuleTutorialLauncher
 
 // ── RUT auto-formato chileno (ej: 12345678-9 → 12.345.678-9) ─────────────────
 private fun formatRut(input: String): String {
@@ -88,6 +90,7 @@ fun ContactosScreen(
             }
         }
     ) { padding ->
+        ModuleTutorialLauncher(TutorialModule.CONTACTOS)
         Column(
             modifier = Modifier
                 .fillMaxSize()

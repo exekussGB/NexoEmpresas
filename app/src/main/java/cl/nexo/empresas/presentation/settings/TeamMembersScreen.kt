@@ -18,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import cl.nexo.empresas.core.tutorial.TutorialModule
+import cl.nexo.empresas.presentation.tutorial.ModuleTutorialLauncher
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -129,6 +131,7 @@ fun TeamMembersScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
+        ModuleTutorialLauncher(TutorialModule.EMPRESA_MIEMBROS)
         if (isLoading && members.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize().padding(padding),

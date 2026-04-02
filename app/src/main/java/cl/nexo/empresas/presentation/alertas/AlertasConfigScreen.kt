@@ -16,6 +16,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.launch
+import cl.nexo.empresas.core.tutorial.TutorialModule
+import cl.nexo.empresas.presentation.tutorial.ModuleTutorialLauncher
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,6 +78,7 @@ fun AlertasConfigScreen(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
+        ModuleTutorialLauncher(TutorialModule.ALERTAS)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -101,7 +104,7 @@ fun AlertasConfigScreen(
                     // Banner informativo si no hay permiso
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                         context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
-                            != PackageManager.PERMISSION_GRANTED
+                        != PackageManager.PERMISSION_GRANTED
                     ) {
                         Card(
                             colors = CardDefaults.cardColors(
