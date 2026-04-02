@@ -13,4 +13,5 @@ object Constants {
     const val TABLE_CHEQUES = "cheques"
     const val TABLE_ALERTAS_CONFIG = "alertas_config"
     const val STORAGE_LOGOS_BUCKET = "logos"
+    const val TABLE_INVITACIONES = "invitaciones"
 }

@@ -2,6 +2,7 @@ package cl.nexo.empresas.data.repository
 
 import cl.nexo.empresas.domain.repository.AuthRepository
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import javax.inject.Inject
@@ -24,14 +25,28 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun resetPassword(email: String): Result<Unit> = runCatching {
+        client.auth.resetPasswordForEmail(email)
+    }
+
+    override suspend fun verifyRecoveryOtp(email: String, code: String): Result<Unit> = runCatching {
+        client.auth.verifyEmailOtp(
+            type = OtpType.Email.RECOVERY,
+            email = email,
+            token = code
+        )
+    }
+
+    override suspend fun updatePassword(newPassword: String): Result<Unit> = runCatching {
+        client.auth.updateUser {
+            password = newPassword
+        }
+    }
+
     override suspend fun logout() {
         client.auth.signOut()
     }
 
-    /**
-     * Verifica si hay una sesión activa con access token válido.
-     * currentSessionOrNull() confirma que hay token, no solo usuario cacheado.
-     */
     override fun isLoggedIn(): Boolean =
         client.auth.currentSessionOrNull() != null
 

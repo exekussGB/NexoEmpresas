@@ -699,6 +699,7 @@ drawable ic_call_answer_video_low
 drawable ic_call_decline
 drawable ic_call_decline_low
 drawable ic_notification
+drawable logo_nexo
 drawable notification_action_background
 drawable notification_bg
 drawable notification_bg_low

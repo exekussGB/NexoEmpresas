@@ -11,10 +11,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,6 +32,7 @@ fun SettingsScreen(
     onLogout: () -> Unit,
     onAlertas: () -> Unit,
     onTutoriales: () -> Unit = {},
+    onTeamMembers: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val empresa by viewModel.empresa.collectAsState()
@@ -39,6 +41,103 @@ fun SettingsScreen(
     val userEmail = viewModel.userEmail
     val userRole = viewModel.userRole
     val context = LocalContext.current
+
+    // Estados de invitación
+    val invitaciones by viewModel.invitaciones.collectAsState()
+    val inviteState by viewModel.inviteState.collectAsState()
+
+    // Estado local para el campo de email
+    var emailInput by remember { mutableStateOf("") }
+
+    // Diálogos de confirmación
+    var showInviteConfirmDialog by remember { mutableStateOf(false) }
+    var showAcceptDialog by remember { mutableStateOf<cl.nexo.empresas.data.model.InvitacionPendiente?>(null) }
+    var showRejectDialog by remember { mutableStateOf<cl.nexo.empresas.data.model.InvitacionPendiente?>(null) }
+
+    // Snackbar
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Mostrar feedback de invitación
+    LaunchedEffect(inviteState) {
+        when (val state = inviteState) {
+            is InviteState.Success -> {
+                snackbarHostState.showSnackbar(state.message)
+                emailInput = ""
+                viewModel.resetInviteState()
+            }
+            is InviteState.Error -> {
+                snackbarHostState.showSnackbar(state.message)
+                viewModel.resetInviteState()
+            }
+            else -> {}
+        }
+    }
+
+    // Diálogo de confirmación de invitación por email
+    if (showInviteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showInviteConfirmDialog = false },
+            title = { Text("Confirmar invitación") },
+            text = { Text("¿Estás seguro de invitar a $emailInput?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showInviteConfirmDialog = false
+                    viewModel.invitarUsuario(emailInput)
+                }) {
+                    Text("Enviar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showInviteConfirmDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    // Diálogo de confirmación de aceptar invitación
+    showAcceptDialog?.let { inv ->
+        AlertDialog(
+            onDismissRequest = { showAcceptDialog = null },
+            title = { Text("Confirmar acceso") },
+            text = { Text("¿Confirmar acceso para ${inv.emailInvitado}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showAcceptDialog = null
+                    viewModel.aceptarInvitacion(inv)
+                }) {
+                    Text("Confirmar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAcceptDialog = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    // Diálogo de confirmación de rechazar invitación
+    showRejectDialog?.let { inv ->
+        AlertDialog(
+            onDismissRequest = { showRejectDialog = null },
+            title = { Text("Rechazar invitación") },
+            text = { Text("¿Rechazar invitación de ${inv.emailInvitado}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRejectDialog = null
+                    viewModel.rechazarInvitacion(inv)
+                }) {
+                    Text("Rechazar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRejectDialog = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -50,7 +149,8 @@ fun SettingsScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         if (isLoading) {
             Box(
@@ -153,8 +253,8 @@ fun SettingsScreen(
                     }
                 }
 
-                // --- Card "Invitar miembro" (solo owner) ---
-                if (userRole == "owner" && inviteCode.isNotBlank()) {
+                // --- Card "Invitar Usuario por Email" (solo owner) ---
+                if (userRole == "owner") {
                     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
                         Column(
                             modifier = Modifier
@@ -163,12 +263,124 @@ fun SettingsScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = "Invitar miembro",
+                                text = "Invitar Usuario",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = "Código de invitación:",
+                                text = "Ingresa el correo electrónico del usuario que deseas invitar.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            OutlinedTextField(
+                                value = emailInput,
+                                onValueChange = { emailInput = it },
+                                label = { Text("Correo electrónico") },
+                                placeholder = { Text("ejemplo@correo.com") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Button(
+                                onClick = { showInviteConfirmDialog = true },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = emailInput.isNotBlank() && inviteState !is InviteState.Loading
+                            ) {
+                                if (inviteState is InviteState.Loading) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(18.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                }
+                                Icon(
+                                    imageVector = Icons.Default.Send,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Enviar invitación")
+                            }
+                        }
+                    }
+
+                    // --- Invitaciones Pendientes (solo owner) ---
+                    if (invitaciones.isNotEmpty()) {
+                        ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Invitaciones Pendientes",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                HorizontalDivider()
+                                invitaciones.forEach { inv ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = inv.emailInvitado,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                            Text(
+                                                text = "Pendiente",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            IconButton(
+                                                onClick = { showAcceptDialog = inv }
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = "Aceptar",
+                                                    tint = Color(0xFF2E7D32)
+                                                )
+                                            }
+                                            IconButton(
+                                                onClick = { showRejectDialog = inv }
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Close,
+                                                    contentDescription = "Rechazar",
+                                                    tint = Color(0xFFC62828)
+                                                )
+                                            }
+                                        }
+                                    }
+                                    HorizontalDivider()
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // --- Card "Invitar miembro" por código (solo owner, secundario) ---
+                if (userRole == "owner" && inviteCode.isNotBlank()) {
+                    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Código de invitación",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "También puedes compartir este código para que otros se unan:",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -189,6 +401,30 @@ fun SettingsScreen(
                                 Text("Copiar código")
                             }
                         }
+                    }
+                }
+
+                // --- ListTile "Miembros del Equipo" ---
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onTeamMembers
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "👥 Miembros del Equipo",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
 

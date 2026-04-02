@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Business
@@ -11,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
@@ -98,7 +100,12 @@ fun CrearEmpresaDialog(
     var nombre by remember { mutableStateOf("") }
     var rut by remember { mutableStateOf("") }
     var giro by remember { mutableStateOf("") }
+    var rutTouched by remember { mutableStateOf(false) }
     val isLoading = createState is CreateEmpresaState.Loading
+
+    val cleanRut = rut.replace(".", "").replace("-", "")
+    val isRutValid = if (cleanRut.isEmpty()) false else isValidRut(cleanRut)
+    val showRutError = rutTouched && rut.isNotBlank() && !isRutValid
 
     AlertDialog(
         onDismissRequest = { if (!isLoading) onDismiss() },
@@ -107,7 +114,15 @@ fun CrearEmpresaDialog(
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = nombre,
-                    onValueChange = { nombre = it },
+                    onValueChange = { newValue ->
+                        nombre = newValue.filter { c ->
+                            c.isLetter() || c.isWhitespace() || c.isDigit() ||
+                                c == '.' || c == ',' || c == '-' || c == '&' ||
+                                c == 'á' || c == 'é' || c == 'í' || c == 'ó' || c == 'ú' ||
+                                c == 'Á' || c == 'É' || c == 'Í' || c == 'Ó' || c == 'Ú' ||
+                                c == 'ñ' || c == 'Ñ'
+                        }
+                    },
                     label = { Text("Nombre *") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -115,12 +130,20 @@ fun CrearEmpresaDialog(
                 )
                 OutlinedTextField(
                     value = rut,
-                    onValueChange = { rut = it },
+                    onValueChange = { newValue ->
+                        rutTouched = true
+                        rut = formatRut(newValue)
+                    },
                     label = { Text("RUT *") },
                     placeholder = { Text("76.123.456-7") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !isLoading
+                    enabled = !isLoading,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = showRutError,
+                    supportingText = if (showRutError) {
+                        { Text("RUT no válido") }
+                    } else null
                 )
                 OutlinedTextField(
                     value = giro,
@@ -142,7 +165,7 @@ fun CrearEmpresaDialog(
         confirmButton = {
             Button(
                 onClick = { onConfirm(nombre, rut, giro) },
-                enabled = nombre.isNotBlank() && rut.isNotBlank() && !isLoading
+                enabled = nombre.isNotBlank() && rut.isNotBlank() && isRutValid && !isLoading
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
@@ -155,4 +178,49 @@ fun CrearEmpresaDialog(
             TextButton(onClick = onDismiss, enabled = !isLoading) { Text("Cancelar") }
         }
     )
+}
+
+private fun formatRut(input: String): String {
+    val clean = input.filter { it.isDigit() || it.equals('k', ignoreCase = true) }
+    if (clean.isEmpty()) return ""
+
+    val body = if (clean.length > 1) clean.dropLast(1) else ""
+    val dv = if (clean.length > 1) clean.last().uppercase() else clean.uppercase()
+
+    if (body.isEmpty()) return dv
+
+    val formatted = buildString {
+        body.reversed().forEachIndexed { index, c ->
+            if (index > 0 && index % 3 == 0) append('.')
+            append(c)
+        }
+    }.reversed()
+
+    return "$formatted-$dv"
+}
+
+private fun isValidRut(input: String): Boolean {
+    val clean = input.replace(".", "").replace("-", "").uppercase()
+    if (clean.length < 2) return false
+
+    val body = clean.dropLast(1)
+    val dv = clean.last()
+
+    if (!body.all { it.isDigit() }) return false
+
+    var sum = 0
+    var multiplier = 2
+    for (c in body.reversed()) {
+        sum += c.digitToInt() * multiplier
+        multiplier = if (multiplier == 7) 2 else multiplier + 1
+    }
+
+    val remainder = 11 - (sum % 11)
+    val expectedDv = when (remainder) {
+        11 -> '0'
+        10 -> 'K'
+        else -> ('0' + remainder)
+    }
+
+    return dv == expectedDv
 }

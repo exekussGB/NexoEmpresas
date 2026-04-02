@@ -18,6 +18,7 @@ import cl.nexo.empresas.presentation.graficos.GraficosViewModel_HiltModules;
 import cl.nexo.empresas.presentation.hub.HubViewModel_HiltModules;
 import cl.nexo.empresas.presentation.scanner.ScannerViewModel_HiltModules;
 import cl.nexo.empresas.presentation.settings.SettingsViewModel_HiltModules;
+import cl.nexo.empresas.presentation.settings.TeamMembersViewModel_HiltModules;
 import cl.nexo.empresas.presentation.tutorial.ModuleTutorialViewModel_HiltModules;
 import cl.nexo.empresas.presentation.tutorial.OnboardingViewModel_HiltModules;
 import cl.nexo.empresas.presentation.tutorial.TutorialListViewModel_HiltModules;
@@ -196,6 +197,7 @@ public final class NexoEmpresasApp_HiltComponents {
           OnboardingViewModel_HiltModules.KeyModule.class,
           ScannerViewModel_HiltModules.KeyModule.class,
           SettingsViewModel_HiltModules.KeyModule.class,
+          TeamMembersViewModel_HiltModules.KeyModule.class,
           TutorialListViewModel_HiltModules.KeyModule.class
       }
   )
@@ -248,6 +250,7 @@ public final class NexoEmpresasApp_HiltComponents {
           OnboardingViewModel_HiltModules.BindsModule.class,
           ScannerViewModel_HiltModules.BindsModule.class,
           SettingsViewModel_HiltModules.BindsModule.class,
+          TeamMembersViewModel_HiltModules.BindsModule.class,
           TutorialListViewModel_HiltModules.BindsModule.class
       }
   )

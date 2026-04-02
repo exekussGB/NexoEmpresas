@@ -79,6 +79,10 @@ import cl.nexo.empresas.presentation.settings.SettingsViewModel;
 import cl.nexo.empresas.presentation.settings.SettingsViewModel_HiltModules;
 import cl.nexo.empresas.presentation.settings.SettingsViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
 import cl.nexo.empresas.presentation.settings.SettingsViewModel_HiltModules_KeyModule_Provide_LazyMapKey;
+import cl.nexo.empresas.presentation.settings.TeamMembersViewModel;
+import cl.nexo.empresas.presentation.settings.TeamMembersViewModel_HiltModules;
+import cl.nexo.empresas.presentation.settings.TeamMembersViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
+import cl.nexo.empresas.presentation.settings.TeamMembersViewModel_HiltModules_KeyModule_Provide_LazyMapKey;
 import cl.nexo.empresas.presentation.tutorial.ModuleTutorialViewModel;
 import cl.nexo.empresas.presentation.tutorial.ModuleTutorialViewModel_HiltModules;
 import cl.nexo.empresas.presentation.tutorial.ModuleTutorialViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
@@ -441,7 +445,7 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
     }
 
     Map keySetMapOfClassOfAndBooleanBuilder() {
-      MapBuilder mapBuilder = MapBuilder.<String, Boolean>newMapBuilder(16);
+      MapBuilder mapBuilder = MapBuilder.<String, Boolean>newMapBuilder(17);
       mapBuilder.put(AddDocumentoViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, AddDocumentoViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(AlertasViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, AlertasViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(AuthViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, AuthViewModel_HiltModules.KeyModule.provide());
@@ -457,6 +461,7 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
       mapBuilder.put(OnboardingViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, OnboardingViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(ScannerViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, ScannerViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(SettingsViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, SettingsViewModel_HiltModules.KeyModule.provide());
+      mapBuilder.put(TeamMembersViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, TeamMembersViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(TutorialListViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, TutorialListViewModel_HiltModules.KeyModule.provide());
       return mapBuilder.build();
     }
@@ -528,6 +533,8 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
 
     Provider<SettingsViewModel> settingsViewModelProvider;
 
+    Provider<TeamMembersViewModel> teamMembersViewModelProvider;
+
     Provider<TutorialListViewModel> tutorialListViewModelProvider;
 
     ViewModelCImpl(SingletonCImpl singletonCImpl, ActivityRetainedCImpl activityRetainedCImpl,
@@ -540,7 +547,7 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
     }
 
     Map hiltViewModelMapMapOfClassOfAndProviderOfViewModelBuilder() {
-      MapBuilder mapBuilder = MapBuilder.<String, javax.inject.Provider<ViewModel>>newMapBuilder(16);
+      MapBuilder mapBuilder = MapBuilder.<String, javax.inject.Provider<ViewModel>>newMapBuilder(17);
       mapBuilder.put(AddDocumentoViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (addDocumentoViewModelProvider)));
       mapBuilder.put(AlertasViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (alertasViewModelProvider)));
       mapBuilder.put(AuthViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (authViewModelProvider)));
@@ -556,6 +563,7 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
       mapBuilder.put(OnboardingViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (onboardingViewModelProvider)));
       mapBuilder.put(ScannerViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (scannerViewModelProvider)));
       mapBuilder.put(SettingsViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (settingsViewModelProvider)));
+      mapBuilder.put(TeamMembersViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (teamMembersViewModelProvider)));
       mapBuilder.put(TutorialListViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (tutorialListViewModelProvider)));
       return mapBuilder.build();
     }
@@ -578,7 +586,8 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
       this.onboardingViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 12);
       this.scannerViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 13);
       this.settingsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 14);
-      this.tutorialListViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 15);
+      this.teamMembersViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 15);
+      this.tutorialListViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 16);
     }
 
     @Override
@@ -655,9 +664,12 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
           return (T) new ScannerViewModel();
 
           case 14: // cl.nexo.empresas.presentation.settings.SettingsViewModel
-          return (T) new SettingsViewModel(singletonCImpl.bindEmpresasRepositoryProvider.get(), singletonCImpl.sessionManagerProvider.get());
+          return (T) new SettingsViewModel(singletonCImpl.bindEmpresasRepositoryProvider.get(), singletonCImpl.sessionManagerProvider.get(), singletonCImpl.provideSupabaseClientProvider.get());
 
-          case 15: // cl.nexo.empresas.presentation.tutorial.TutorialListViewModel
+          case 15: // cl.nexo.empresas.presentation.settings.TeamMembersViewModel
+          return (T) new TeamMembersViewModel(singletonCImpl.sessionManagerProvider.get(), singletonCImpl.provideSupabaseClientProvider.get());
+
+          case 16: // cl.nexo.empresas.presentation.tutorial.TutorialListViewModel
           return (T) new TutorialListViewModel(singletonCImpl.tutorialManagerProvider.get());
 
           default: throw new AssertionError(id);

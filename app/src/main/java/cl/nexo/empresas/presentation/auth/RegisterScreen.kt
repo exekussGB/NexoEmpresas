@@ -1,12 +1,15 @@
 package cl.nexo.empresas.presentation.auth
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.flow.collectLatest
@@ -21,6 +24,14 @@ fun RegisterScreen(
     var password by remember { mutableStateOf("") }
     var confirm  by remember { mutableStateOf("") }
     val state by vm.uiState.collectAsState()
+
+    val hasMinLength = password.length >= 8
+    val hasUppercase = password.any { it.isUpperCase() }
+    val hasLowercase = password.any { it.isLowerCase() }
+    val hasNumber = password.any { it.isDigit() }
+    val hasSpecialChar = password.any { !it.isLetterOrDigit() }
+    val allRequirementsMet = hasMinLength && hasUppercase && hasLowercase && hasNumber && hasSpecialChar
+    val isValidEmail = email.contains("@") && email.contains(".")
 
     LaunchedEffect(Unit) {
         vm.uiState.collectLatest { if (it is AuthUiState.Success) onRegisterSuccess() }
@@ -38,8 +49,18 @@ fun RegisterScreen(
             value = email, onValueChange = { email = it },
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            isError = email.isNotEmpty() && !isValidEmail
         )
+        if (email.isNotEmpty() && !isValidEmail) {
+            Text(
+                "Ingresa un email válido",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.align(Alignment.Start).padding(top = 4.dp)
+            )
+        }
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = password, onValueChange = { password = it },
@@ -48,6 +69,20 @@ fun RegisterScreen(
             singleLine = true,
             visualTransformation = PasswordVisualTransformation()
         )
+
+        if (password.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(start = 4.dp)
+            ) {
+                PasswordRequirement("Mínimo 8 caracteres", hasMinLength)
+                PasswordRequirement("Al menos una letra mayúscula", hasUppercase)
+                PasswordRequirement("Al menos una letra minúscula", hasLowercase)
+                PasswordRequirement("Al menos un número", hasNumber)
+                PasswordRequirement("Al menos un carácter especial (!@#\$%^&*...)", hasSpecialChar)
+            }
+        }
+
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = confirm, onValueChange = { confirm = it },
@@ -58,7 +93,6 @@ fun RegisterScreen(
         )
         Spacer(Modifier.height(24.dp))
 
-        // Passwords no coinciden
         if (password.isNotEmpty() && confirm.isNotEmpty() && password != confirm)
             Text(
                 "Las contraseñas no coinciden",
@@ -66,7 +100,6 @@ fun RegisterScreen(
                 style = MaterialTheme.typography.bodySmall
             )
 
-        // Error de registro
         if (state is AuthUiState.Error)
             Text(
                 (state as AuthUiState.Error).message,
@@ -75,7 +108,6 @@ fun RegisterScreen(
                 textAlign = TextAlign.Center
             )
 
-        // Email pendiente de confirmación
         if (state is AuthUiState.EmailPendingConfirmation)
             Card(
                 colors = CardDefaults.cardColors(
@@ -102,14 +134,14 @@ fun RegisterScreen(
 
         Button(
             onClick = {
-                if (password == confirm && email.isNotBlank() && password.isNotBlank())
+                if (password == confirm && isValidEmail && allRequirementsMet)
                     vm.register(email, password)
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             enabled = state !is AuthUiState.Loading &&
                       state !is AuthUiState.EmailPendingConfirmation &&
-                      email.isNotBlank() &&
-                      password.isNotBlank() &&
+                      isValidEmail &&
+                      allRequirementsMet &&
                       password == confirm
         ) {
             if (state is AuthUiState.Loading)
@@ -120,4 +152,15 @@ fun RegisterScreen(
         Spacer(Modifier.height(12.dp))
         TextButton(onClick = onNavigateToLogin) { Text("¿Ya tienes cuenta? Inicia sesión") }
     }
+}
+
+@Composable
+private fun PasswordRequirement(text: String, met: Boolean) {
+    val color = if (met) Color(0xFF4CAF50) else Color.Gray
+    val icon = if (met) "✓" else "○"
+    Text(
+        text = "$icon $text",
+        color = color,
+        style = MaterialTheme.typography.bodySmall
+    )
 }

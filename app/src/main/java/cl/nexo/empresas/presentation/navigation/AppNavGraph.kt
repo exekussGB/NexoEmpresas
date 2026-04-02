@@ -2,12 +2,17 @@ package cl.nexo.empresas.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import cl.nexo.empresas.core.tutorial.TutorialModule
 import cl.nexo.empresas.presentation.alertas.AlertasConfigScreen
+import cl.nexo.empresas.presentation.auth.ForgotPasswordScreen
 import cl.nexo.empresas.presentation.auth.LoginScreen
 import cl.nexo.empresas.presentation.auth.RegisterScreen
+import cl.nexo.empresas.presentation.auth.ResetPasswordScreen
+import cl.nexo.empresas.presentation.auth.VerifyOtpScreen
 import cl.nexo.empresas.presentation.cheques.ChequesScreen
 import cl.nexo.empresas.presentation.contactos.ContactosScreen
 import cl.nexo.empresas.presentation.cuentas.CuentasCorrientesScreen
@@ -18,6 +23,7 @@ import cl.nexo.empresas.presentation.empresas.EmpresasScreen
 import cl.nexo.empresas.presentation.graficos.GraficosScreen
 import cl.nexo.empresas.presentation.hub.HubEmpresaScreen
 import cl.nexo.empresas.presentation.settings.SettingsScreen
+import cl.nexo.empresas.presentation.settings.TeamMembersScreen
 import cl.nexo.empresas.presentation.scanner.ScannerScreen
 import cl.nexo.empresas.presentation.simulador.SimuladorScreen
 import cl.nexo.empresas.presentation.tutorial.ModuleTutorialLauncher
@@ -39,7 +45,8 @@ fun AppNavGraph(
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
-                onNavigateToRegister = { navController.navigate(Screen.Register.route) }
+                onNavigateToRegister = { navController.navigate(Screen.Register.route) },
+                onNavigateToForgotPassword = { navController.navigate(Screen.ForgotPassword.route) }
             )
         }
 
@@ -54,6 +61,40 @@ fun AppNavGraph(
             )
         }
 
+        composable(Screen.ForgotPassword.route) {
+            ForgotPasswordScreen(
+                onBackToLogin = { navController.popBackStack() },
+                onNavigateToVerifyOtp = { email ->
+                    navController.navigate(Screen.VerifyOtp.route(email))
+                }
+            )
+        }
+
+        composable(
+            route = Screen.VerifyOtp.route,
+            arguments = listOf(navArgument("email") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val email = java.net.URLDecoder.decode(
+                backStackEntry.arguments?.getString("email") ?: "",
+                "UTF-8"
+            )
+            VerifyOtpScreen(
+                email = email,
+                onVerified = { navController.navigate(Screen.ResetPassword.route) },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.ResetPassword.route) {
+            ResetPasswordScreen(
+                onResetSuccess = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Screen.Empresas.route) {
             EmpresasScreen(
                 onEmpresaSelected = {
@@ -62,7 +103,6 @@ fun AppNavGraph(
                     }
                 }
             )
-            // Tutorial: Crear Empresa
             ModuleTutorialLauncher(TutorialModule.EMPRESA_SETUP)
         }
 
@@ -73,9 +113,13 @@ fun AppNavGraph(
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
+                },
+                onBackToEmpresas = {
+                    navController.navigate(Screen.Empresas.route) {
+                        popUpTo(Screen.Hub.route) { inclusive = true }
+                    }
                 }
             )
-            // Onboarding + Hub tutorials are handled in HubEmpresaScreen itself
         }
 
         composable(Screen.Dashboard.route) {
@@ -83,7 +127,6 @@ fun AppNavGraph(
                 onBack = { navController.popBackStack() },
                 onVerGraficos = { navController.navigate(Screen.Graficos.route) }
             )
-            // Tutorial: Resumen Financiero
             ModuleTutorialLauncher(TutorialModule.RESUMEN)
         }
 
@@ -92,7 +135,6 @@ fun AppNavGraph(
                 navController = navController,
                 onBack = { navController.popBackStack() }
             )
-            // Tutorial: Ingresar Documento
             ModuleTutorialLauncher(TutorialModule.INGRESAR_DOC)
         }
 
@@ -102,7 +144,6 @@ fun AppNavGraph(
                 onBack = { navController.popBackStack() },
                 onAddDocumento = { navController.navigate(Screen.AddDocumento.route) }
             )
-            // Tutorial: Por Cobrar
             ModuleTutorialLauncher(TutorialModule.POR_COBRAR)
         }
 
@@ -112,7 +153,6 @@ fun AppNavGraph(
                 onBack = { navController.popBackStack() },
                 onAddDocumento = { navController.navigate(Screen.AddDocumento.route) }
             )
-            // Tutorial: Por Pagar
             ModuleTutorialLauncher(TutorialModule.POR_PAGAR)
         }
 
@@ -120,7 +160,6 @@ fun AppNavGraph(
             ChequesScreen(
                 onBack = { navController.popBackStack() }
             )
-            // Tutorial: Cheques
             ModuleTutorialLauncher(TutorialModule.CHEQUES)
         }
 
@@ -128,7 +167,6 @@ fun AppNavGraph(
             GraficosScreen(
                 onBack = { navController.popBackStack() }
             )
-            // Tutorial: Gráficos
             ModuleTutorialLauncher(TutorialModule.GRAFICOS)
         }
 
@@ -136,7 +174,6 @@ fun AppNavGraph(
             CuentasCorrientesScreen(
                 onBack = { navController.popBackStack() }
             )
-            // Tutorial: Cuentas Corrientes
             ModuleTutorialLauncher(TutorialModule.CUENTAS)
         }
 
@@ -144,7 +181,6 @@ fun AppNavGraph(
             ContactosScreen(
                 onBack = { navController.popBackStack() }
             )
-            // Tutorial: Contactos
             ModuleTutorialLauncher(TutorialModule.CONTACTOS)
         }
 
@@ -152,7 +188,6 @@ fun AppNavGraph(
             SimuladorScreen(
                 onBack = { navController.popBackStack() }
             )
-            // Tutorial: Simulador de Contratación
             ModuleTutorialLauncher(TutorialModule.SIMULADOR)
         }
 
@@ -165,9 +200,9 @@ fun AppNavGraph(
                     }
                 },
                 onAlertas = { navController.navigate(Screen.Alertas.route) },
-                onTutoriales = { navController.navigate(Screen.TutorialList.route) }
+                onTutoriales = { navController.navigate(Screen.TutorialList.route) },
+                onTeamMembers = { navController.navigate(Screen.TeamMembers.route) }
             )
-            // Tutorial: Miembros y Roles
             ModuleTutorialLauncher(TutorialModule.EMPRESA_MIEMBROS)
         }
 
@@ -175,7 +210,6 @@ fun AppNavGraph(
             AlertasConfigScreen(
                 onBack = { navController.popBackStack() }
             )
-            // Tutorial: Alertas
             ModuleTutorialLauncher(TutorialModule.ALERTAS)
         }
 
@@ -189,12 +223,17 @@ fun AppNavGraph(
                 },
                 onBack = { navController.popBackStack() }
             )
-            // Tutorial: Escáner DTE
             ModuleTutorialLauncher(TutorialModule.SCANNER)
         }
 
         composable(Screen.TutorialList.route) {
             TutorialListScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.TeamMembers.route) {
+            TeamMembersScreen(
                 onBack = { navController.popBackStack() }
             )
         }

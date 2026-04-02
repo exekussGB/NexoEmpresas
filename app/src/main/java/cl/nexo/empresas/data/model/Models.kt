@@ -187,9 +187,10 @@ enum class CategoriaDocumento(val value: String, val label: String) {
     OTRO("otro", "Otro")
 }
 
-enum class RolEmpresa(val value: String) {
-    OWNER("owner"),
-    VIEWER("viewer")
+enum class RolEmpresa(val value: String, val label: String) {
+    OWNER("owner", "Dueño"),
+    ADMIN("admin", "Administrador"),
+    VIEWER("viewer", "Visualizador")
 }
 
 // ── Módulo 7: Gráficos ─────────────────────────────────────────────────────────────────────
@@ -240,4 +241,16 @@ data class DashboardTotales(
     @SerialName("total_por_pagar") val totalPorPagar: Long = 0L,
     @SerialName("total_cheques_pendientes") val totalChequesPendientes: Long = 0L,
     val cuentas: List<CuentaDashboard> = emptyList()
+)
+
+// ── Módulo Invitaciones ────────────────────────────────────────────────────────────────────
+
+@Serializable
+data class InvitacionPendiente(
+    val id: String = "",
+    @SerialName("empresa_id") val empresaId: String = "",
+    @SerialName("email_invitado") val emailInvitado: String = "",
+    val estado: String = "pendiente",
+    @SerialName("invitado_por") val invitadoPor: String = "",
+    @SerialName("created_at") val createdAt: String? = null
 )

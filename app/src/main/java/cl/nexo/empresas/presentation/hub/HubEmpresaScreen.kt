@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Calculate
@@ -82,6 +83,7 @@ class HubViewModel @Inject constructor(
 fun HubEmpresaScreen(
     onNavigate: (Screen) -> Unit,
     onLogout: () -> Unit,
+    onBackToEmpresas: () -> Unit = {},
     viewModel: HubViewModel = hiltViewModel()
 ) {
     val showOnboarding by viewModel.showOnboarding.collectAsState()
@@ -102,6 +104,11 @@ fun HubEmpresaScreen(
         topBar = {
             TopAppBar(
                 title = { Text("NexoEmpresas") },
+                navigationIcon = {
+                    IconButton(onClick = onBackToEmpresas) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver a empresas")
+                    }
+                },
                 actions = {
                     IconButton(onClick = onLogout) {
                         Icon(Icons.Default.Logout, "Cerrar sesión")
@@ -134,7 +141,7 @@ fun HubEmpresaScreen(
                         Icon(
                             item.icon,
                             null,
-                            modifier = Modifier.size(40.dp),
+                            modifier = Modifier.size(52.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Spacer(Modifier.height(8.dp))
@@ -166,7 +173,7 @@ fun HubEmpresaScreen(
                         Icon(
                             opcion.icon,
                             null,
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier.size(42.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Spacer(Modifier.width(12.dp))
