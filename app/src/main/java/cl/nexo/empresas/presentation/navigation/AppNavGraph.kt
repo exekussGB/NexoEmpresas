@@ -23,6 +23,7 @@ import cl.nexo.empresas.presentation.scanner.ScannerScreen
 import cl.nexo.empresas.presentation.settings.SettingsScreen
 import cl.nexo.empresas.presentation.settings.TeamMembersScreen
 import cl.nexo.empresas.presentation.simulador.SimuladorScreen
+import cl.nexo.empresas.presentation.tutorial.TutorialListScreen
 
 @Composable
 fun AppNavGraph(
@@ -186,7 +187,8 @@ fun AppNavGraph(
                     }
                 },
                 onAlertas = { navController.navigate(Screen.Alertas.route) },
-                onTeamMembers = { navController.navigate(Screen.TeamMembers.route) }
+                onTeamMembers = { navController.navigate(Screen.TeamMembers.route) },
+                onTutoriales = { navController.navigate(Screen.Tutoriales.route) }
             )
         }
 
@@ -210,6 +212,12 @@ fun AppNavGraph(
 
         composable(Screen.TeamMembers.route) {
             TeamMembersScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Tutoriales.route) {
+            TutorialListScreen(
                 onBack = { navController.popBackStack() }
             )
         }
