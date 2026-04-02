@@ -1,5 +1,9 @@
 package cl.nexo.empresas.presentation.graficos
 
+import android.content.Intent
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -8,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +23,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -45,6 +51,24 @@ fun GraficosScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val meses   by viewModel.meses.collectAsState()
+    val context = LocalContext.current
+
+    // ── SAF: crear documento CSV ────────────────────────────────────────
+    val csvLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri ->
+        if (uri != null) {
+            try {
+                val csvContent = viewModel.generateCsvContent()
+                context.contentResolver.openOutputStream(uri)?.use { out ->
+                    out.write(csvContent.toByteArray(Charsets.UTF_8))
+                }
+                Toast.makeText(context, "CSV exportado correctamente", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error al exportar: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -53,6 +77,17 @@ fun GraficosScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                actions = {
+                    // Botón exportar CSV — solo visible cuando hay datos
+                    if (uiState is GraficosUiState.Success) {
+                        IconButton(onClick = {
+                            val fileName = "graficos_${meses}M_${System.currentTimeMillis()}.csv"
+                            csvLauncher.launch(fileName)
+                        }) {
+                            Icon(Icons.Filled.Share, contentDescription = "Exportar CSV")
+                        }
                     }
                 }
             )
@@ -68,13 +103,37 @@ fun GraficosScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // ── Selector de período ─────────────────────────────────────────
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 listOf(3, 6, 12).forEach { m ->
                     FilterChip(
                         selected  = meses == m,
                         onClick   = { viewModel.setMeses(m) },
                         label     = { Text("${m}M") }
                     )
+                }
+
+                Spacer(Modifier.weight(1f))
+
+                // Botón exportar CSV (texto) — alternativa más visible
+                if (uiState is GraficosUiState.Success) {
+                    OutlinedButton(
+                        onClick = {
+                            val fileName = "graficos_${meses}M_${System.currentTimeMillis()}.csv"
+                            csvLauncher.launch(fileName)
+                        },
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                    ) {
+                        Icon(
+                            Icons.Filled.Share,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text("CSV", style = MaterialTheme.typography.labelMedium)
+                    }
                 }
             }
 
@@ -110,12 +169,12 @@ fun GraficosScreen(
 @Composable
 private fun GraficosContent(data: GraficoData) {
 
-    // ── Gráfico 1: Líneas — Cobrado vs Pagado ────────────────────────────
-    ChartCard(title = "📈 Cobrado vs Pagado") {
+    // ── Gráfico 1: BARRAS — Cobrado vs Pagado ────────────────────────────
+    ChartCard(title = "📊 Cobrado vs Pagado") {
         if (data.mensual.isEmpty()) {
             EmptyMessage()
         } else {
-            LineChart(data.mensual)
+            GroupedBarChart(data.mensual)
             Spacer(Modifier.height(4.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 LegendDot(Color(0xFF4CAF50), "Cobrado (ingresos)")
@@ -169,52 +228,90 @@ private fun EmptyMessage() {
     }
 }
 
-// ── Gráfico de líneas: cobrado vs pagado ────────────────────────────────────
+// ── Gráfico de BARRAS AGRUPADAS: Cobrado vs Pagado ──────────────────────────
 
 @Composable
-private fun LineChart(data: List<GraficoMensual>) {
-    val colorCobrado = Color(0xFF4CAF50)
-    val colorPagado  = Color(0xFFF44336)
+private fun GroupedBarChart(data: List<GraficoMensual>) {
+    val colorCobrado = Color(0xFF4CAF50) // verde
+    val colorPagado  = Color(0xFFF44336) // rojo
     val gridColor    = MaterialTheme.colorScheme.outlineVariant
     val textColor    = MaterialTheme.colorScheme.onSurface
     val density      = LocalDensity.current
 
     val maxVal = data.maxOf { maxOf(it.totalCobrado, it.totalPagado) }.coerceAtLeast(1L)
 
-    Canvas(modifier = Modifier.fillMaxWidth().height(180.dp)) {
+    Canvas(modifier = Modifier.fillMaxWidth().height(200.dp)) {
         val w         = size.width
-        val chartH    = size.height - 28.dp.toPx()
+        val chartH    = size.height - 32.dp.toPx() // espacio para etiquetas abajo
         val n         = data.size
-        val stepX     = if (n > 1) w / (n - 1).toFloat() else w / 2f
-        val originX   = if (n == 1) w / 2f else 0f
+        val groupW    = w / n                        // ancho de cada grupo de barras
+        val barW      = (groupW * 0.35f)             // ancho de cada barra individual
+        val gap       = groupW * 0.05f               // espacio entre las 2 barras
 
-        // línea de grilla horizontal
-        drawLine(gridColor, Offset(0f, chartH), Offset(w, chartH), strokeWidth = 1.dp.toPx())
+        // Líneas de grilla horizontales
+        for (i in 0..3) {
+            val y = chartH * (1f - i / 3f)
+            drawLine(gridColor, Offset(0f, y), Offset(w, y), strokeWidth = 0.5.dp.toPx())
+        }
 
-        fun yOf(v: Long) = chartH - (v.toFloat() / maxVal * chartH)
-
-        // Líneas + puntos
         data.forEachIndexed { i, item ->
-            val x = originX + stepX * i
+            val groupX = groupW * i
 
-            if (i < data.size - 1) {
-                val nx = originX + stepX * (i + 1)
-                val next = data[i + 1]
-                // cobrado
-                drawLine(colorCobrado, Offset(x, yOf(item.totalCobrado)), Offset(nx, yOf(next.totalCobrado)), strokeWidth = 2.5.dp.toPx())
-                // pagado
-                drawLine(colorPagado,  Offset(x, yOf(item.totalPagado)),  Offset(nx, yOf(next.totalPagado)),  strokeWidth = 2.5.dp.toPx())
+            // Barra Cobrado (izquierda)
+            val cobradoH = (item.totalCobrado.toFloat() / maxVal * chartH).coerceAtLeast(0f)
+            val cobradoX = groupX + (groupW - 2 * barW - gap) / 2f
+            drawRoundRect(
+                color        = colorCobrado,
+                topLeft      = Offset(cobradoX, chartH - cobradoH),
+                size         = Size(barW, cobradoH),
+                cornerRadius = CornerRadius(3.dp.toPx(), 3.dp.toPx())
+            )
+
+            // Barra Pagado (derecha)
+            val pagadoH = (item.totalPagado.toFloat() / maxVal * chartH).coerceAtLeast(0f)
+            val pagadoX = cobradoX + barW + gap
+            drawRoundRect(
+                color        = colorPagado,
+                topLeft      = Offset(pagadoX, chartH - pagadoH),
+                size         = Size(barW, pagadoH),
+                cornerRadius = CornerRadius(3.dp.toPx(), 3.dp.toPx())
+            )
+
+            // Valor encima de cada barra (solo si hay espacio)
+            if (cobradoH > 8.dp.toPx()) {
+                drawContext.canvas.nativeCanvas.drawText(
+                    item.totalCobrado.formatCorto(),
+                    cobradoX + barW / 2f,
+                    chartH - cobradoH - 4.dp.toPx(),
+                    android.graphics.Paint().apply {
+                        color     = colorCobrado.toArgb()
+                        textSize  = with(density) { 9.sp.toPx() }
+                        textAlign = android.graphics.Paint.Align.CENTER
+                        isFakeBoldText = true
+                    }
+                )
+            }
+            if (pagadoH > 8.dp.toPx()) {
+                drawContext.canvas.nativeCanvas.drawText(
+                    item.totalPagado.formatCorto(),
+                    pagadoX + barW / 2f,
+                    chartH - pagadoH - 4.dp.toPx(),
+                    android.graphics.Paint().apply {
+                        color     = colorPagado.toArgb()
+                        textSize  = with(density) { 9.sp.toPx() }
+                        textAlign = android.graphics.Paint.Align.CENTER
+                        isFakeBoldText = true
+                    }
+                )
             }
 
-            // Puntos
-            drawCircle(colorCobrado, radius = 4.dp.toPx(), center = Offset(x, yOf(item.totalCobrado)))
-            drawCircle(colorPagado,  radius = 4.dp.toPx(), center = Offset(x, yOf(item.totalPagado)))
-
-            // Etiqueta mes
+            // Etiqueta mes (centrada bajo el grupo)
             val monthIdx = item.mes.substring(5, 7).toInt() - 1
             val label    = MESES_NOMBRE.getOrElse(monthIdx) { item.mes.substring(5, 7) }
             drawContext.canvas.nativeCanvas.drawText(
-                label, x, chartH + 20.dp.toPx(),
+                label,
+                groupX + groupW / 2f,
+                chartH + 20.dp.toPx(),
                 android.graphics.Paint().apply {
                     color    = textColor.toArgb()
                     textSize = with(density) { 10.sp.toPx() }

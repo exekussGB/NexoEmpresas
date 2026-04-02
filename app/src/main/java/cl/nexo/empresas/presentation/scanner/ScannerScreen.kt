@@ -37,6 +37,8 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import cl.nexo.empresas.data.model.DteScanResult
+import cl.nexo.empresas.core.tutorial.TutorialModule
+import cl.nexo.empresas.presentation.tutorial.ModuleTutorialLauncher
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.common.Barcode
@@ -87,7 +89,7 @@ fun ScannerScreen(
     // ── Auto-reset tras ParseFailed para reintentar ─────────────────────────
     LaunchedEffect(state) {
         if (state is ScannerState.ParseFailed) {
-            kotlinx.coroutines.delay(3000) // Mostrar mensaje 3 segundos
+            kotlinx.coroutines.delay(4000) // Mostrar mensaje 4 segundos
             viewModel.reset()
         }
     }
@@ -103,10 +105,34 @@ fun ScannerScreen(
         }
     }
 
-    val barcodeScanner = remember {
+    // Scanner para cámara en vivo: solo PDF417 + QR (más rápido)
+    val liveBarcodeScanner = remember {
         BarcodeScanning.getClient(
             BarcodeScannerOptions.Builder()
                 .setBarcodeFormats(Barcode.FORMAT_PDF417, Barcode.FORMAT_QR_CODE)
+                .build()
+        )
+    }
+
+    // Scanner para galería: TODOS los formatos (más exhaustivo para imágenes estáticas)
+    val galleryBarcodeScanner = remember {
+        BarcodeScanning.getClient(
+            BarcodeScannerOptions.Builder()
+                .setBarcodeFormats(
+                    Barcode.FORMAT_PDF417,
+                    Barcode.FORMAT_QR_CODE,
+                    Barcode.FORMAT_DATA_MATRIX,
+                    Barcode.FORMAT_AZTEC,
+                    Barcode.FORMAT_CODE_128,
+                    Barcode.FORMAT_CODE_39,
+                    Barcode.FORMAT_CODE_93,
+                    Barcode.FORMAT_EAN_13,
+                    Barcode.FORMAT_EAN_8,
+                    Barcode.FORMAT_ITF,
+                    Barcode.FORMAT_UPC_A,
+                    Barcode.FORMAT_UPC_E,
+                    Barcode.FORMAT_CODABAR
+                )
                 .build()
         )
     }
@@ -117,24 +143,56 @@ fun ScannerScreen(
     ) { uri ->
         if (uri != null) {
             isProcessingGallery = true
-            viewModel.reset() // Clear any previous ParseFailed state
+            viewModel.reset()
             try {
                 val image = InputImage.fromFilePath(context, uri)
-                barcodeScanner.process(image)
+
+                // Intentar primero con scanner de todos los formatos
+                galleryBarcodeScanner.process(image)
                     .addOnSuccessListener { barcodes ->
-                        val barcode = barcodes.firstOrNull()
-                        if (barcode != null) {
-                            val raw = barcode.rawValue ?: ""
-                            // Try TED XML first (PDF417), then QR URL
-                            val result = TedParser.parse(raw)
-                            if (result != null) {
-                                viewModel.onBarcodeDetected(result)
-                            } else {
-                                val reason = TedParser.diagnose(raw)
-                                viewModel.onParseFailed(reason)
+                        if (barcodes.isNotEmpty()) {
+                            // Priorizar PDF417 y QR sobre otros formatos
+                            val sorted = barcodes.sortedBy { barcode ->
+                                when (barcode.format) {
+                                    Barcode.FORMAT_PDF417  -> 0
+                                    Barcode.FORMAT_QR_CODE -> 1
+                                    else                    -> 2
+                                }
+                            }
+
+                            var parsed = false
+                            for (barcode in sorted) {
+                                val raw = barcode.rawValue ?: continue
+                                val result = TedParser.parse(raw)
+                                if (result != null) {
+                                    viewModel.onBarcodeDetected(result)
+                                    parsed = true
+                                    break
+                                }
+                            }
+
+                            if (!parsed) {
+                                // Detectó código(s) pero ninguno es DTE
+                                val firstRaw = sorted.first().rawValue ?: ""
+                                val formatName = when (sorted.first().format) {
+                                    Barcode.FORMAT_PDF417     -> "PDF417"
+                                    Barcode.FORMAT_QR_CODE    -> "QR"
+                                    Barcode.FORMAT_DATA_MATRIX -> "DataMatrix"
+                                    Barcode.FORMAT_CODE_128   -> "Code128"
+                                    Barcode.FORMAT_EAN_13     -> "EAN-13"
+                                    else                       -> "código"
+                                }
+                                val reason = TedParser.diagnose(firstRaw)
+                                viewModel.onParseFailed("Se detectó un $formatName pero no es una factura DTE.\n$reason")
                             }
                         } else {
-                            viewModel.onParseFailed("No se encontró ningún código de barras en la imagen.\nIntenta con una foto más nítida del código.")
+                            viewModel.onParseFailed(
+                                "No se encontró ningún código de barras en la imagen.\n" +
+                                        "Asegúrate de que:\n" +
+                                        "• La foto sea nítida y con buena iluminación\n" +
+                                        "• El código PDF417 o QR sea visible completo\n" +
+                                        "• No sea una captura de pantalla (pierde calidad)"
+                            )
                         }
                         isProcessingGallery = false
                     }
@@ -173,7 +231,7 @@ fun ScannerScreen(
                                 mediaImage,
                                 imageProxy.imageInfo.rotationDegrees
                             )
-                            barcodeScanner.process(image)
+                            liveBarcodeScanner.process(image)
                                 .addOnSuccessListener { barcodes ->
                                     val barcode = barcodes.firstOrNull()
                                     if (barcode != null) {
@@ -182,7 +240,6 @@ fun ScannerScreen(
                                         if (result != null) {
                                             viewModel.onBarcodeDetected(result)
                                         } else {
-                                            // ── Diagnóstico: código detectado pero no es DTE válido ──
                                             val reason = TedParser.diagnose(raw)
                                             viewModel.onParseFailed(reason)
                                         }
@@ -209,7 +266,8 @@ fun ScannerScreen(
         }, ContextCompat.getMainExecutor(context))
 
         onDispose {
-            barcodeScanner.close()
+            liveBarcodeScanner.close()
+            galleryBarcodeScanner.close()
         }
     }
 
@@ -231,6 +289,7 @@ fun ScannerScreen(
             )
         }
     ) { padding ->
+        ModuleTutorialLauncher(TutorialModule.SCANNER)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -238,7 +297,6 @@ fun ScannerScreen(
         ) {
             when {
                 !hasCameraPermission -> {
-                    // Pantalla de permiso denegado
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -284,7 +342,7 @@ fun ScannerScreen(
                         isParseFailed = state is ScannerState.ParseFailed
                     )
 
-                    // Scanning indicator - frame counter + pulsing dot
+                    // Scanning indicator
                     if (state is ScannerState.Scanning) {
                         val infiniteTransition = rememberInfiniteTransition(label = "scan_pulse")
                         val alpha by infiniteTransition.animateFloat(
@@ -310,14 +368,14 @@ fun ScannerScreen(
                             }
                             Spacer(Modifier.width(6.dp))
                             Text(
-                                text = "Frames: $framesAnalyzed",
+                                text = "Escaneando…",
                                 color = Color.White.copy(alpha = 0.7f),
                                 fontSize = 11.sp
                             )
                         }
                     }
 
-                    // Gallery button - positioned above the status message
+                    // Gallery button
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -356,8 +414,8 @@ fun ScannerScreen(
                         is ScannerState.ParseFailed -> "⚠️ ${(state as ScannerState.ParseFailed).reason}"
                     }
                     val statusBg = when (state) {
-                        is ScannerState.ParseFailed -> Color(0xFFE65100).copy(alpha = 0.85f) // naranja oscuro
-                        is ScannerState.Found       -> Color(0xFF2E7D32).copy(alpha = 0.85f) // verde
+                        is ScannerState.ParseFailed -> Color(0xFFE65100).copy(alpha = 0.85f)
+                        is ScannerState.Found       -> Color(0xFF2E7D32).copy(alpha = 0.85f)
                         else                        -> Color.Black.copy(alpha = 0.65f)
                     }
                     Box(
@@ -389,7 +447,6 @@ fun ScannerScreen(
 
 /**
  * Overlay con máscara oscura + marco guía centrado para el PDF417.
- * El PDF417 es rectangular apaisado — el marco refleja esa proporción.
  */
 @Composable
 private fun ScannerOverlay(
@@ -397,24 +454,21 @@ private fun ScannerOverlay(
     isParseFailed: Boolean = false
 ) {
     val frameColor = when {
-        isDetected    -> Color(0xFF4CAF50) // verde
-        isParseFailed -> Color(0xFFFF9800) // naranja
+        isDetected    -> Color(0xFF4CAF50)
+        isParseFailed -> Color(0xFFFF9800)
         else          -> Color.White
     }
     Canvas(modifier = Modifier.fillMaxSize()) {
         val canvasWidth  = size.width
         val canvasHeight = size.height
 
-        // Marco guía: ancho = 80% del canvas, alto = 25% (proporción PDF417)
         val frameWidth  = canvasWidth * 0.82f
         val frameHeight = canvasWidth * 0.25f
         val frameLeft   = (canvasWidth  - frameWidth)  / 2f
         val frameTop    = (canvasHeight - frameHeight) / 2f
 
-        // Fondo oscuro completo
         drawRect(color = Color.Black.copy(alpha = 0.55f))
 
-        // Ventana transparente (borrar el rectángulo del marco)
         drawRoundRect(
             color = Color.Transparent,
             topLeft = Offset(frameLeft, frameTop),
@@ -423,7 +477,6 @@ private fun ScannerOverlay(
             blendMode = BlendMode.Clear
         )
 
-        // Borde del marco
         drawRoundRect(
             color = frameColor,
             topLeft = Offset(frameLeft, frameTop),
@@ -432,7 +485,6 @@ private fun ScannerOverlay(
             style = Stroke(width = 3.dp.toPx())
         )
 
-        // Esquinas decorativas
         val cornerLen = 24.dp.toPx()
         val cornerStrokeWidth = 5.dp.toPx()
         val corners = listOf(

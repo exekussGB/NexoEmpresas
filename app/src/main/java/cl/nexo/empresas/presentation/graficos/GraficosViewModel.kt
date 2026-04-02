@@ -33,8 +33,6 @@ class GraficosViewModel @Inject constructor(
     }
 
     fun load() {
-        // TenantManager.empresaId retorna "" (no null) cuando no hay empresa cargada.
-        // Usamos SessionManager como fallback antes de mostrar error.
         val empresaId = tenantManager.empresa?.id?.takeIf { it.isNotBlank() }
             ?: sessionManager.currentEmpresaId?.takeIf { it.isNotBlank() }
             ?: run {
@@ -47,6 +45,66 @@ class GraficosViewModel @Inject constructor(
             repo.getGraficoData(empresaId, _meses.value)
                 .onSuccess { _uiState.value = GraficosUiState.Success(it) }
                 .onFailure { _uiState.value = GraficosUiState.Error(it.message ?: "Error al cargar gráficos") }
+        }
+    }
+
+    // ── Generar contenido CSV ────────────────────────────────────────────
+    fun generateCsvContent(): String {
+        val state = _uiState.value
+        if (state !is GraficosUiState.Success) return ""
+
+        val data = state.data
+        val sb = StringBuilder()
+
+        // Sección 1: Cobrado vs Pagado
+        sb.appendLine("=== Cobrado vs Pagado (${_meses.value} meses) ===")
+        sb.appendLine("Mes,Cobrado,Pagado,Diferencia")
+        data.mensual.forEach { item ->
+            val mesLabel = formatMesLabel(item.mes)
+            val diff = item.totalCobrado - item.totalPagado
+            sb.appendLine("$mesLabel,${item.totalCobrado},${item.totalPagado},$diff")
+        }
+
+        // Totales
+        val totalCobrado = data.mensual.sumOf { it.totalCobrado }
+        val totalPagado  = data.mensual.sumOf { it.totalPagado }
+        sb.appendLine("TOTAL,$totalCobrado,$totalPagado,${totalCobrado - totalPagado}")
+        sb.appendLine()
+
+        // Sección 2: Saldo por cuenta
+        val cuentas = data.porCuenta.map { it.cuentaNombre }.distinct()
+        if (cuentas.isNotEmpty()) {
+            sb.appendLine("=== Saldo Neto por Cuenta ===")
+            sb.appendLine("Cuenta,Mes,Saldo Neto")
+            data.porCuenta.forEach { item ->
+                val mesLabel = formatMesLabel(item.mes)
+                sb.appendLine("${item.cuentaNombre},$mesLabel,${item.saldoNeto}")
+            }
+
+            // Totales por cuenta
+            sb.appendLine()
+            sb.appendLine("=== Totales por Cuenta ===")
+            sb.appendLine("Cuenta,Saldo Neto Total")
+            cuentas.forEach { nombre ->
+                val total = data.porCuenta.filter { it.cuentaNombre == nombre }.sumOf { it.saldoNeto }
+                sb.appendLine("$nombre,$total")
+            }
+        }
+
+        return sb.toString()
+    }
+
+    private val MESES = listOf("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+
+    private fun formatMesLabel(mes: String): String {
+        // mes viene como "YYYY-MM"
+        return try {
+            val parts = mes.split("-")
+            val year = parts[0]
+            val monthIdx = parts[1].toInt() - 1
+            "${MESES.getOrElse(monthIdx) { parts[1] }} $year"
+        } catch (e: Exception) {
+            mes
         }
     }
 }
