@@ -209,10 +209,45 @@ data class SaldoCuentaMensual(
     @SerialName("saldo_neto")    val saldoNeto:     Long
 )
 
+// ── NUEVO: Detalle de cheque en gráficos ────────────────────────────────────────────────────
+
+@Serializable
+data class ChequeDetalle(
+    @SerialName("numero_cheque") val numeroCheque: String = "",
+    val banco: String = "",
+    val monto: Long = 0L,
+    @SerialName("fecha_cobro") val fechaCobro: String = "",
+    val estado: String = "pendiente"
+)
+
+// ── NUEVO: Detalle de documento individual en gráficos ──────────────────────────────────────
+
+@Serializable
+data class DocumentoDetalle(
+    val id: String = "",
+    @SerialName("fecha_movimiento") val fechaMovimiento: String = "",
+    val tipo: String = "",
+    val descripcion: String = "",
+    val monto: Long = 0L,
+    @SerialName("metodo_pago") val metodoPago: String = "otro",
+    @SerialName("numero_documento") val numeroDocumento: String = "",
+    val categoria: String = "",
+    val estado: String = "",
+    @SerialName("fecha_pago") val fechaPago: String? = null,
+    @SerialName("fecha_vencimiento") val fechaVencimiento: String? = null,
+    val notas: String = "",
+    @SerialName("contacto_nombre") val contactoNombre: String = "Sin contacto",
+    @SerialName("cuenta_nombre") val cuentaNombre: String = "Sin cuenta",
+    val cheques: List<ChequeDetalle> = emptyList()
+)
+
+// ── GraficoData ACTUALIZADO (con detalle) ───────────────────────────────────────────────────
+
 @Serializable
 data class GraficoData(
-    val mensual:                                          List<GraficoMensual>,
-    @SerialName("por_cuenta") val porCuenta: List<SaldoCuentaMensual>
+    val mensual: List<GraficoMensual>,
+    @SerialName("por_cuenta") val porCuenta: List<SaldoCuentaMensual>,
+    val detalle: List<DocumentoDetalle> = emptyList()   // ← NUEVO — default vacío para retrocompatibilidad
 )
 
 @Serializable
