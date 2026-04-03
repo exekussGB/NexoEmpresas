@@ -2,6 +2,7 @@ package cl.nexo.empresas.presentation.empresas;
 
 import cl.nexo.empresas.core.session.SessionManager;
 import cl.nexo.empresas.core.session.TenantManager;
+import cl.nexo.empresas.domain.repository.AlertasRepository;
 import cl.nexo.empresas.domain.repository.EmpresasRepository;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.Factory;
@@ -36,29 +37,35 @@ public final class EmpresasViewModel_Factory implements Factory<EmpresasViewMode
 
   private final Provider<SupabaseClient> clientProvider;
 
+  private final Provider<AlertasRepository> alertasRepositoryProvider;
+
   private EmpresasViewModel_Factory(Provider<EmpresasRepository> empresasRepositoryProvider,
       Provider<TenantManager> tenantManagerProvider,
-      Provider<SessionManager> sessionManagerProvider, Provider<SupabaseClient> clientProvider) {
+      Provider<SessionManager> sessionManagerProvider, Provider<SupabaseClient> clientProvider,
+      Provider<AlertasRepository> alertasRepositoryProvider) {
     this.empresasRepositoryProvider = empresasRepositoryProvider;
     this.tenantManagerProvider = tenantManagerProvider;
     this.sessionManagerProvider = sessionManagerProvider;
     this.clientProvider = clientProvider;
+    this.alertasRepositoryProvider = alertasRepositoryProvider;
   }
 
   @Override
   public EmpresasViewModel get() {
-    return newInstance(empresasRepositoryProvider.get(), tenantManagerProvider.get(), sessionManagerProvider.get(), clientProvider.get());
+    return newInstance(empresasRepositoryProvider.get(), tenantManagerProvider.get(), sessionManagerProvider.get(), clientProvider.get(), alertasRepositoryProvider.get());
   }
 
   public static EmpresasViewModel_Factory create(
       Provider<EmpresasRepository> empresasRepositoryProvider,
       Provider<TenantManager> tenantManagerProvider,
-      Provider<SessionManager> sessionManagerProvider, Provider<SupabaseClient> clientProvider) {
-    return new EmpresasViewModel_Factory(empresasRepositoryProvider, tenantManagerProvider, sessionManagerProvider, clientProvider);
+      Provider<SessionManager> sessionManagerProvider, Provider<SupabaseClient> clientProvider,
+      Provider<AlertasRepository> alertasRepositoryProvider) {
+    return new EmpresasViewModel_Factory(empresasRepositoryProvider, tenantManagerProvider, sessionManagerProvider, clientProvider, alertasRepositoryProvider);
   }
 
   public static EmpresasViewModel newInstance(EmpresasRepository empresasRepository,
-      TenantManager tenantManager, SessionManager sessionManager, SupabaseClient client) {
-    return new EmpresasViewModel(empresasRepository, tenantManager, sessionManager, client);
+      TenantManager tenantManager, SessionManager sessionManager, SupabaseClient client,
+      AlertasRepository alertasRepository) {
+    return new EmpresasViewModel(empresasRepository, tenantManager, sessionManager, client, alertasRepository);
   }
 }
