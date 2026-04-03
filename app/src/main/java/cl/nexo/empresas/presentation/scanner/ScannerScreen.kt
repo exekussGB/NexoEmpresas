@@ -198,8 +198,13 @@ fun ScannerScreen(
     /**
      * Procesa el resultado de un escaneo exitoso (ML Kit o ZXing).
      */
-    fun processRawBarcode(raw: String, source: String = "PDF417"): Boolean {
-        val result = TedParser.parse(raw)
+    fun processRawBarcode(raw: String, rawBytes: ByteArray? = null, source: String = "PDF417"): Boolean {
+        // Intentar primero con rawValue (String)
+        var result = TedParser.parse(raw)
+        // Si falla, intentar con rawBytes y múltiples encodings
+        if (result == null && rawBytes != null) {
+            result = TedParser.parseFromBytes(rawBytes)
+        }
         return if (result != null) {
             viewModel.onBarcodeDetected(result)
             true
@@ -233,8 +238,14 @@ fun ScannerScreen(
 
                             var parsed = false
                             for (barcode in sorted) {
-                                val raw = barcode.rawValue ?: continue
-                                val result = TedParser.parse(raw)
+                                val raw = barcode.rawValue ?: ""
+                                val bytes = barcode.rawBytes
+                                // Intentar primero con rawValue (String)
+        var result = TedParser.parse(raw)
+        // Si falla, intentar con rawBytes y múltiples encodings
+        if (result == null && rawBytes != null) {
+            result = TedParser.parseFromBytes(rawBytes)
+        }
                                 if (result != null) {
                                     viewModel.onBarcodeDetected(result)
                                     parsed = true
@@ -243,7 +254,15 @@ fun ScannerScreen(
                             }
 
                             if (!parsed) {
-                                val firstRaw = sorted.first().rawValue ?: ""
+                                val firstBarcode = sorted.first()
+                                val firstRaw = firstBarcode.rawValue ?: ""
+                                // Último intento con rawBytes del primer barcode
+                                val bytesResult = TedParser.parseFromBytes(firstBarcode.rawBytes)
+                                if (bytesResult != null) {
+                                    viewModel.onBarcodeDetected(bytesResult)
+                                    isProcessingGallery = false
+                                    return@addOnSuccessListener
+                                }
                                 val formatName = when (sorted.first().format) {
                                     Barcode.FORMAT_PDF417     -> "PDF417"
                                     Barcode.FORMAT_QR_CODE    -> "QR"
@@ -308,7 +327,8 @@ fun ScannerScreen(
                                     val barcode = barcodes.firstOrNull()
                                     if (barcode != null) {
                                         val raw = barcode.rawValue ?: ""
-                                        processRawBarcode(raw)
+                                        val bytes = barcode.rawBytes
+                                        processRawBarcode(raw, bytes)
                                     } else if (framesAnalyzed % 5 == 0) {
                                         // ── FIX 3: ZXing fallback cada 5 frames ─────
                                         val bitmap = yuv420ToBitmap(imageProxy)
@@ -605,7 +625,12 @@ private fun tryZxingGalleryFallback(
                 val zxResult = reader.decode(binaryBitmap, hints)
 
                 val raw = zxResult.text
-                val result = TedParser.parse(raw)
+                // Intentar primero con rawValue (String)
+        var result = TedParser.parse(raw)
+        // Si falla, intentar con rawBytes y múltiples encodings
+        if (result == null && rawBytes != null) {
+            result = TedParser.parseFromBytes(rawBytes)
+        }
                 if (result != null) {
                     viewModel.onBarcodeDetected(result)
                     decoded = true
