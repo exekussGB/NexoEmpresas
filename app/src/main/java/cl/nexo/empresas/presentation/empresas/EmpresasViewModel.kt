@@ -6,7 +6,9 @@ import cl.nexo.empresas.core.session.SessionManager
 import cl.nexo.empresas.core.session.TenantManager
 import cl.nexo.empresas.data.model.Empresa
 import cl.nexo.empresas.data.model.EmpresaMember
+import cl.nexo.empresas.domain.repository.AlertasRepository
 import cl.nexo.empresas.domain.repository.EmpresasRepository
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -21,7 +23,8 @@ class EmpresasViewModel @Inject constructor(
     private val empresasRepository: EmpresasRepository,
     private val tenantManager: TenantManager,
     private val sessionManager: SessionManager,
-    private val client: SupabaseClient
+    private val client: SupabaseClient,
+    private val alertasRepository: AlertasRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<EmpresasUiState>(EmpresasUiState.Idle)
@@ -47,6 +50,7 @@ class EmpresasViewModel @Inject constructor(
     /**
      * Selecciona la empresa activa y, de forma async, carga el rol del usuario
      * en esa empresa para que isOwner() funcione en toda la app.
+     * También registra el token FCM para recibir push notifications.
      */
     fun selectEmpresa(empresa: Empresa) {
         tenantManager.empresa = empresa
@@ -69,7 +73,24 @@ class EmpresasViewModel @Inject constructor(
                     sessionManager.userRole = "owner"
                 }
             }
+            // Registrar token FCM para esta empresa
+            registrarFcmToken()
         }
+    }
+
+    /**
+     * Obtiene el token FCM actual y lo guarda en alertas_config
+     * para que las Edge Functions puedan enviar push notifications.
+     */
+    private fun registrarFcmToken() {
+        FirebaseMessaging.getInstance().token
+            .addOnSuccessListener { token ->
+                viewModelScope.launch {
+                    alertasRepository.saveFcmToken(token)
+                        .onFailure { /* ignorar silenciosamente */ }
+                }
+            }
+            .addOnFailureListener { /* ignorar si Firebase no está disponible */ }
     }
 
     fun showCreateDialog(show: Boolean) {
