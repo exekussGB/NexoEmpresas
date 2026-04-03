@@ -7,8 +7,7 @@ import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
 import android.graphics.Rect
 import android.graphics.YuvImage
-import android.net.Uri
-import android.util.Size
+import android.util.Log
 import android.view.ViewGroup
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,12 +27,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -42,17 +42,22 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import cl.nexo.empresas.core.tutorial.TutorialModule
 import cl.nexo.empresas.data.model.DteScanResult
+import cl.nexo.empresas.core.tutorial.TutorialModule
 import cl.nexo.empresas.presentation.tutorial.ModuleTutorialLauncher
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
-import com.google.zxing.*
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.DecodeHintType
+import com.google.zxing.LuminanceSource
+import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.common.HybridBinarizer
 import com.google.zxing.pdf417.PDF417Reader
 import java.io.ByteArrayOutputStream
+
+private const val TAG = "ScannerScreen"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @androidx.annotation.OptIn(androidx.camera.core.ExperimentalGetImage::class)
@@ -67,8 +72,81 @@ fun ScannerScreen(
     val haptic         = LocalHapticFeedback.current
     val state          by viewModel.state.collectAsState()
 
+    // ── Gallery state ─────────────────────────────────────────────────────
     var isProcessingGallery by remember { mutableStateOf(false) }
+
+    // ── Frame counter ────────────────────────────────────────────────────
     var framesAnalyzed by remember { mutableIntStateOf(0) }
+
+    // ── Helper: process raw barcode content ─────────────────────────────
+    fun processRawBarcode(raw: String, rawBytes: ByteArray? = null, source: String = "PDF417"): Boolean {
+        Log.d(TAG, "[$source] Intentando parsear. rawValue length=${raw.length}, rawBytes size=${rawBytes?.size}")
+
+        // 1) Intentar con rawValue (String)
+        var result = TedParser.parse(raw)
+
+        // 2) Si falla, intentar con rawBytes y múltiples encodings
+        if (result == null && rawBytes != null) {
+            Log.d(TAG, "[$source] rawValue no parseó, intentando rawBytes...")
+            result = TedParser.parseFromBytes(rawBytes)
+        }
+
+        return if (result != null) {
+            Log.d(TAG, "[$source] ✅ TED parseado: tipo=${result.tipoDocumento}, folio=${result.folio}")
+            viewModel.onBarcodeDetected(result)
+            true
+        } else {
+            val reason = TedParser.diagnose(raw)
+            Log.d(TAG, "[$source] ❌ No es TED: $reason")
+            viewModel.onParseFailed("Código detectado pero no contiene un Timbre Electrónico (TED).\n$reason")
+            false
+        }
+    }
+
+    // ── Helper: YUV420 to Bitmap for ZXing ──────────────────────────────
+    fun yuv420ToBitmap(imageProxy: ImageProxy): Bitmap? {
+        return try {
+            val yBuffer = imageProxy.planes[0].buffer
+            val uBuffer = imageProxy.planes[1].buffer
+            val vBuffer = imageProxy.planes[2].buffer
+            val ySize = yBuffer.remaining()
+            val uSize = uBuffer.remaining()
+            val vSize = vBuffer.remaining()
+            val nv21 = ByteArray(ySize + uSize + vSize)
+            yBuffer.get(nv21, 0, ySize)
+            vBuffer.get(nv21, ySize, vSize)
+            uBuffer.get(nv21, ySize + vSize, uSize)
+            val yuvImage = YuvImage(nv21, ImageFormat.NV21, imageProxy.width, imageProxy.height, null)
+            val out = ByteArrayOutputStream()
+            yuvImage.compressToJpeg(Rect(0, 0, imageProxy.width, imageProxy.height), 90, out)
+            BitmapFactory.decodeByteArray(out.toByteArray(), 0, out.size())
+        } catch (e: Exception) {
+            Log.w(TAG, "YUV to Bitmap failed", e)
+            null
+        }
+    }
+
+    // ── Helper: ZXing PDF417 decode ─────────────────────────────────────
+    fun tryZxingDecode(bitmap: Bitmap): String? {
+        return try {
+            val w = bitmap.width
+            val h = bitmap.height
+            val pixels = IntArray(w * h)
+            bitmap.getPixels(pixels, 0, w, 0, 0, w, h)
+            val source: LuminanceSource = RGBLuminanceSource(w, h, pixels)
+            val binaryBitmap = BinaryBitmap(HybridBinarizer(source))
+            val hints = mapOf(
+                DecodeHintType.TRY_HARDER to true,
+                DecodeHintType.PURE_BARCODE to false
+            )
+            val reader = PDF417Reader()
+            val result = reader.decode(binaryBitmap, hints)
+            Log.d(TAG, "[ZXing] Decoded PDF417: ${result.text.take(100)}...")
+            result.text
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     // ── Permiso de cámara ───────────────────────────────────────────────────
     var hasCameraPermission by remember {
@@ -93,7 +171,7 @@ fun ScannerScreen(
         }
     }
 
-    // ── Auto-reset tras ParseFailed ─────────────────────────────────────────
+    // ── Auto-reset tras ParseFailed ─────────────────────────────────────
     LaunchedEffect(state) {
         if (state is ScannerState.ParseFailed) {
             kotlinx.coroutines.delay(4000)
@@ -112,7 +190,7 @@ fun ScannerScreen(
         }
     }
 
-    // Scanner ML Kit para cámara: PDF417 + QR
+    // Scanner para cámara en vivo: solo PDF417 + QR
     val liveBarcodeScanner = remember {
         BarcodeScanning.getClient(
             BarcodeScannerOptions.Builder()
@@ -121,7 +199,7 @@ fun ScannerScreen(
         )
     }
 
-    // Scanner ML Kit para galería: todos los formatos
+    // Scanner para galería: TODOS los formatos
     val galleryBarcodeScanner = remember {
         BarcodeScanning.getClient(
             BarcodeScannerOptions.Builder()
@@ -142,77 +220,6 @@ fun ScannerScreen(
                 )
                 .build()
         )
-    }
-
-    // ── ZXing PDF417 fallback reader ────────────────────────────────────────
-    val zxingPdf417Reader = remember { PDF417Reader() }
-
-    /**
-     * Intenta decodificar PDF417 usando ZXing como fallback cuando ML Kit falla.
-     * ZXing es significativamente mejor con PDF417 densos como los timbres DTE.
-     */
-    fun tryZxingDecode(bitmap: Bitmap): String? {
-        return try {
-            val width = bitmap.width
-            val height = bitmap.height
-            val pixels = IntArray(width * height)
-            bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
-            val source = RGBLuminanceSource(width, height, pixels)
-            val binaryBitmap = BinaryBitmap(HybridBinarizer(source))
-            val hints = mapOf(
-                DecodeHintType.TRY_HARDER to true,
-                DecodeHintType.POSSIBLE_FORMATS to listOf(BarcodeFormat.PDF_417)
-            )
-            val result = zxingPdf417Reader.decode(binaryBitmap, hints)
-            result.text
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    /**
-     * Convierte un frame YUV de CameraX a Bitmap para ZXing.
-     */
-    fun yuv420ToBitmap(imageProxy: ImageProxy): Bitmap? {
-        return try {
-            val yBuffer = imageProxy.planes[0].buffer
-            val uBuffer = imageProxy.planes[1].buffer
-            val vBuffer = imageProxy.planes[2].buffer
-            val ySize = yBuffer.remaining()
-            val uSize = uBuffer.remaining()
-            val vSize = vBuffer.remaining()
-            val nv21 = ByteArray(ySize + uSize + vSize)
-            yBuffer.get(nv21, 0, ySize)
-            vBuffer.get(nv21, ySize, vSize)
-            uBuffer.get(nv21, ySize + vSize, uSize)
-            val yuvImage = YuvImage(nv21, ImageFormat.NV21, imageProxy.width, imageProxy.height, null)
-            val out = ByteArrayOutputStream()
-            yuvImage.compressToJpeg(Rect(0, 0, imageProxy.width, imageProxy.height), 90, out)
-            val bytes = out.toByteArray()
-            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    /**
-     * Procesa el resultado de un escaneo exitoso (ML Kit o ZXing).
-     */
-    fun processRawBarcode(raw: String, rawBytes: ByteArray? = null, source: String = "PDF417"): Boolean {
-        // Intentar primero con rawValue (String)
-        var result = TedParser.parse(raw)
-        // Si falla, intentar con rawBytes y múltiples encodings
-        if (result == null && rawBytes != null) {
-            result = TedParser.parseFromBytes(rawBytes)
-        }
-        return if (result != null) {
-            viewModel.onBarcodeDetected(result)
-            true
-        } else {
-            val reason = TedParser.diagnose(raw)
-            viewModel.onParseFailed(reason)
-            false
-        }
     }
 
     // ── Gallery picker ────────────────────────────────────────────────────
@@ -240,16 +247,37 @@ fun ScannerScreen(
                             for (barcode in sorted) {
                                 val raw = barcode.rawValue ?: ""
                                 val bytes = barcode.rawBytes
-                                // Intentar primero con rawValue (String)
-        var result = TedParser.parse(raw)
-        // Si falla, intentar con rawBytes y múltiples encodings
-        if (result == null && rawBytes != null) {
-            result = TedParser.parseFromBytes(rawBytes)
-        }
+                                // Intentar con rawValue + rawBytes
+                                var result = TedParser.parse(raw)
+                                if (result == null && bytes != null) {
+                                    result = TedParser.parseFromBytes(bytes)
+                                }
                                 if (result != null) {
                                     viewModel.onBarcodeDetected(result)
                                     parsed = true
                                     break
+                                }
+                            }
+
+                            if (!parsed) {
+                                // ── ZXing fallback para galería ──
+                                try {
+                                    val inputStream = context.contentResolver.openInputStream(uri)
+                                    val galleryBitmap = BitmapFactory.decodeStream(inputStream)
+                                    inputStream?.close()
+                                    if (galleryBitmap != null) {
+                                        val zxRaw = tryZxingDecode(galleryBitmap)
+                                        if (zxRaw != null) {
+                                            val zxResult = TedParser.parse(zxRaw)
+                                            if (zxResult != null) {
+                                                viewModel.onBarcodeDetected(zxResult)
+                                                parsed = true
+                                            }
+                                        }
+                                        galleryBitmap.recycle()
+                                    }
+                                } catch (e: Exception) {
+                                    Log.w(TAG, "ZXing gallery fallback failed", e)
                                 }
                             }
 
@@ -260,33 +288,55 @@ fun ScannerScreen(
                                 val bytesResult = TedParser.parseFromBytes(firstBarcode.rawBytes)
                                 if (bytesResult != null) {
                                     viewModel.onBarcodeDetected(bytesResult)
-                                    isProcessingGallery = false
-                                    return@addOnSuccessListener
+                                } else {
+                                    val formatName = when (firstBarcode.format) {
+                                        Barcode.FORMAT_PDF417      -> "PDF417"
+                                        Barcode.FORMAT_QR_CODE     -> "QR"
+                                        Barcode.FORMAT_DATA_MATRIX -> "DataMatrix"
+                                        Barcode.FORMAT_CODE_128    -> "Code128"
+                                        Barcode.FORMAT_EAN_13      -> "EAN-13"
+                                        else                        -> "código"
+                                    }
+                                    val reason = TedParser.diagnose(firstRaw)
+                                    viewModel.onParseFailed("Se detectó un $formatName pero no es una factura DTE.\n$reason")
                                 }
-                                val formatName = when (sorted.first().format) {
-                                    Barcode.FORMAT_PDF417     -> "PDF417"
-                                    Barcode.FORMAT_QR_CODE    -> "QR"
-                                    Barcode.FORMAT_DATA_MATRIX -> "DataMatrix"
-                                    Barcode.FORMAT_CODE_128   -> "Code128"
-                                    Barcode.FORMAT_EAN_13     -> "EAN-13"
-                                    else                       -> "código"
-                                }
-                                val reason = TedParser.diagnose(firstRaw)
-                                viewModel.onParseFailed("Se detectó un $formatName pero no es una factura DTE.\n$reason")
                             }
-                            isProcessingGallery = false
                         } else {
-                            // ML Kit no detectó nada → fallback a ZXing
-                            tryZxingGalleryFallback(context, uri, viewModel) {
-                                isProcessingGallery = false
+                            // ── No barcodes from ML Kit → try ZXing ──
+                            try {
+                                val inputStream = context.contentResolver.openInputStream(uri)
+                                val galleryBitmap = BitmapFactory.decodeStream(inputStream)
+                                inputStream?.close()
+                                if (galleryBitmap != null) {
+                                    val zxRaw = tryZxingDecode(galleryBitmap)
+                                    if (zxRaw != null) {
+                                        val zxResult = TedParser.parse(zxRaw)
+                                        if (zxResult != null) {
+                                            viewModel.onBarcodeDetected(zxResult)
+                                            galleryBitmap.recycle()
+                                            isProcessingGallery = false
+                                            return@addOnSuccessListener
+                                        }
+                                    }
+                                    galleryBitmap.recycle()
+                                }
+                            } catch (e: Exception) {
+                                Log.w(TAG, "ZXing gallery fallback failed", e)
                             }
+
+                            viewModel.onParseFailed(
+                                "No se encontró ningún código de barras en la imagen.\n" +
+                                        "Asegúrate de que:\n" +
+                                        "• La foto sea nítida y con buena iluminación\n" +
+                                        "• El código PDF417 o QR sea visible completo\n" +
+                                        "• No sea una captura de pantalla (pierde calidad)"
+                            )
                         }
+                        isProcessingGallery = false
                     }
                     .addOnFailureListener { e ->
-                        // ML Kit falló → intentar ZXing
-                        tryZxingGalleryFallback(context, uri, viewModel) {
-                            isProcessingGallery = false
-                        }
+                        viewModel.onParseFailed("Error al procesar imagen: ${e.message}")
+                        isProcessingGallery = false
                     }
             } catch (e: Exception) {
                 viewModel.onParseFailed("Error al leer imagen: ${e.message}")
@@ -302,15 +352,15 @@ fun ScannerScreen(
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
 
-            val preview = Preview.Builder()
-                .build()
-                .also { it.setSurfaceProvider(previewView.surfaceProvider) }
+            val preview = Preview.Builder().build().also {
+                it.setSurfaceProvider(previewView.surfaceProvider)
+            }
 
-            // ── FIX 1: Alta resolución para PDF417 densos ───────────────
+            // ── FIX 1: Resolución HD para PDF417 densos ──
             val imageAnalyzer = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .setTargetResolution(Size(1920, 1080))
                 .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
+                .setTargetResolution(android.util.Size(1920, 1080))
                 .build()
                 .also { analysis ->
                     analysis.setAnalyzer(ContextCompat.getMainExecutor(context)) { imageProxy ->
@@ -321,21 +371,20 @@ fun ScannerScreen(
                                 mediaImage,
                                 imageProxy.imageInfo.rotationDegrees
                             )
-
                             liveBarcodeScanner.process(image)
                                 .addOnSuccessListener { barcodes ->
                                     val barcode = barcodes.firstOrNull()
                                     if (barcode != null) {
                                         val raw = barcode.rawValue ?: ""
                                         val bytes = barcode.rawBytes
-                                        processRawBarcode(raw, bytes)
+                                        processRawBarcode(raw, bytes, "MLKit-Live")
                                     } else if (framesAnalyzed % 5 == 0) {
-                                        // ── FIX 3: ZXing fallback cada 5 frames ─────
+                                        // ── FIX 3: ZXing fallback cada 5 frames ──
                                         val bitmap = yuv420ToBitmap(imageProxy)
                                         if (bitmap != null) {
-                                            val raw = tryZxingDecode(bitmap)
-                                            if (raw != null) {
-                                                processRawBarcode(raw, "ZXing-PDF417")
+                                            val zxRaw = tryZxingDecode(bitmap)
+                                            if (zxRaw != null) {
+                                                processRawBarcode(zxRaw, null, "ZXing-Live")
                                             }
                                             bitmap.recycle()
                                         }
@@ -350,8 +399,6 @@ fun ScannerScreen(
 
             try {
                 cameraProvider.unbindAll()
-
-                // ── FIX 2: Auto-focus continuo + zoom base ──────────────
                 val camera = cameraProvider.bindToLifecycle(
                     lifecycleOwner,
                     CameraSelector.DEFAULT_BACK_CAMERA,
@@ -359,18 +406,17 @@ fun ScannerScreen(
                     imageAnalyzer
                 )
 
-                // Activar auto-focus continuo
-                camera.cameraControl.cancelFocusAndMetering()
-                val factory = SurfaceOrientedMeteringPointFactory(1f, 1f)
-                val centerPoint = factory.createPoint(0.5f, 0.5f)
-                val action = FocusMeteringAction.Builder(centerPoint, FocusMeteringAction.FLAG_AF)
-                    .setAutoCancelDuration(3, java.util.concurrent.TimeUnit.SECONDS)
-                    .build()
-                camera.cameraControl.startFocusAndMetering(action)
-
-                // Zoom base 1.3x para acercarse más al PDF417
-                camera.cameraControl.setLinearZoom(0.15f)
-
+                // ── FIX 2: Auto-focus continuo + zoom base 1.3x ──
+                camera.cameraControl.let { ctrl ->
+                    ctrl.setLinearZoom(0.15f) // ~1.3x zoom
+                    // Focus continuo al centro
+                    val factory = SurfaceOrientedMeteringPointFactory(1f, 1f)
+                    val point = factory.createPoint(0.5f, 0.5f)
+                    val action = FocusMeteringAction.Builder(point, FocusMeteringAction.FLAG_AF)
+                        .setAutoCancelDuration(3, java.util.concurrent.TimeUnit.SECONDS)
+                        .build()
+                    ctrl.startFocusAndMetering(action)
+                }
             } catch (e: Exception) {
                 viewModel.onError("Error al iniciar cámara: ${e.message}")
             }
@@ -415,7 +461,10 @@ fun ScannerScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text("📷", style = MaterialTheme.typography.displayMedium)
+                        Text(
+                            "📷",
+                            style = MaterialTheme.typography.displayMedium
+                        )
                         Spacer(Modifier.height(16.dp))
                         Text(
                             "Permiso de cámara requerido",
@@ -438,16 +487,19 @@ fun ScannerScreen(
                 }
 
                 else -> {
+                    // Vista de cámara
                     AndroidView(
                         factory = { previewView },
                         modifier = Modifier.fillMaxSize()
                     )
 
+                    // Overlay oscuro con ventana transparente
                     ScannerOverlay(
                         isDetected = state is ScannerState.Found,
                         isParseFailed = state is ScannerState.ParseFailed
                     )
 
+                    // Scanning indicator
                     if (state is ScannerState.Scanning) {
                         val infiniteTransition = rememberInfiniteTransition(label = "scan_pulse")
                         val alpha by infiniteTransition.animateFloat(
@@ -466,7 +518,10 @@ fun ScannerScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Canvas(modifier = Modifier.size(10.dp)) {
-                                drawCircle(color = Color.Red, alpha = alpha)
+                                drawCircle(
+                                    color = Color.Red,
+                                    alpha = alpha
+                                )
                             }
                             Spacer(Modifier.width(6.dp))
                             Text(
@@ -508,7 +563,7 @@ fun ScannerScreen(
                         }
                     }
 
-                    // Status message
+                    // Mensaje de estado
                     val statusText = when (state) {
                         is ScannerState.Scanning    -> "Apunta al código de barras o QR de la factura\n(esquina inferior del documento)"
                         is ScannerState.Found       -> "✅ Factura detectada"
@@ -548,126 +603,8 @@ fun ScannerScreen(
 }
 
 /**
- * Fallback: si ML Kit no detecta nada en una imagen de galería,
- * se usa ZXing PDF417Reader que es más robusto con timbres DTE densos.
- */
-private fun tryZxingGalleryFallback(
-    context: android.content.Context,
-    uri: Uri,
-    viewModel: ScannerViewModel,
-    onComplete: () -> Unit
-) {
-    try {
-        val inputStream = context.contentResolver.openInputStream(uri) ?: run {
-            viewModel.onParseFailed(
-                "No se encontró ningún código de barras en la imagen.\n" +
-                        "Asegúrate de que:\n" +
-                        "• La foto sea nítida y con buena iluminación\n" +
-                        "• El código PDF417 o QR sea visible completo\n" +
-                        "• No sea una captura de pantalla (pierde calidad)"
-            )
-            onComplete()
-            return
-        }
-
-        // Decodificar a múltiples resoluciones para mejorar detección
-        val originalBitmap = BitmapFactory.decodeStream(inputStream)
-        inputStream.close()
-
-        if (originalBitmap == null) {
-            viewModel.onParseFailed("Error al decodificar la imagen.")
-            onComplete()
-            return
-        }
-
-        // Intentar con la imagen original y con versiones escaladas
-        val bitmapsToTry = mutableListOf(originalBitmap)
-
-        // Si la imagen es muy grande, probar también con versión reducida
-        if (originalBitmap.width > 2000 || originalBitmap.height > 2000) {
-            val scale = 1500f / maxOf(originalBitmap.width, originalBitmap.height)
-            val scaled = Bitmap.createScaledBitmap(
-                originalBitmap,
-                (originalBitmap.width * scale).toInt(),
-                (originalBitmap.height * scale).toInt(),
-                true
-            )
-            bitmapsToTry.add(scaled)
-        }
-
-        // Si es muy pequeña, probar con versión ampliada
-        if (originalBitmap.width < 800 || originalBitmap.height < 800) {
-            val scale = 1200f / minOf(originalBitmap.width, originalBitmap.height)
-            val scaled = Bitmap.createScaledBitmap(
-                originalBitmap,
-                (originalBitmap.width * scale).toInt(),
-                (originalBitmap.height * scale).toInt(),
-                true
-            )
-            bitmapsToTry.add(scaled)
-        }
-
-        val reader = PDF417Reader()
-        val hints = mapOf(
-            DecodeHintType.TRY_HARDER to true,
-            DecodeHintType.POSSIBLE_FORMATS to listOf(BarcodeFormat.PDF_417)
-        )
-
-        var decoded = false
-        for (bitmap in bitmapsToTry) {
-            try {
-                val width = bitmap.width
-                val height = bitmap.height
-                val pixels = IntArray(width * height)
-                bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
-                val source = RGBLuminanceSource(width, height, pixels)
-                val binaryBitmap = BinaryBitmap(HybridBinarizer(source))
-                val zxResult = reader.decode(binaryBitmap, hints)
-
-                val raw = zxResult.text
-                // Intentar primero con rawValue (String)
-        var result = TedParser.parse(raw)
-        // Si falla, intentar con rawBytes y múltiples encodings
-        if (result == null && rawBytes != null) {
-            result = TedParser.parseFromBytes(rawBytes)
-        }
-                if (result != null) {
-                    viewModel.onBarcodeDetected(result)
-                    decoded = true
-                    break
-                } else {
-                    val reason = TedParser.diagnose(raw)
-                    viewModel.onParseFailed("Se detectó un PDF417 pero no es una factura DTE.\n$reason")
-                    decoded = true
-                    break
-                }
-            } catch (_: Exception) {
-                // This bitmap size didn't work, try next
-            }
-        }
-
-        if (!decoded) {
-            viewModel.onParseFailed(
-                "No se encontró ningún código de barras en la imagen.\n" +
-                        "Asegúrate de que:\n" +
-                        "• La foto sea nítida y con buena iluminación\n" +
-                        "• El código PDF417 o QR sea visible completo\n" +
-                        "• No sea una captura de pantalla (pierde calidad)"
-            )
-        }
-
-        // Limpiar bitmaps
-        bitmapsToTry.forEach { if (it != originalBitmap) it.recycle() }
-        originalBitmap.recycle()
-    } catch (e: Exception) {
-        viewModel.onParseFailed("Error al procesar imagen: ${e.message}")
-    }
-    onComplete()
-}
-
-/**
  * Overlay con máscara oscura + marco guía centrado para el PDF417.
- * Marco más alto para acomodar timbres DTE completos.
+ * FIX 4: Frame height 25% → 35% para cubrir mejor el timbre.
  */
 @Composable
 private fun ScannerOverlay(
@@ -683,9 +620,8 @@ private fun ScannerOverlay(
         val canvasWidth  = size.width
         val canvasHeight = size.height
 
-        // Marco más grande para PDF417 densos
-        val frameWidth  = canvasWidth * 0.85f
-        val frameHeight = canvasWidth * 0.35f  // Más alto que antes (0.25f)
+        val frameWidth  = canvasWidth * 0.82f
+        val frameHeight = canvasWidth * 0.35f  // FIX 4: era 0.25f
         val frameLeft   = (canvasWidth  - frameWidth)  / 2f
         val frameTop    = (canvasHeight - frameHeight) / 2f
 
@@ -693,16 +629,16 @@ private fun ScannerOverlay(
 
         drawRoundRect(
             color = Color.Transparent,
-            topLeft = androidx.compose.ui.geometry.Offset(frameLeft, frameTop),
-            size = androidx.compose.ui.geometry.Size(frameWidth, frameHeight),
+            topLeft = Offset(frameLeft, frameTop),
+            size = Size(frameWidth, frameHeight),
             cornerRadius = CornerRadius(8.dp.toPx()),
             blendMode = BlendMode.Clear
         )
 
         drawRoundRect(
             color = frameColor,
-            topLeft = androidx.compose.ui.geometry.Offset(frameLeft, frameTop),
-            size = androidx.compose.ui.geometry.Size(frameWidth, frameHeight),
+            topLeft = Offset(frameLeft, frameTop),
+            size = Size(frameWidth, frameHeight),
             cornerRadius = CornerRadius(8.dp.toPx()),
             style = Stroke(width = 3.dp.toPx())
         )
