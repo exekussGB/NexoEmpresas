@@ -119,32 +119,32 @@ fun HubEmpresaScreen(
     ) { padding ->
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(24.dp),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(items.dropLast(1)) { item ->
                 Card(
                     onClick = { onNavigate(item.screen) },
-                    modifier = Modifier.aspectRatio(1f)
+                    modifier = Modifier.aspectRatio(1.1f)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(16.dp),
+                            .padding(12.dp),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
                             item.icon,
                             null,
-                            modifier = Modifier.size(52.dp),
+                            modifier = Modifier.size(44.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(6.dp))
                         Text(
                             item.label,
                             style = MaterialTheme.typography.labelLarge,
@@ -161,22 +161,22 @@ fun HubEmpresaScreen(
                     onClick = { onNavigate(opcion.screen) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(80.dp)
+                        .height(68.dp)
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 24.dp),
+                            .padding(horizontal = 20.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Icon(
                             opcion.icon,
                             null,
-                            modifier = Modifier.size(42.dp),
+                            modifier = Modifier.size(36.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(Modifier.width(12.dp))
+                        Spacer(Modifier.width(10.dp))
                         Text(opcion.label, style = MaterialTheme.typography.titleMedium)
                     }
                 }
