@@ -100,7 +100,7 @@ fun VerifyOtpScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                placeholder = { Text("000000") }
+                placeholder = { Text("00000000") }
             )
             Spacer(Modifier.height(16.dp))
 
