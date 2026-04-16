@@ -1,107 +1,128 @@
-package com.nexo.empresas.dte.data.repository
+package com.nexo.empresas.data.repository
 
-import com.nexo.empresas.dte.data.model.*
-import com.nexo.empresas.dte.data.remote.DteRemoteDataSource
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import javax.inject.Inject
-import javax.inject.Singleton
+import com.nexo.empresas.data.model.Dte
+import com.nexo.empresas.data.model.EmitirDteRequest
+import com.nexo.empresas.data.model.EmitirDteResponse
+import com.nexo.empresas.data.model.EstadoDteResponse
+import com.nexo.empresas.data.model.Folio
+import com.nexo.empresas.data.model.ItemDte
+import com.nexo.empresas.data.model.RutInfo
+import com.nexo.empresas.data.remote.dte.DteRemoteDataSource
 
-sealed class Result<out T> {
-    data class Success<T>(val data: T) : Result<T>()
-    data class Error(val message: String, val cause: Throwable? = null) : Result<Nothing>()
-    object Loading : Result<Nothing>()
+sealed class Resource<T> {
+    data class Success<T>(val data: T) : Resource<T>()
+    data class Error<T>(val exception: Exception) : Resource<T>()
+    class Loading<T> : Resource<T>()
 }
 
-@Singleton
-class DteRepository @Inject constructor(
-    private val remote: DteRemoteDataSource
+class DteRepository(
+    private val remoteDataSource: DteRemoteDataSource
 ) {
 
-    // ── Emitir DTE ──────────────────────────────────────────────────────────
-
-    fun emitirDte(request: EmitirDteRequest): Flow<Result<Dte>> = flow {
-        emit(Result.Loading)
-        runCatching { remote.emitirDte(request) }
-            .onSuccess { response ->
-                if (response.success && response.dte != null) {
-                    emit(Result.Success(response.dte))
-                } else {
-                    emit(Result.Error(response.error ?: "Error desconocido al emitir DTE"))
-                }
+    /**
+     * Emite un nuevo DTE y retorna el resultado envuelto en Resource
+     */
+    suspend fun emitirDte(request: EmitirDteRequest): Resource<EmitirDteResponse> {
+        return remoteDataSource.emitirDte(request)
+            .mapCatching { response ->
+                Resource.Success(response)
             }
-            .onFailure { emit(Result.Error(it.message ?: "Error de red", it)) }
+            .getOrElse { exception ->
+                Resource.Error(exception as? Exception ?: Exception(exception.message))
+            }
     }
 
-    // ── Consultar estado SII ────────────────────────────────────────────────
-
-    fun consultarEstado(dteId: String): Flow<Result<EstadoDteResponse>> = flow {
-        emit(Result.Loading)
-        runCatching { remote.consultarEstadoDte(dteId) }
-            .onSuccess { emit(Result.Success(it)) }
-            .onFailure { emit(Result.Error(it.message ?: "Error al consultar estado", it)) }
+    /**
+     * Obtiene el estado de un DTE
+     */
+    suspend fun obtenerEstadoDte(dteId: String): Resource<EstadoDteResponse> {
+        return remoteDataSource.obtenerEstadoDte(dteId)
+            .mapCatching { response ->
+                Resource.Success(response)
+            }
+            .getOrElse { exception ->
+                Resource.Error(exception as? Exception ?: Exception(exception.message))
+            }
     }
 
-    // ── Listar DTEs ─────────────────────────────────────────────────────────
-
-    fun listarDtes(
-        empresaId: String,
-        estadoFiltro: String? = null,
-        limit: Int = 50,
-        offset: Int = 0
-    ): Flow<Result<List<Dte>>> = flow {
-        emit(Result.Loading)
-        runCatching { remote.listarDtes(empresaId, estadoFiltro, limit, offset) }
-            .onSuccess { emit(Result.Success(it)) }
-            .onFailure { emit(Result.Error(it.message ?: "Error al listar DTEs", it)) }
+    /**
+     * Obtiene información del RUT
+     */
+    suspend fun obtenerInfoRut(rut: String): Resource<RutInfo> {
+        return remoteDataSource.obtenerInfoRut(rut)
+            .mapCatching { response ->
+                Resource.Success(response)
+            }
+            .getOrElse { exception ->
+                Resource.Error(exception as? Exception ?: Exception(exception.message))
+            }
     }
 
-    // ── Obtener DTE ─────────────────────────────────────────────────────────
-
-    fun obtenerDte(dteId: String): Flow<Result<Dte>> = flow {
-        emit(Result.Loading)
-        runCatching {
-            val dte = remote.obtenerDte(dteId)
-            val items = remote.obtenerItemsDte(dteId)
-            dte.copy(items = items)
-        }
-            .onSuccess { emit(Result.Success(it)) }
-            .onFailure { emit(Result.Error(it.message ?: "Error al obtener DTE", it)) }
+    /**
+     * Obtiene los folios disponibles para una empresa
+     */
+    suspend fun obtenerFolios(rutEmpresa: String): Resource<List<Folio>> {
+        return remoteDataSource.obtenerFolios(rutEmpresa)
+            .mapCatching { response ->
+                Resource.Success(response)
+            }
+            .getOrElse { exception ->
+                Resource.Error(exception as? Exception ?: Exception(exception.message))
+            }
     }
 
-    // ── Folios ──────────────────────────────────────────────────────────────
-
-    fun listarFolios(empresaId: String): Flow<Result<List<Folio>>> = flow {
-        emit(Result.Loading)
-        runCatching { remote.listarFolios(empresaId) }
-            .onSuccess { emit(Result.Success(it)) }
-            .onFailure { emit(Result.Error(it.message ?: "Error al obtener folios", it)) }
+    /**
+     * Obtiene los DTEs de una empresa
+     */
+    suspend fun obtenerDtesPorEmpresa(rutEmpresa: String): Resource<List<Dte>> {
+        return remoteDataSource.obtenerDtesPorEmpresa(rutEmpresa)
+            .mapCatching { response ->
+                Resource.Success(response)
+            }
+            .getOrElse { exception ->
+                Resource.Error(exception as? Exception ?: Exception(exception.message))
+            }
     }
 
-    // ── Lookup RUT ──────────────────────────────────────────────────────────
-
-    fun lookupRut(rut: String): Flow<Result<RutInfo>> = flow {
-        emit(Result.Loading)
-        runCatching { remote.lookupRut(rut) }
-            .onSuccess { emit(Result.Success(it)) }
-            .onFailure { emit(Result.Error(it.message ?: "RUT no encontrado", it)) }
+    /**
+     * Obtiene un DTE específico
+     */
+    suspend fun obtenerDte(dteId: String): Resource<Dte> {
+        return remoteDataSource.obtenerDte(dteId)
+            .mapCatching { response ->
+                Resource.Success(response)
+            }
+            .getOrElse { exception ->
+                Resource.Error(exception as? Exception ?: Exception(exception.message))
+            }
     }
 
-    // ── PDF / XML ───────────────────────────────────────────────────────────
+    /**
+     * Obtiene los items de un DTE
+     */
+    suspend fun obtenerItemsDte(dteId: String): Resource<List<ItemDte>> {
+        return remoteDataSource.obtenerItemsDte(dteId)
+            .mapCatching { response ->
+                Resource.Success(response)
+            }
+            .getOrElse { exception ->
+                Resource.Error(exception as? Exception ?: Exception(exception.message))
+            }
+    }
 
-    suspend fun getPdfUrl(pdfPath: String): String = remote.descargarPdfUrl(pdfPath)
-    suspend fun getXmlUrl(xmlPath: String): String = remote.descargarXmlUrl(xmlPath)
-
-    // ── Registrar certificado ───────────────────────────────────────────────
-
-    fun registrarCertificado(
-        empresaId: String,
-        pfxBase64: String,
-        clavePfx: String
-    ): Flow<Result<Boolean>> = flow {
-        emit(Result.Loading)
-        runCatching { remote.registrarCertificado(empresaId, pfxBase64, clavePfx) }
-            .onSuccess { emit(Result.Success(it)) }
-            .onFailure { emit(Result.Error(it.message ?: "Error al registrar certificado", it)) }
+    /**
+     * Obtiene el folio actual para un tipo de DTE
+     */
+    suspend fun obtenerFolioActual(
+        rutEmpresa: String,
+        tipoDte: Int
+    ): Resource<Folio> {
+        return remoteDataSource.obtenerFolioActual(rutEmpresa, tipoDte)
+            .mapCatching { response ->
+                Resource.Success(response)
+            }
+            .getOrElse { exception ->
+                Resource.Error(exception as? Exception ?: Exception(exception.message))
+            }
     }
 }

@@ -1,50 +1,46 @@
-package com.nexo.empresas.core.di
+package com.nexo.empresas.di
 
-import com.nexo.empresas.BuildConfig
+import com.nexo.empresas.core.util.Constants
 import com.nexo.empresas.data.remote.dte.DteRemoteDataSource
-import com.nexo.empresas.dte.data.repository.DteRepository
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import io.github.jan.supabase.SupabaseClient
+import com.nexo.empresas.data.repository.DteRepository
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import javax.inject.Singleton
+import org.koin.dsl.module
 
-@Module
-@InstallIn(SingletonComponent::class)
-object DteModule {
-    @Provides
-    @Singleton
-    fun provideDteHttpClient(): HttpClient = HttpClient(OkHttp) {
-        install(ContentNegotiation) {
-            json(Json { ignoreUnknownKeys = true; coerceInputValues = true })
-        }
-        defaultRequest {
-            // headers comunes.
+val dteModule = module {
+    // HttpClient para DTE API
+    single<HttpClient> {
+        HttpClient {
+            install(ContentNegotiation) {
+                json(Json {
+                    prettyPrint = true
+                    ignoreUnknownKeys = true
+                    isLenient = true
+                })
+            }
+            install(Logging) {
+                level = LogLevel.BODY
+            }
         }
     }
 
-    @Provides
-    @Singleton
-    fun provideDteRemoteDataSource(
-        supabase: SupabaseClient,
-        httpClient: HttpClient
-    ): DteRemoteDataSource = DteRemoteDataSource(
-        supabase        = supabase,
-        httpClient      = httpClient,
-        supabaseUrl     = BuildConfig.SUPABASE_URL,
-        supabaseAnonKey = BuildConfig.SUPABASE_ANON_KEY
-    )
+    // Remote Data Source
+    single {
+        DteRemoteDataSource(
+            httpClient = get(),
+            baseUrl = Constants.DTE_BASE_URL,
+            apiKey = Constants.DTE_API_KEY
+        )
+    }
 
-    @Provides
-    @Singleton
-    fun provideDteRepository(
-        remote: DteRemoteDataSource
-    ): DteRepository = DteRepository(remote)
+    // Repository
+    single {
+        DteRepository(
+            remoteDataSource = get()
+        )
+    }
 }
