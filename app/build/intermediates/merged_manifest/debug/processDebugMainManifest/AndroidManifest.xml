@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="cl.nexo.empresas"
+    package="com.nexo.empresas"
     android:versionCode="1"
     android:versionName="1.0.0" >
 
@@ -23,24 +23,23 @@
     <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
 
     <permission
-        android:name="cl.nexo.empresas.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        android:name="com.nexo.empresas.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
         android:protectionLevel="signature" />
 
-    <uses-permission android:name="cl.nexo.empresas.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+    <uses-permission android:name="com.nexo.empresas.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
 
     <application
-        android:name="cl.nexo.empresas.NexoEmpresasApp"
+        android:name="com.nexo.empresas.NexoEmpresasApp"
         android:allowBackup="true"
         android:appComponentFactory="androidx.core.app.CoreComponentFactory"
         android:debuggable="true"
         android:extractNativeLibs="false"
         android:icon="@mipmap/ic_launcher"
         android:label="NexoEmpresas"
-        android:testOnly="true"
         android:theme="@style/Theme.NexoEmpresas"
         android:usesCleartextTraffic="false" >
         <activity
-            android:name="cl.nexo.empresas.MainActivity"
+            android:name="com.nexo.empresas.MainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize" >
             <intent-filter>
@@ -52,7 +51,7 @@
 
         <!-- Firebase Cloud Messaging -->
         <service
-            android:name="cl.nexo.empresas.core.service.NexoFcmService"
+            android:name="com.nexo.empresas.core.service.NexoFcmService"
             android:exported="false" >
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
@@ -84,7 +83,7 @@
 
         <provider
             android:name="androidx.startup.InitializationProvider"
-            android:authorities="cl.nexo.empresas.androidx-startup"
+            android:authorities="com.nexo.empresas.androidx-startup"
             android:exported="false" >
             <meta-data
                 android:name="androidx.work.WorkManagerInitializer"
@@ -218,7 +217,7 @@
 
         <provider
             android:name="com.google.mlkit.common.internal.MlKitInitProvider"
-            android:authorities="cl.nexo.empresas.mlkitinitprovider"
+            android:authorities="com.nexo.empresas.mlkitinitprovider"
             android:exported="false"
             android:initOrder="99" />
 
@@ -279,7 +278,7 @@
 
         <provider
             android:name="com.google.firebase.provider.FirebaseInitProvider"
-            android:authorities="cl.nexo.empresas.firebaseinitprovider"
+            android:authorities="com.nexo.empresas.firebaseinitprovider"
             android:directBootAware="true"
             android:exported="false"
             android:initOrder="100" />

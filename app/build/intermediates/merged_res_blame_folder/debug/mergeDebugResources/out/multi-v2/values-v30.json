@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "cl.nexo.empresas.app-mergeDebugResources-68:/values-v30/values-v30.xml",
+            "outputFile": "com.nexo.empresas.app-mergeDebugResources-68:/values-v30/values-v30.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\exeku\\.gradle\\caches\\9.0.0\\transforms\\7c4b3b2131e482ec58ce574dc0f0f402\\transformed\\material3-release\\res\\values-v30\\values-v30.xml",
+                    "source": "C:\\Users\\exeku\\.gradle\\caches\\9.0.0\\transforms\\109bc4f2a47399ac248a290ffa39da50\\transformed\\material3-release\\res\\values-v30\\values-v30.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

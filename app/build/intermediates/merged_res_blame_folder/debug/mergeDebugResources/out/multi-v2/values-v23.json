@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "cl.nexo.empresas.app-mergeDebugResources-68:/values-v23/values-v23.xml",
+            "outputFile": "com.nexo.empresas.app-mergeDebugResources-68:/values-v23/values-v23.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\exeku\\.gradle\\caches\\9.0.0\\transforms\\29c15e85878b38ca3d8c47befed79275\\transformed\\appcompat-1.7.0\\res\\values-v23\\values-v23.xml",
+                    "source": "C:\\Users\\exeku\\.gradle\\caches\\9.0.0\\transforms\\ef9af8502ecdc676d3e77162e0d2002e\\transformed\\appcompat-1.7.0\\res\\values-v23\\values-v23.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,20,34,35,36,39,43,44,45,46",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -23,7 +23,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\exeku\\.gradle\\caches\\9.0.0\\transforms\\f760633c9bc9d8b2b54efe5cf12f2b37\\transformed\\work-runtime-2.9.1\\res\\values-v23\\values-v23.xml",
+                    "source": "C:\\Users\\exeku\\.gradle\\caches\\9.0.0\\transforms\\66c3eb9e94ec8d254a495bbfa3ffad48\\transformed\\work-runtime-2.9.1\\res\\values-v23\\values-v23.xml",
                     "from": {
                         "startLines": "2,3",
                         "startColumns": "4,4",

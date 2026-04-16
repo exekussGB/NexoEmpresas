@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "cl.nexo.empresas.app-mergeDebugResources-68:/values-ldltr-v21/values-ldltr-v21.xml",
+            "outputFile": "com.nexo.empresas.app-mergeDebugResources-68:/values-ldltr-v21/values-ldltr-v21.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\exeku\\.gradle\\caches\\9.0.0\\transforms\\29c15e85878b38ca3d8c47befed79275\\transformed\\appcompat-1.7.0\\res\\values-ldltr-v21\\values-ldltr-v21.xml",
+                    "source": "C:\\Users\\exeku\\.gradle\\caches\\9.0.0\\transforms\\ef9af8502ecdc676d3e77162e0d2002e\\transformed\\appcompat-1.7.0\\res\\values-ldltr-v21\\values-ldltr-v21.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

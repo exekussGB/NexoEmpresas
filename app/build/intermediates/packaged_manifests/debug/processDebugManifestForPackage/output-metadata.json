@@ -4,7 +4,7 @@
     "type": "PACKAGED_MANIFESTS",
     "kind": "Directory"
   },
-  "applicationId": "cl.nexo.empresas",
+  "applicationId": "com.nexo.empresas",
   "variantName": "debug",
   "elements": [
     {

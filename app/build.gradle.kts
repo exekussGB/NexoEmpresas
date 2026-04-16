@@ -10,11 +10,11 @@ plugins {
 }
 
 android {
-    namespace = "cl.nexo.empresas"
+    namespace = "com.nexo.empresas"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "cl.nexo.empresas"
+        applicationId = "com.nexo.empresas"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -115,4 +115,7 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.4.1")
     implementation("androidx.camera:camera-view:1.4.1")
     implementation("androidx.camera:camera-core:1.4.1")
+
+    implementation(libs.ktor.content.negotiation)
+    implementation(libs.ktor.serialization.json)
 }
