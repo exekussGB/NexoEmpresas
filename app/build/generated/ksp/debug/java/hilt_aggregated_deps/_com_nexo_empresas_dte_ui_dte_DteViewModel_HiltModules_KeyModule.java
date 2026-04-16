@@ -8,8 +8,8 @@ import javax.annotation.processing.Generated;
  */
 @AggregatedDeps(
     components = "dagger.hilt.android.components.ActivityRetainedComponent",
-    modules = "com.nexoempresas.dte.ui.dte.DteViewModel_HiltModules.KeyModule"
+    modules = "com.nexo.empresas.dte.ui.dte.DteViewModel_HiltModules.KeyModule"
 )
 @Generated("dagger.hilt.processor.internal.aggregateddeps.AggregatedDepsGenerator")
-public class _com_nexoempresas_dte_ui_dte_DteViewModel_HiltModules_KeyModule {
+public class _com_nexo_empresas_dte_ui_dte_DteViewModel_HiltModules_KeyModule {
 }

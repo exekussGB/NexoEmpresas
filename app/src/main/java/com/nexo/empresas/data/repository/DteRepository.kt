@@ -1,7 +1,7 @@
 package com.nexo.empresas.dte.data.repository
 
-import com.nexoempresas.dte.data.model.*
-import com.nexoempresas.dte.data.remote.DteRemoteDataSource
+import com.nexo.empresas.dte.data.model.*
+import com.nexo.empresas.dte.data.remote.DteRemoteDataSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject

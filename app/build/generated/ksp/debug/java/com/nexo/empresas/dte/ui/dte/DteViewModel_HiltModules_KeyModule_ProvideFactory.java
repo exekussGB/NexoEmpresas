@@ -1,4 +1,4 @@
-package com.nexoempresas.dte.ui.dte;
+package com.nexo.empresas.dte.ui.dte;
 
 import dagger.internal.DaggerGenerated;
 import dagger.internal.Factory;

@@ -1,4 +1,4 @@
-package com.nexoempresas.dte.ui.dte
+package com.nexo.empresas.dte.ui.dte
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,7 +15,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.nexoempresas.dte.data.model.TipoDte
+import com.nexo.empresas.dte.data.model.TipoDte
 import java.text.NumberFormat
 import java.util.Locale
 

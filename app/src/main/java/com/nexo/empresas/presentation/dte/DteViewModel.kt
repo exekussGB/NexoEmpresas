@@ -1,10 +1,10 @@
-package com.nexoempresas.dte.ui.dte
+package com.nexo.empresas.dte.ui.dte
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nexoempresas.dte.data.model.*
-import com.nexoempresas.dte.data.repository.DteRepository
-import com.nexoempresas.dte.data.repository.Result
+import com.nexo.empresas.dte.data.model.*
+import com.nexo.empresas.dte.data.repository.DteRepository
+import com.nexo.empresas.dte.data.repository.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch

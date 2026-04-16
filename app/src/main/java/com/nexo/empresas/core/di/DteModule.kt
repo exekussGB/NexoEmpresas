@@ -2,7 +2,7 @@ package com.nexo.empresas.core.di
 
 import com.nexo.empresas.BuildConfig
 import com.nexo.empresas.data.remote.dte.DteRemoteDataSource
-import com.nexo.empresas.data.repository.DteRepository
+import com.nexo.empresas.dte.data.repository.DteRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

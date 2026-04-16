@@ -1,4 +1,4 @@
-package com.nexoempresas.dte.ui.dte
+package com.nexo.empresas.dte.ui.dte
 
 import android.content.Intent
 import android.net.Uri
@@ -16,7 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.nexoempresas.dte.data.model.ItemDte
+import com.nexo.empresas.dte.data.model.ItemDte
 import java.text.NumberFormat
 import java.util.Locale
 

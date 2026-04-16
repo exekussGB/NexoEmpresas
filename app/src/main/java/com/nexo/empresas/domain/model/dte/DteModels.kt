@@ -1,4 +1,4 @@
-package com.nexoempresas.dte.data.model
+package com.nexo.empresas.dte.data.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

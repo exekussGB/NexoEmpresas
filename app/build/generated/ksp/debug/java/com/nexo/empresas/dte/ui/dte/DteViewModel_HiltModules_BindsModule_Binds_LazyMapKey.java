@@ -1,4 +1,4 @@
-package com.nexoempresas.dte.ui.dte;
+package com.nexo.empresas.dte.ui.dte;
 
 import dagger.internal.DaggerGenerated;
 import dagger.internal.IdentifierNameString;
@@ -20,9 +20,9 @@ import javax.annotation.processing.Generated;
     "deprecation",
     "nullness:initialization.field.uninitialized"
 })
-public final class DteViewModel_HiltModules_KeyModule_Provide_LazyMapKey {
+public final class DteViewModel_HiltModules_BindsModule_Binds_LazyMapKey {
   @KeepFieldType
   static DteViewModel keepFieldType;
 
-  public static String lazyClassKeyName = "com.nexoempresas.dte.ui.dte.DteViewModel";
+  public static String lazyClassKeyName = "com.nexo.empresas.dte.ui.dte.DteViewModel";
 }

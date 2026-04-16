@@ -1,1 +1,0 @@
--keep,allowobfuscation,allowshrinking class com.nexoempresas.dte.ui.dte.DteViewModel

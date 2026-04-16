@@ -1,4 +1,4 @@
-package com.nexoempresas.dte.ui.dte
+package com.nexo.empresas.dte.ui.dte
 
 import android.content.Context
 import android.net.Uri
