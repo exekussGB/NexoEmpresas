@@ -1,0 +1,1 @@
+-keep,allowobfuscation,allowshrinking class com.nexo.empresas.presentation.tutorial.OnboardingViewModel

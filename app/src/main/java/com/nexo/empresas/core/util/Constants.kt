@@ -13,4 +13,10 @@ object Constants {
     // DTE (Opcional para pruebas)
     const val DTE_BASE_URL = ""  // URL base de tu proveedor DTE
     const val DTE_API_KEY = ""   // API Key de tu proveedor DTE
+
+    // Tablas Supabase
+    const val TABLE_EMPRESAS = "empresas"
+    const val TABLE_EMPRESA_MEMBERS = "empresa_members"
+    const val TABLE_CONTACTOS = "contactos"
+    const val TABLE_CUENTAS_CORRIENTES = "cuentas_corrientes"
 }

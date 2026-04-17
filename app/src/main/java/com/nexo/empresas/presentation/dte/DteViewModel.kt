@@ -1,4 +1,4 @@
-package com.nexo.empresas.dte.ui.dte
+package com.nexo.empresas.presentation.dte
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

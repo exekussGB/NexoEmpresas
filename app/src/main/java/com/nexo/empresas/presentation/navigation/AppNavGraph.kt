@@ -30,6 +30,9 @@ fun AppNavGraph(
         navController = navController,
         startDestination = startDestination
     ) {
+        // Módulo DTE
+        dteNavGraph(navController)
+
         composable(Screen.Login.route) {
             LoginScreen(
                 onLoginSuccess = { navController.navigate(Screen.Empresas.route) { popUpTo(Screen.Login.route) { inclusive = true } } },
@@ -52,7 +55,7 @@ fun AppNavGraph(
 
         composable(Screen.Hub.route) {
             HubEmpresaScreen(
-                onNavigate = { screen -> navController.navigate(screen.route) },
+                onNavigate = { route -> navController.navigate(route) },
                 onLogout = {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }

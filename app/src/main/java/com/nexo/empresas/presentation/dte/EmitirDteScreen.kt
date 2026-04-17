@@ -1,4 +1,4 @@
-package com.nexo.empresas.dte.ui.dte
+package com.nexo.empresas.presentation.dte
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn

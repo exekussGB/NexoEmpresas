@@ -18,6 +18,13 @@ sealed class Screen(val route: String) {
     data object Simulador : Screen("simulador")
     data object Scanner : Screen("scanner")
     data object TutorialList : Screen("tutorial_list")
+
+    // DTE
+    data object DteRoot : Screen("dte")
+    data object DteLista : Screen("dte/lista/{empresaId}") {
+        fun route(id: String) = "dte/lista/$id"
+    }
+
     data object DocumentoDetail : Screen("documento/{documentoId}") {
         fun route(id: String) = "documento/$id"
     }

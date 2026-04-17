@@ -47,6 +47,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nexo.empresas.core.tutorial.TutorialManager
+import com.nexo.empresas.core.session.TenantManager
 import com.nexo.empresas.core.tutorial.TutorialModule
 import com.nexo.empresas.presentation.navigation.Screen
 import com.nexo.empresas.presentation.tutorial.OnboardingFlow
@@ -60,11 +61,14 @@ data class HubItem(val label: String, val icon: ImageVector, val screen: Screen)
 
 @HiltViewModel
 class HubViewModel @Inject constructor(
-    private val tutorialManager: TutorialManager
+    private val tutorialManager: TutorialManager,
+    val tenantManager: TenantManager
 ) : ViewModel() {
 
     private val _showOnboarding = MutableStateFlow(false)
     val showOnboarding = _showOnboarding.asStateFlow()
+
+    val currentEmpresaId: String? get() = tenantManager.currentEmpresaId
 
     init {
         viewModelScope.launch {
@@ -80,7 +84,7 @@ class HubViewModel @Inject constructor(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HubEmpresaScreen(
-    onNavigate: (Screen) -> Unit,
+    onNavigate: (String) -> Unit,
     onLogout: () -> Unit,
     viewModel: HubViewModel = hiltViewModel()
 ) {
@@ -94,6 +98,7 @@ fun HubEmpresaScreen(
         HubItem("Cheques", Icons.Default.Receipt, Screen.Cheques),
         HubItem("Cuentas", Icons.Default.AccountBalance, Screen.Cuentas),
         HubItem("Contactos", Icons.Default.Contacts, Screen.Contactos),
+        HubItem("Facturación", Icons.Default.Receipt, Screen.DteRoot),
         HubItem("Simulador", Icons.Default.Calculate, Screen.Simulador),
         HubItem("Opciones", Icons.Default.Settings, Screen.Opciones),
     )
@@ -121,7 +126,15 @@ fun HubEmpresaScreen(
         ) {
             items(items.dropLast(1)) { item ->
                 Card(
-                    onClick = { onNavigate(item.screen) },
+                    onClick = {
+                        if (item.screen == Screen.DteRoot) {
+                            viewModel.currentEmpresaId?.let { id ->
+                                onNavigate(Screen.DteLista.route(id))
+                            }
+                        } else {
+                            onNavigate(item.screen.route)
+                        }
+                    },
                     modifier = Modifier.aspectRatio(1f)
                 ) {
                     Column(
@@ -151,7 +164,15 @@ fun HubEmpresaScreen(
             item(span = { GridItemSpan(2) }) {
                 val opcion = items.last()
                 Card(
-                    onClick = { onNavigate(opcion.screen) },
+                    onClick = {
+                        if (opcion.screen == Screen.DteRoot) {
+                            viewModel.currentEmpresaId?.let { id ->
+                                onNavigate(Screen.DteLista.route(id))
+                            }
+                        } else {
+                            onNavigate(opcion.screen.route)
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(80.dp)

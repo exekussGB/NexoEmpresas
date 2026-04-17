@@ -1,5 +1,6 @@
 package com.nexo.empresas.presentation.hub;
 
+import com.nexo.empresas.core.session.TenantManager;
 import com.nexo.empresas.core.tutorial.TutorialManager;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.Factory;
@@ -27,20 +28,26 @@ import javax.annotation.processing.Generated;
 public final class HubViewModel_Factory implements Factory<HubViewModel> {
   private final Provider<TutorialManager> tutorialManagerProvider;
 
-  private HubViewModel_Factory(Provider<TutorialManager> tutorialManagerProvider) {
+  private final Provider<TenantManager> tenantManagerProvider;
+
+  private HubViewModel_Factory(Provider<TutorialManager> tutorialManagerProvider,
+      Provider<TenantManager> tenantManagerProvider) {
     this.tutorialManagerProvider = tutorialManagerProvider;
+    this.tenantManagerProvider = tenantManagerProvider;
   }
 
   @Override
   public HubViewModel get() {
-    return newInstance(tutorialManagerProvider.get());
+    return newInstance(tutorialManagerProvider.get(), tenantManagerProvider.get());
   }
 
-  public static HubViewModel_Factory create(Provider<TutorialManager> tutorialManagerProvider) {
-    return new HubViewModel_Factory(tutorialManagerProvider);
+  public static HubViewModel_Factory create(Provider<TutorialManager> tutorialManagerProvider,
+      Provider<TenantManager> tenantManagerProvider) {
+    return new HubViewModel_Factory(tutorialManagerProvider, tenantManagerProvider);
   }
 
-  public static HubViewModel newInstance(TutorialManager tutorialManager) {
-    return new HubViewModel(tutorialManager);
+  public static HubViewModel newInstance(TutorialManager tutorialManager,
+      TenantManager tenantManager) {
+    return new HubViewModel(tutorialManager, tenantManager);
   }
 }
