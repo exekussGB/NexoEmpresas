@@ -36,7 +36,6 @@
         android:extractNativeLibs="false"
         android:icon="@mipmap/ic_launcher"
         android:label="NexoEmpresas"
-        android:testOnly="true"
         android:theme="@style/Theme.NexoEmpresas"
         android:usesCleartextTraffic="false" >
         <activity
