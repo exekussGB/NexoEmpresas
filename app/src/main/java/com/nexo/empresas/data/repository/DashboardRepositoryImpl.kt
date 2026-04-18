@@ -10,6 +10,11 @@ import kotlinx.serialization.json.put
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Implementación del repositorio de Dashboard.
+ * Consume funciones remotas (RPC) de Supabase para obtener agregados financieros en tiempo real.
+ * Proporciona los datos para las tarjetas de resumen y gráficos de la pantalla principal.
+ */
 @Singleton
 class DashboardRepositoryImpl @Inject constructor(
     private val supabase: SupabaseClient,

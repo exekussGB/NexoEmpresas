@@ -11,6 +11,12 @@ import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Implementación del repositorio de Documentos (Facturas, Boletas, Comprobantes).
+ * Gestiona el ciclo de vida de los documentos financieros: creación, anulación y pago.
+ * Incluye lógica de negocio compleja para la gestión de cheques asociados y
+ * conciliación de documentos de referencia (pagos que saldan facturas).
+ */
 @Singleton
 class DocumentosRepositoryImpl @Inject constructor(
     private val supabaseClient: SupabaseClient,

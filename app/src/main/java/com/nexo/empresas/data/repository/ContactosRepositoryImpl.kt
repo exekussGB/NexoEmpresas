@@ -9,6 +9,11 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import javax.inject.Inject
 
+/**
+ * Implementación del repositorio de Contactos.
+ * Gestiona la sincronización de clientes y proveedores desde Supabase Postgrest.
+ * Permite realizar búsquedas, filtrado y gestión de la agenda de la empresa.
+ */
 class ContactosRepositoryImpl @Inject constructor(
     private val client: SupabaseClient
 ) : ContactosRepository {
