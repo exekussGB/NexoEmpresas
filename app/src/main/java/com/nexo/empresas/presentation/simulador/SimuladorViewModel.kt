@@ -38,7 +38,7 @@ class SimuladorViewModel : ViewModel() {
         // ── 1. Gratificación ──
         val gratificacion = when (i.gratificacionTipo) {
             GratificacionTipo.ART_50 -> {
-                val topeGrat = (RC.TOPE_GRATIFICACION_ART50 * RC.INGRESO_MINIMO).toLong()
+                val topeGrat = (RC.TOPE_GRATIFICACION_ART50 * RC.INGRESO_MINIMO / 12.0).roundToLong()
                 min((i.sueldoBase * 0.25).toLong(), topeGrat)
             }
             GratificacionTipo.ART_47 -> (i.sueldoBase * 0.30).toLong()

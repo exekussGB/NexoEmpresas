@@ -9,7 +9,7 @@ object RemuneracionesChile {
     // ── UTM e Indicadores (Marzo 2026) ──
     const val UTM = 69_889L                  // Valor UTM marzo 2026
     const val UF = 38_876.52                 // Referencial
-    const val INGRESO_MINIMO = 500_000L      // Sueldo mínimo vigente
+    const val INGRESO_MINIMO = 539_000L      // Ley 21.751, vigente desde enero 2026
     const val TOPE_IMPONIBLE_UF = 81.6       // 81,6 UF
     val TOPE_IMPONIBLE: Long get() = (TOPE_IMPONIBLE_UF * UF).toLong() // ~$3.173.208
 
