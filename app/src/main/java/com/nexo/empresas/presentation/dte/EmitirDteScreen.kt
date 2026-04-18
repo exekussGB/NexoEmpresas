@@ -22,7 +22,6 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EmitirDteScreen(
-    empresaId: String,
     onNavigateBack: () -> Unit,
     onDteEmitido: (String) -> Unit,
     viewModel: DteViewModel = hiltViewModel()
@@ -30,7 +29,6 @@ fun EmitirDteScreen(
     val uiState by viewModel.emitirState.collectAsStateWithLifecycle()
     val formatter = NumberFormat.getCurrencyInstance(Locale("es", "CL"))
 
-    // Navegar al detalle cuando se emite exitosamente
     LaunchedEffect(uiState.success, uiState.dteEmitido) {
         if (uiState.success && uiState.dteEmitido?.id != null) {
             onDteEmitido(uiState.dteEmitido!!.id!!)
@@ -52,14 +50,13 @@ fun EmitirDteScreen(
     ) { paddingValues ->
         LazyColumn(
             contentPadding = PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
+                start = 16.dp, end = 16.dp,
                 top = paddingValues.calculateTopPadding() + 8.dp,
                 bottom = 120.dp
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // ── Tipo de DTE ────────────────────────────────────────────────
+            // Tipo DTE
             item {
                 SectionTitle("Tipo de Documento")
                 TipoDteSelector(
@@ -68,7 +65,7 @@ fun EmitirDteScreen(
                 )
             }
 
-            // ── Datos del receptor ─────────────────────────────────────────
+            // Receptor
             item {
                 SectionTitle("Receptor")
                 ReceptorForm(
@@ -86,7 +83,7 @@ fun EmitirDteScreen(
                 )
             }
 
-            // ── Items ──────────────────────────────────────────────────────
+            // Items
             item { SectionTitle("Items / Detalle") }
 
             itemsIndexed(uiState.items) { index, item ->
@@ -110,12 +107,11 @@ fun EmitirDteScreen(
                 }
             }
 
-            // ── Resumen de totales ─────────────────────────────────────────
+            // Totales
             item {
                 val neto = uiState.items.sumOf { it.montoNeto }
                 val iva = (neto * 0.19).toLong()
                 val total = neto + iva
-
                 ResumenTotales(
                     neto = formatter.format(neto),
                     iva = formatter.format(iva),
@@ -123,7 +119,7 @@ fun EmitirDteScreen(
                 )
             }
 
-            // ── Error y botón emitir ───────────────────────────────────────
+            // Error y botón emitir
             item {
                 uiState.error?.let {
                     Text(
@@ -135,7 +131,7 @@ fun EmitirDteScreen(
                 }
 
                 Button(
-                    onClick = { viewModel.emitirDte(empresaId) },
+                    onClick = { viewModel.emitirDte() },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !uiState.isLoading
                 ) {
@@ -167,29 +163,20 @@ private fun TipoDteSelector(
     onTipoSelected: (TipoDte) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = it }
-    ) {
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
         OutlinedTextField(
             value = tipoSeleccionado.descripcion,
             onValueChange = {},
             readOnly = true,
             label = { Text("Tipo de documento") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor()
+            modifier = Modifier.fillMaxWidth().menuAnchor()
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             TipoDte.entries.forEach { tipo ->
                 DropdownMenuItem(
                     text = { Text("(${tipo.codigo}) ${tipo.descripcion}") },
-                    onClick = {
-                        onTipoSelected(tipo)
-                        expanded = false
-                    }
+                    onClick = { onTipoSelected(tipo); expanded = false }
                 )
             }
         }
@@ -200,16 +187,10 @@ private fun TipoDteSelector(
 
 @Composable
 private fun ReceptorForm(
-    rut: String,
-    razonSocial: String,
-    giro: String,
-    direccion: String,
-    lookupLoading: Boolean,
-    lookupError: String?,
-    onRutChange: (String) -> Unit,
-    onRazonSocialChange: (String) -> Unit,
-    onGiroChange: (String) -> Unit,
-    onDireccionChange: (String) -> Unit,
+    rut: String, razonSocial: String, giro: String, direccion: String,
+    lookupLoading: Boolean, lookupError: String?,
+    onRutChange: (String) -> Unit, onRazonSocialChange: (String) -> Unit,
+    onGiroChange: (String) -> Unit, onDireccionChange: (String) -> Unit,
     onLookupRut: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -226,54 +207,41 @@ private fun ReceptorForm(
                 singleLine = true
             )
             Spacer(Modifier.width(8.dp))
-            IconButton(
-                onClick = onLookupRut,
-                enabled = rut.length >= 8 && !lookupLoading
-            ) {
+            IconButton(onClick = onLookupRut, enabled = rut.length >= 8 && !lookupLoading) {
                 if (lookupLoading) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                 } else {
-                    Icon(Icons.Default.Search, contentDescription = "Buscar RUT en SII")
+                    Icon(Icons.Default.Search, contentDescription = "Buscar RUT")
                 }
             }
         }
-
         OutlinedTextField(
-            value = razonSocial,
-            onValueChange = onRazonSocialChange,
+            value = razonSocial, onValueChange = onRazonSocialChange,
             label = { Text("Razón Social") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            modifier = Modifier.fillMaxWidth(), singleLine = true
         )
         OutlinedTextField(
-            value = giro,
-            onValueChange = onGiroChange,
+            value = giro, onValueChange = onGiroChange,
             label = { Text("Giro (opcional)") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            modifier = Modifier.fillMaxWidth(), singleLine = true
         )
         OutlinedTextField(
-            value = direccion,
-            onValueChange = onDireccionChange,
+            value = direccion, onValueChange = onDireccionChange,
             label = { Text("Dirección (opcional)") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            modifier = Modifier.fillMaxWidth(), singleLine = true
         )
     }
 }
 
-// ─── Formulario item ──────────────────────────────────────────────────────────
+// ─── Formulario ítem ──────────────────────────────────────────────────────────
 
 @Composable
 private fun ItemDteForm(
-    index: Int,
-    item: ItemFormState,
+    index: Int, item: ItemFormState,
     onItemChange: (ItemFormState) -> Unit,
-    onEliminar: () -> Unit,
-    canDelete: Boolean
+    onEliminar: () -> Unit, canDelete: Boolean
 ) {
     val formatter = NumberFormat.getCurrencyInstance(Locale("es", "CL"))
-
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
@@ -281,52 +249,47 @@ private fun ItemDteForm(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Ítem ${index + 1}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text("Ítem ${index + 1}", style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold)
                 if (canDelete) {
                     IconButton(onClick = onEliminar, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.Delete, contentDescription = "Eliminar ítem", tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Default.Delete, contentDescription = "Eliminar",
+                            tint = MaterialTheme.colorScheme.error)
                     }
                 }
             }
-
             OutlinedTextField(
                 value = item.descripcion,
                 onValueChange = { onItemChange(item.copy(descripcion = it)) },
                 label = { Text("Descripción") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                modifier = Modifier.fillMaxWidth(), singleLine = true
             )
-
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = item.cantidad,
                     onValueChange = { onItemChange(item.copy(cantidad = it)) },
-                    label = { Text("Cantidad") },
-                    modifier = Modifier.weight(1f),
+                    label = { Text("Cant.") }, modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
                 )
                 OutlinedTextField(
                     value = item.precioUnitario,
                     onValueChange = { onItemChange(item.copy(precioUnitario = it)) },
-                    label = { Text("Precio unitario") },
-                    modifier = Modifier.weight(2f),
+                    label = { Text("Precio") }, modifier = Modifier.weight(2f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true
                 )
                 OutlinedTextField(
                     value = item.descuento,
                     onValueChange = { onItemChange(item.copy(descuento = it)) },
-                    label = { Text("Desc. %") },
-                    modifier = Modifier.weight(1f),
+                    label = { Text("Desc%") }, modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
                 )
             }
-
             if (item.montoNeto > 0) {
                 Text(
-                    text = "Subtotal neto: ${formatter.format(item.montoNeto)}",
+                    text = "Subtotal: ${formatter.format(item.montoNeto)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -339,13 +302,9 @@ private fun ItemDteForm(
 
 @Composable
 private fun ResumenTotales(neto: String, iva: String, total: String) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-    ) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text("Resumen", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)

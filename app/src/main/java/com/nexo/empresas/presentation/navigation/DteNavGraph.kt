@@ -1,4 +1,4 @@
-package com.nexo.empresas.presentation.navigation
+package com.nexo.empresas.presentation.navigation.dte
 
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -11,105 +11,86 @@ import com.nexo.empresas.presentation.dte.*
 // ─── Rutas ────────────────────────────────────────────────────────────────────
 
 object DteRoutes {
-    val ROOT = Screen.DteRoot.route
+    const val ROOT = "dte"
 
-    // Lista de DTEs
-    val LISTA = Screen.DteLista.route
-    fun lista(empresaId: String) = Screen.DteLista.route(empresaId)
+    // Lista — recibe empresaId solo para entrar al grafo desde el Hub
+    const val LISTA = "dte/lista/{empresaId}"
+    fun lista(empresaId: String) = "dte/lista/$empresaId"
 
-    // Emitir nuevo DTE
-    const val EMITIR = "dte/emitir/{empresaId}"
-    fun emitir(empresaId: String) = "dte/emitir/$empresaId"
+    // Las demás pantallas obtienen el empresaId del TenantManager
+    const val EMITIR    = "dte/emitir"
+    const val FOLIOS    = "dte/folios"
+    const val CERT      = "dte/certificado"
 
-    // Detalle de un DTE
-    const val DETALLE = "dte/detalle/{dteId}"
+    // Detalle sí necesita el dteId
+    const val DETALLE   = "dte/detalle/{dteId}"
     fun detalle(dteId: String) = "dte/detalle/$dteId"
-
-    // Gestión de folios
-    const val FOLIOS = "dte/folios/{empresaId}"
-    fun folios(empresaId: String) = "dte/folios/$empresaId"
-
-    // Onboarding certificado
-    const val CERTIFICADO = "dte/certificado/{empresaId}"
-    fun certificado(empresaId: String) = "dte/certificado/$empresaId"
 }
 
-// ─── Grafo de navegación del módulo DTE ──────────────────────────────────────
+// ─── Grafo de navegación ──────────────────────────────────────────────────────
 
 fun NavGraphBuilder.dteNavGraph(navController: NavHostController) {
-    // ── Lista de DTEs ──────────────────────────────────────────────────
-    composable(
-        route = DteRoutes.LISTA,
-        arguments = listOf(navArgument("empresaId") { type = NavType.StringType })
-    ) { backStack ->
-        val empresaId = backStack.arguments?.getString("empresaId") ?: return@composable
-        ListaDtesScreen(
-            empresaId = empresaId,
-            onNavigateToDetalle = { dteId ->
-                navController.navigate(DteRoutes.detalle(dteId))
-            },
-            onNavigateToEmitir = {
-                navController.navigate(DteRoutes.emitir(empresaId))
-            },
-            onBack = { navController.popBackStack() }
-        )
-    }
-
-    // ── Emitir DTE ─────────────────────────────────────────────────────
-    composable(
-        route = DteRoutes.EMITIR,
-        arguments = listOf(navArgument("empresaId") { type = NavType.StringType })
-    ) { backStack ->
-        val empresaId = backStack.arguments?.getString("empresaId") ?: return@composable
-        EmitirDteScreen(
-            empresaId = empresaId,
-            onNavigateBack = { navController.popBackStack() },
-            onDteEmitido = { dteId ->
-                navController.navigate(DteRoutes.detalle(dteId)) {
-                    popUpTo(DteRoutes.lista(empresaId))
+    navigation(
+        startDestination = DteRoutes.LISTA,
+        route = DteRoutes.ROOT
+    ) {
+        // Lista de DTEs
+        composable(
+            route = DteRoutes.LISTA,
+            arguments = listOf(navArgument("empresaId") { type = NavType.StringType })
+        ) {
+            ListaDtesScreen(
+                onNavigateToDetalle = { dteId ->
+                    navController.navigate(DteRoutes.detalle(dteId))
+                },
+                onNavigateToEmitir = {
+                    navController.navigate(DteRoutes.EMITIR)
+                },
+                onBack = {
+                    navController.popBackStack()
                 }
-            }
-        )
-    }
+            )
+        }
 
-    // ── Detalle DTE ────────────────────────────────────────────────────
-    composable(
-        route = DteRoutes.DETALLE,
-        arguments = listOf(navArgument("dteId") { type = NavType.StringType })
-    ) { backStack ->
-        val dteId = backStack.arguments?.getString("dteId") ?: return@composable
-        DetalleDteScreen(
-            dteId = dteId,
-            onNavigateBack = { navController.popBackStack() }
-        )
-    }
-
-    // ── Folios ─────────────────────────────────────────────────────────
-    composable(
-        route = DteRoutes.FOLIOS,
-        arguments = listOf(navArgument("empresaId") { type = NavType.StringType })
-    ) { backStack ->
-        val empresaId = backStack.arguments?.getString("empresaId") ?: return@composable
-        FoliosScreen(
-            empresaId = empresaId,
-            onNavigateBack = { navController.popBackStack() }
-        )
-    }
-
-    // ── Certificado / Onboarding ───────────────────────────────────────
-    composable(
-        route = DteRoutes.CERTIFICADO,
-        arguments = listOf(navArgument("empresaId") { type = NavType.StringType })
-    ) { backStack ->
-        val empresaId = backStack.arguments?.getString("empresaId") ?: return@composable
-        OnboardingCertificadoScreen(
-            empresaId = empresaId,
-            onNavigateBack = { navController.popBackStack() },
-            onCertificadoRegistrado = {
-                navController.navigate(DteRoutes.lista(empresaId)) {
-                    popUpTo(DteRoutes.certificado(empresaId)) { inclusive = true }
+        // Emitir DTE
+        composable(route = DteRoutes.EMITIR) {
+            EmitirDteScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onDteEmitido = { dteId ->
+                    navController.navigate(DteRoutes.detalle(dteId)) {
+                        popUpTo(DteRoutes.EMITIR) { inclusive = true }
+                    }
                 }
-            }
-        )
+            )
+        }
+
+        // Detalle DTE
+        composable(
+            route = DteRoutes.DETALLE,
+            arguments = listOf(navArgument("dteId") { type = NavType.StringType })
+        ) { backStack ->
+            val dteId = backStack.arguments?.getString("dteId") ?: return@composable
+            DetalleDteScreen(
+                dteId = dteId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // Folios
+        composable(route = DteRoutes.FOLIOS) {
+            FoliosScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // Certificado / Onboarding
+        composable(route = DteRoutes.CERT) {
+            OnboardingCertificadoScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onCertificadoRegistrado = {
+                    navController.popBackStack()
+                }
+            )
+        }
     }
 }

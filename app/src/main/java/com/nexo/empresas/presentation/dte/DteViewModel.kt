@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// ─── UI State general ────────────────────────────────────────────────────────
+// ─── UI States ────────────────────────────────────────────────────────────────
 
 data class DteListUiState(
     val dtes: List<Dte> = emptyList(),
@@ -25,7 +25,6 @@ data class EmitirDteUiState(
     val success: Boolean = false,
     val dteEmitido: Dte? = null,
     val error: String? = null,
-    // Formulario
     val tipoDte: TipoDte = TipoDte.FACTURA_ELECTRONICA,
     val rutReceptor: String = "",
     val razonSocialReceptor: String = "",
@@ -73,7 +72,7 @@ data class OnboardingUiState(
     val clavePfx: String = ""
 )
 
-// ─── ViewModel ───────────────────────────────────────────────────────────────
+// ─── ViewModel ────────────────────────────────────────────────────────────────
 
 @HiltViewModel
 class DteViewModel @Inject constructor(
@@ -81,23 +80,31 @@ class DteViewModel @Inject constructor(
     private val tenantManager: TenantManager
 ) : ViewModel() {
 
-    private val _empresaId = MutableStateFlow<String?>(tenantManager.currentEmpresaId)
-    val empresaId: StateFlow<String?> = _empresaId.asStateFlow()
+    // Lee el empresaId dinámicamente en cada llamada — nunca en el constructor
+    private fun getEmpresaId(): String? = tenantManager.currentEmpresaId
 
-    // ── Lista de DTEs ───────────────────────────────────────────────────────
+    // ── Lista de DTEs ─────────────────────────────────────────────────────────
 
     private val _listaState = MutableStateFlow(DteListUiState())
     val listaState: StateFlow<DteListUiState> = _listaState.asStateFlow()
 
-    fun cargarDtes(empresaId: String, estadoFiltro: String? = null) {
-        if (empresaId.isBlank()) return
+    fun cargarDtes(estadoFiltro: String? = null) {
+        val empresaId = getEmpresaId()
+        if (empresaId == null) {
+            _listaState.update { it.copy(isLoading = false, error = "Empresa no configurada") }
+            return
+        }
         viewModelScope.launch {
             repository.listarDtes(empresaId, estadoFiltro)
                 .collect { result ->
                     _listaState.update {
                         when (result) {
                             is Result.Loading -> it.copy(isLoading = true, error = null)
-                            is Result.Success -> it.copy(isLoading = false, dtes = result.data, estadoFiltro = estadoFiltro)
+                            is Result.Success -> it.copy(
+                                isLoading = false,
+                                dtes = result.data,
+                                estadoFiltro = estadoFiltro
+                            )
                             is Result.Error -> it.copy(isLoading = false, error = result.message)
                         }
                     }
@@ -105,11 +112,9 @@ class DteViewModel @Inject constructor(
         }
     }
 
-    fun filtrarPorEstado(empresaId: String, estado: String?) {
-        cargarDtes(empresaId, estado)
-    }
+    fun filtrarPorEstado(estado: String?) = cargarDtes(estado)
 
-    // ── Emitir DTE ──────────────────────────────────────────────────────────
+    // ── Emitir DTE ────────────────────────────────────────────────────────────
 
     private val _emitirState = MutableStateFlow(EmitirDteUiState())
     val emitirState: StateFlow<EmitirDteUiState> = _emitirState.asStateFlow()
@@ -128,11 +133,14 @@ class DteViewModel @Inject constructor(
                         is Result.Loading -> it.copy(rutLookupLoading = true, rutLookupError = null)
                         is Result.Success -> it.copy(
                             rutLookupLoading = false,
-                            razonSocialReceptor = result.data.razonSocial,
+                            razonSocialReceptor = result.data.razonSocial ?: "",
                             giroReceptor = result.data.giro ?: "",
                             direccionReceptor = result.data.direccion ?: ""
                         )
-                        is Result.Error -> it.copy(rutLookupLoading = false, rutLookupError = result.message)
+                        is Result.Error -> it.copy(
+                            rutLookupLoading = false,
+                            rutLookupError = result.message
+                        )
                     }
                 }
             }
@@ -156,7 +164,13 @@ class DteViewModel @Inject constructor(
         }
     }
 
-    fun emitirDte(empresaId: String) {
+    fun emitirDte() {
+        val empresaId = getEmpresaId()
+        if (empresaId == null) {
+            _emitirState.update { it.copy(error = "No hay empresa activa") }
+            return
+        }
+
         val state = _emitirState.value
         if (!validarFormulario(state)) return
 
@@ -182,7 +196,11 @@ class DteViewModel @Inject constructor(
                 _emitirState.update {
                     when (result) {
                         is Result.Loading -> it.copy(isLoading = true, error = null)
-                        is Result.Success -> it.copy(isLoading = false, success = true, dteEmitido = result.data)
+                        is Result.Success -> it.copy(
+                            isLoading = false,
+                            success = true,
+                            dteEmitido = result.data
+                        )
                         is Result.Error -> it.copy(isLoading = false, error = result.message)
                     }
                 }
@@ -208,7 +226,7 @@ class DteViewModel @Inject constructor(
         return true
     }
 
-    // ── Detalle DTE ─────────────────────────────────────────────────────────
+    // ── Detalle DTE ───────────────────────────────────────────────────────────
 
     private val _detalleState = MutableStateFlow(DetalleDteUiState())
     val detalleState: StateFlow<DetalleDteUiState> = _detalleState.asStateFlow()
@@ -242,26 +260,36 @@ class DteViewModel @Inject constructor(
         viewModelScope.launch {
             _detalleState.update { it.copy(consultandoEstado = true) }
             repository.consultarEstado(dteId).collect { result ->
-                if (result is Result.Success) {
-                    _detalleState.update { s ->
+                when (result) {
+                    is Result.Success -> _detalleState.update { s ->
                         s.copy(
                             consultandoEstado = false,
-                            dte = s.dte?.copy(estadoSii = result.data.estado, trackId = result.data.trackId)
+                            dte = s.dte?.copy(
+                                estadoSii = result.data.estado,
+                                trackId = result.data.trackId
+                            )
                         )
                     }
-                } else if (result is Result.Error) {
-                    _detalleState.update { it.copy(consultandoEstado = false, error = result.message) }
+                    is Result.Error -> _detalleState.update {
+                        it.copy(consultandoEstado = false, error = result.message)
+                    }
+                    else -> Unit
                 }
             }
         }
     }
 
-    // ── Folios ──────────────────────────────────────────────────────────────
+    // ── Folios ────────────────────────────────────────────────────────────────
 
     private val _foliosState = MutableStateFlow(FoliosUiState())
     val foliosState: StateFlow<FoliosUiState> = _foliosState.asStateFlow()
 
-    fun cargarFolios(empresaId: String) {
+    fun cargarFolios() {
+        val empresaId = getEmpresaId()
+        if (empresaId == null) {
+            _foliosState.update { it.copy(error = "Empresa no configurada") }
+            return
+        }
         viewModelScope.launch {
             repository.listarFolios(empresaId).collect { result ->
                 _foliosState.update {
@@ -275,7 +303,7 @@ class DteViewModel @Inject constructor(
         }
     }
 
-    // ── Onboarding / Certificado ────────────────────────────────────────────
+    // ── Onboarding / Certificado ──────────────────────────────────────────────
 
     private val _onboardingState = MutableStateFlow(OnboardingUiState())
     val onboardingState: StateFlow<OnboardingUiState> = _onboardingState.asStateFlow()
@@ -284,9 +312,16 @@ class DteViewModel @Inject constructor(
         _onboardingState.update { it.copy(pfxNombreArchivo = nombre, pfxBase64 = base64) }
     }
 
-    fun onClavePfxChange(clave: String) = _onboardingState.update { it.copy(clavePfx = clave) }
+    fun onClavePfxChange(clave: String) =
+        _onboardingState.update { it.copy(clavePfx = clave) }
 
-    fun registrarCertificado(empresaId: String) {
+    fun registrarCertificado() {
+        val empresaId = getEmpresaId()
+        if (empresaId == null) {
+            _onboardingState.update { it.copy(error = "Empresa no configurada") }
+            return
+        }
+
         val state = _onboardingState.value
         if (state.pfxBase64 == null) {
             _onboardingState.update { it.copy(error = "Selecciona el archivo .pfx") }

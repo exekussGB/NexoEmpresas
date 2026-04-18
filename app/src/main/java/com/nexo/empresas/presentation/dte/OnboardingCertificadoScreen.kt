@@ -24,18 +24,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
-/**
- * Pantalla de onboarding para registrar el certificado digital (.pfx / .p12) de la empresa.
- *
- * IMPORTANTE: El archivo .pfx se lee en memoria, se convierte a Base64 y se envía
- * directamente a la Edge Function de Supabase (registrar-certificado), la cual lo
- * almacena en Supabase Vault cifrado por empresa. El archivo NUNCA se guarda
- * en el dispositivo ni en Supabase Storage.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingCertificadoScreen(
-    empresaId: String,
     onNavigateBack: () -> Unit,
     onCertificadoRegistrado: () -> Unit,
     viewModel: DteViewModel = hiltViewModel()
@@ -44,20 +35,16 @@ fun OnboardingCertificadoScreen(
     val context = LocalContext.current
     var claveVisible by remember { mutableStateOf(false) }
 
-    // Navegar al completar
     LaunchedEffect(uiState.success) {
         if (uiState.success) onCertificadoRegistrado()
     }
 
-    // Launcher para seleccionar archivo .pfx / .p12
     val fileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
             val (nombre, base64) = readFileAsBase64(context, it)
-            if (base64 != null) {
-                viewModel.onPfxSeleccionado(nombre, base64)
-            }
+            if (base64 != null) viewModel.onPfxSeleccionado(nombre, base64)
         }
     }
 
@@ -81,60 +68,46 @@ fun OnboardingCertificadoScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // ── Información ────────────────────────────────────────────────
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            ) {
+            // Info
+            Card(colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                 Row(modifier = Modifier.padding(16.dp)) {
-                    Icon(
-                        Icons.Default.Security,
-                        contentDescription = null,
+                    Icon(Icons.Default.Security, contentDescription = null,
                         modifier = Modifier.size(32.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                        tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(12.dp))
                     Column {
-                        Text(
-                            "¿Qué es el certificado digital?",
+                        Text("¿Qué es el certificado digital?",
                             style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                            fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.height(4.dp))
                         Text(
                             "Es la firma electrónica que autentica y firma cada DTE ante el SII. " +
-                            "Se obtiene de proveedores como E-CertChile, Acepta o FirmaVirtual. " +
-                            "El archivo tiene extensión .pfx o .p12.",
+                                    "Se obtiene de proveedores como E-CertChile, Acepta o FirmaVirtual. " +
+                                    "El archivo tiene extensión .pfx o .p12.",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
                 }
             }
 
-            // ── Advertencia de seguridad ───────────────────────────────────
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                )
-            ) {
+            // Advertencia seguridad
+            Card(colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer)) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
-                    Icon(
-                        Icons.Default.Lock,
-                        contentDescription = null,
+                    Icon(Icons.Default.Lock, contentDescription = null,
                         modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.tertiary
-                    )
+                        tint = MaterialTheme.colorScheme.tertiary)
                     Spacer(Modifier.width(8.dp))
                     Text(
                         "Tu certificado se enviará cifrado al servidor y se almacenará " +
-                        "en Supabase Vault. Nunca quedará guardado en este dispositivo.",
+                                "en Supabase Vault. Nunca quedará guardado en este dispositivo.",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
 
-            // ── Selector de archivo ────────────────────────────────────────
+            // Selector archivo
             Text("Paso 1: Selecciona el archivo .pfx",
                 style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
 
@@ -149,22 +122,17 @@ fun OnboardingCertificadoScreen(
 
             if (uiState.pfxNombreArchivo != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.CheckCircle,
-                        contentDescription = null,
+                    Icon(Icons.Default.CheckCircle, contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
-                    )
+                        modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text(
-                        "Archivo listo: ${uiState.pfxNombreArchivo}",
+                    Text("Archivo listo: ${uiState.pfxNombreArchivo}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                        color = MaterialTheme.colorScheme.primary)
                 }
             }
 
-            // ── Clave del certificado ──────────────────────────────────────
+            // Clave
             Text("Paso 2: Ingresa la clave del certificado",
                 style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
 
@@ -173,11 +141,12 @@ fun OnboardingCertificadoScreen(
                 onValueChange = viewModel::onClavePfxChange,
                 label = { Text("Clave del certificado (.pfx)") },
                 visualTransformation = if (claveVisible) VisualTransformation.None
-                                       else PasswordVisualTransformation(),
+                else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { claveVisible = !claveVisible }) {
                         Icon(
-                            if (claveVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            if (claveVisible) Icons.Default.VisibilityOff
+                            else Icons.Default.Visibility,
                             contentDescription = if (claveVisible) "Ocultar" else "Mostrar"
                         )
                     }
@@ -187,27 +156,23 @@ fun OnboardingCertificadoScreen(
                 singleLine = true
             )
 
-            // ── Error ──────────────────────────────────────────────────────
+            // Error
             uiState.error?.let {
-                Text(
-                    text = it,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall
-                )
+                Text(it, color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall)
             }
 
-            // ── Botón registrar ────────────────────────────────────────────
+            // Botón registrar
             Button(
-                onClick = { viewModel.registrarCertificado(empresaId) },
+                onClick = { viewModel.registrarCertificado() },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoading && uiState.pfxBase64 != null && uiState.clavePfx.isNotBlank()
+                enabled = !uiState.isLoading &&
+                        uiState.pfxBase64 != null &&
+                        uiState.clavePfx.isNotBlank()
             ) {
                 if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp),
+                        color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                     Spacer(Modifier.width(8.dp))
                     Text("Registrando certificado...")
                 } else {
@@ -217,11 +182,13 @@ fun OnboardingCertificadoScreen(
                 }
             }
 
-            // ── Tabla de proveedores ───────────────────────────────────────
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+            // Proveedores
+            Card(colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Proveedores de certificado digital acreditados por el SII:",
-                        style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                    Text("Proveedores acreditados por el SII:",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(8.dp))
                     listOf(
                         "E-CertChile" to "ecertchile.cl",
@@ -241,8 +208,6 @@ fun OnboardingCertificadoScreen(
         }
     }
 }
-
-// ─── Utilidad: leer archivo como Base64 ──────────────────────────────────────
 
 private fun readFileAsBase64(context: Context, uri: Uri): Pair<String, String?> {
     val nombre = uri.lastPathSegment?.substringAfterLast('/') ?: "certificado.pfx"

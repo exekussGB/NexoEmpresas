@@ -22,14 +22,13 @@ import com.nexo.empresas.dte.data.model.Folio
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FoliosScreen(
-    empresaId: String,
     onNavigateBack: () -> Unit,
     viewModel: DteViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.foliosState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(empresaId) {
-        viewModel.cargarFolios(empresaId)
+    LaunchedEffect(Unit) {
+        viewModel.cargarFolios()
     }
 
     Scaffold(
@@ -42,7 +41,7 @@ fun FoliosScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.cargarFolios(empresaId) }) {
+                    IconButton(onClick = { viewModel.cargarFolios() }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Actualizar")
                     }
                 }
@@ -56,13 +55,12 @@ fun FoliosScreen(
                 }
             }
             uiState.error != null -> {
-                ErrorCard(uiState.error!!, onRetry = { viewModel.cargarFolios(empresaId) })
+                ErrorCard(uiState.error!!, onRetry = { viewModel.cargarFolios() })
             }
             else -> {
                 LazyColumn(
                     contentPadding = PaddingValues(
-                        start = 16.dp,
-                        end = 16.dp,
+                        start = 16.dp, end = 16.dp,
                         top = paddingValues.calculateTopPadding() + 8.dp,
                         bottom = 24.dp
                     ),
@@ -70,7 +68,7 @@ fun FoliosScreen(
                 ) {
                     item {
                         Text(
-                            text = "Estos son los rangos de folios (CAF) autorizados por el SII para tu empresa.",
+                            text = "Rangos de folios (CAF) autorizados por el SII para tu empresa.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(bottom = 4.dp)
@@ -79,7 +77,10 @@ fun FoliosScreen(
 
                     if (uiState.folios.isEmpty()) {
                         item {
-                            Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
+                            Box(
+                                Modifier.fillMaxWidth().padding(top = 48.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 Text(
                                     "Sin folios registrados. Solicita un CAF en palena.sii.cl",
                                     style = MaterialTheme.typography.bodyMedium,
@@ -94,24 +95,19 @@ fun FoliosScreen(
                     }
 
                     item {
-                        // Instrucciones para solicitar más folios
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
-                        ) {
+                        Card(colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )) {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                Text(
-                                    "¿Necesitas más folios?",
+                                Text("¿Necesitas más folios?",
                                     style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold
-                                )
+                                    fontWeight = FontWeight.SemiBold)
                                 Spacer(Modifier.height(4.dp))
                                 Text(
                                     "1. Ingresa a palena.sii.cl (producción) o maullin.sii.cl (certificación).\n" +
-                                    "2. Ve a Factura Electrónica → Solicitar Folios.\n" +
-                                    "3. Descarga el archivo CAF (.xml).\n" +
-                                    "4. Entrega el archivo al administrador para cargarlo en el sistema.",
+                                            "2. Ve a Factura Electrónica → Solicitar Folios.\n" +
+                                            "3. Descarga el archivo CAF (.xml).\n" +
+                                            "4. Entrega el archivo al administrador para cargarlo en el sistema.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -123,8 +119,6 @@ fun FoliosScreen(
         }
     }
 }
-
-// ─── Tarjeta de folio ─────────────────────────────────────────────────────────
 
 @Composable
 private fun FolioCard(folio: Folio) {
@@ -159,21 +153,14 @@ private fun FolioCard(folio: Folio) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-
                 if (alerta) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Warning,
-                            contentDescription = null,
+                        Icon(Icons.Default.Warning, contentDescription = null,
                             tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(16.dp)
-                        )
+                            modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text(
-                            "¡Pocos folios!",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
+                        Text("¡Pocos folios!", style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -189,12 +176,11 @@ private fun FolioCard(folio: Folio) {
 
             Spacer(Modifier.height(8.dp))
 
-            // Barra de progreso de uso
             LinearProgressIndicator(
                 progress = { porcentajeUsado },
                 modifier = Modifier.fillMaxWidth(),
                 color = if (alerta) MaterialTheme.colorScheme.error
-                        else MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.primary
             )
             Text(
                 text = "${(porcentajeUsado * 100).toInt()}% utilizado",
@@ -214,12 +200,9 @@ private fun FolioInfoItem(label: String, value: String, highlight: Boolean = fal
             style = MaterialTheme.typography.titleMedium,
             fontWeight = if (highlight) FontWeight.Bold else FontWeight.Normal,
             color = if (highlight) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurface
+            else MaterialTheme.colorScheme.onSurface
         )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Text(text = label, style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

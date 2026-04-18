@@ -45,16 +45,17 @@ class AuthViewModel @Inject constructor(
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
     init {
-        // Observar restauración de sesión: cuando Supabase recupera una sesión
-        // guardada (al abrir la app), cargar la empresa automáticamente.
         viewModelScope.launch {
             authRepository.sessionStatus.collect { status ->
+                println("DEBUG: sessionStatus = $status")
                 if (status is SessionStatus.Authenticated) {
                     authRepository.loadEmpresaForCurrentUser()
+                        .onSuccess {
+                            println("DEBUG: empresa cargada OK")
+                        }
                         .onFailure { e ->
-                            // Si falla (ej: sin conexión), no bloquear la app.
-                            // El error se mostrará cuando el usuario intente usar DTE.
-                            println("AuthViewModel: no se pudo cargar empresa: ${e.message}")
+                            println("DEBUG: ERROR cargando empresa = ${e.message}")
+                            println("DEBUG: ERROR causa = ${e.cause}")
                         }
                 }
             }

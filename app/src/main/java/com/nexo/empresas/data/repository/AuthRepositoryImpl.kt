@@ -64,7 +64,8 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun loadEmpresaForCurrentUser(): Result<Unit> = runCatching {
         val userId = client.auth.currentUserOrNull()?.id
             ?: error("No hay usuario autenticado")
-
+        println("DEBUG: userId = $userId")
+        println("DEBUG: empresa = ${tenantManager.empresa}")
         // 1. Obtener empresa_id desde empresa_usuarios
         val empresaUsuario = client.postgrest["empresa_usuarios"]
             .select {
@@ -72,6 +73,7 @@ class AuthRepositoryImpl @Inject constructor(
                 limit(1)
             }
             .decodeSingle<EmpresaUsuario>()
+        println("DEBUG: empresa_id encontrado = ${empresaUsuario.empresa_id}")
 
         // 2. Cargar datos completos de la empresa
         val empresa = client.postgrest["empresas"]
@@ -80,8 +82,10 @@ class AuthRepositoryImpl @Inject constructor(
                 limit(1)
             }
             .decodeSingle<Empresa>()
+        println("DEBUG: empresa cargada = ${empresa.nombre}")
 
         // 3. Registrar en TenantManager
         tenantManager.empresa = empresa
+        println("DEBUG: tenantManager.empresa después = ${tenantManager.empresa?.nombre}")
     }
 }

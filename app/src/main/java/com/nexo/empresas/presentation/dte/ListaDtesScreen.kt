@@ -8,8 +8,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -29,19 +29,15 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListaDtesScreen(
-    empresaId: String,
     onNavigateToDetalle: (String) -> Unit,
     onNavigateToEmitir: () -> Unit,
     onBack: () -> Unit,
     viewModel: DteViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.listaState.collectAsStateWithLifecycle()
-    val empresaIdState by viewModel.empresaId.collectAsStateWithLifecycle()
 
-    LaunchedEffect(empresaIdState) {
-        empresaIdState?.let { id ->
-            viewModel.cargarDtes(id)
-        }
+    LaunchedEffect(Unit) {
+        viewModel.cargarDtes()
     }
 
     Scaffold(
@@ -50,15 +46,11 @@ fun ListaDtesScreen(
                 title = { Text("Documentos Tributarios") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { 
-                        empresaIdState?.let { id ->
-                            viewModel.cargarDtes(id, uiState.estadoFiltro) 
-                        }
-                    }) {
+                    IconButton(onClick = { viewModel.cargarDtes(uiState.estadoFiltro) }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Actualizar")
                     }
                 }
@@ -77,42 +69,39 @@ fun ListaDtesScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            val id = empresaIdState
-            if (id == null) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                // ── Filtros de estado ──────────────────────────────────────────
-                FiltroEstadoRow(
-                    estadoActual = uiState.estadoFiltro,
-                    onFiltroSelected = { viewModel.filtrarPorEstado(id, it) }
-                )
+            FiltroEstadoRow(
+                estadoActual = uiState.estadoFiltro,
+                onFiltroSelected = { viewModel.filtrarPorEstado(it) }
+            )
 
-                // ── Contenido ─────────────────────────────────────────────────
-                when {
-                    uiState.isLoading -> {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
-                        }
+            when {
+                uiState.isLoading -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
                     }
-                    uiState.error != null -> {
-                        ErrorCard(
-                            message = uiState.error!!,
-                            onRetry = { viewModel.cargarDtes(id) }
-                        )
-                    }
-                    uiState.dtes.isEmpty() -> {
-                        EmptyDtesPlaceholder()
-                    }
-                    else -> {
-                        LazyColumn(
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(uiState.dtes, key = { it.id ?: it.hashCode().toString() }) { dte ->
-                                DteCard(dte = dte, onClick = { dte.id?.let(onNavigateToDetalle) })
-                            }
+                }
+                uiState.error != null -> {
+                    ErrorCard(
+                        message = uiState.error!!,
+                        onRetry = { viewModel.cargarDtes() }
+                    )
+                }
+                uiState.dtes.isEmpty() -> {
+                    EmptyDtesPlaceholder()
+                }
+                else -> {
+                    LazyColumn(
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(
+                            uiState.dtes,
+                            key = { it.id ?: it.hashCode().toString() }
+                        ) { dte ->
+                            DteCard(
+                                dte = dte,
+                                onClick = { dte.id?.let(onNavigateToDetalle) }
+                            )
                         }
                     }
                 }
@@ -144,13 +133,10 @@ private fun FiltroEstadoRow(
     }
 }
 
-// ─── Tarjeta de DTE ──────────────────────────────────────────────────────────
+// ─── Tarjeta DTE ──────────────────────────────────────────────────────────────
 
 @Composable
-fun DteCard(
-    dte: Dte,
-    onClick: () -> Unit
-) {
+fun DteCard(dte: Dte, onClick: () -> Unit) {
     val formatter = NumberFormat.getCurrencyInstance(Locale("es", "CL"))
 
     Card(
@@ -212,16 +198,20 @@ fun DteCard(
     }
 }
 
-// ─── Badge de estado ──────────────────────────────────────────────────────────
+// ─── Badge estado ─────────────────────────────────────────────────────────────
 
 @Composable
 fun EstadoBadge(estado: EstadoDte) {
     val (bgColor, textColor) = when (estado) {
-        EstadoDte.ACEPTADO -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
-        EstadoDte.RECHAZADO -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
+        EstadoDte.ACEPTADO -> MaterialTheme.colorScheme.primaryContainer to
+                MaterialTheme.colorScheme.onPrimaryContainer
+        EstadoDte.RECHAZADO -> MaterialTheme.colorScheme.errorContainer to
+                MaterialTheme.colorScheme.onErrorContainer
         EstadoDte.ACEPTADO_REPAROS -> Color(0xFFFFF3E0) to Color(0xFFE65100)
-        EstadoDte.ENVIADO -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
-        EstadoDte.PENDIENTE -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+        EstadoDte.ENVIADO -> MaterialTheme.colorScheme.secondaryContainer to
+                MaterialTheme.colorScheme.onSecondaryContainer
+        EstadoDte.PENDIENTE -> MaterialTheme.colorScheme.surfaceVariant to
+                MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Box(
@@ -237,7 +227,7 @@ fun EstadoBadge(estado: EstadoDte) {
     }
 }
 
-// ─── Placeholder vacío ────────────────────────────────────────────────────────
+// ─── Placeholders ─────────────────────────────────────────────────────────────
 
 @Composable
 private fun EmptyDtesPlaceholder() {
@@ -252,8 +242,6 @@ private fun EmptyDtesPlaceholder() {
         }
     }
 }
-
-// ─── Error card ───────────────────────────────────────────────────────────────
 
 @Composable
 fun ErrorCard(message: String, onRetry: () -> Unit) {

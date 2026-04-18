@@ -16,6 +16,7 @@ import com.nexo.empresas.presentation.documentos.DocumentosScreen
 import com.nexo.empresas.presentation.empresas.EmpresasScreen
 import com.nexo.empresas.presentation.graficos.GraficosScreen
 import com.nexo.empresas.presentation.hub.HubEmpresaScreen
+import com.nexo.empresas.presentation.navigation.dte.dteNavGraph
 import com.nexo.empresas.presentation.settings.SettingsScreen
 import com.nexo.empresas.presentation.scanner.ScannerScreen
 import com.nexo.empresas.presentation.simulador.SimuladorScreen
