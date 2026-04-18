@@ -10,4 +10,10 @@ interface AuthRepository {
     suspend fun logout()
     fun isLoggedIn(): Boolean
     fun currentUserId(): String?
+
+    /**
+     * Carga la empresa asociada al usuario autenticado desde empresa_usuarios
+     * y la registra en TenantManager. Llamar después de login y al restaurar sesión.
+     */
+    suspend fun loadEmpresaForCurrentUser(): Result<Unit>
 }

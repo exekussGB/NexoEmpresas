@@ -885,7 +885,7 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
           return (T) new AlertasRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.sessionManagerProvider.get());
 
           case 8: // com.nexo.empresas.data.repository.AuthRepositoryImpl
-          return (T) new AuthRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get());
+          return (T) new AuthRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.tenantManagerProvider.get());
 
           case 9: // com.nexo.empresas.data.repository.ChequesRepositoryImpl
           return (T) new ChequesRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.sessionManagerProvider.get());

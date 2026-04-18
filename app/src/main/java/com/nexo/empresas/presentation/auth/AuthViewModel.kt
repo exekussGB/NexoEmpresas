@@ -1,6 +1,5 @@
 package com.nexo.empresas.presentation.auth
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nexo.empresas.domain.repository.AuthRepository
@@ -43,15 +42,30 @@ class AuthViewModel @Inject constructor(
         )
 
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
-    val uiState: StateFlow<AuthUiState> = _uiState
+    val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+
+    init {
+        // Observar restauración de sesión: cuando Supabase recupera una sesión
+        // guardada (al abrir la app), cargar la empresa automáticamente.
+        viewModelScope.launch {
+            authRepository.sessionStatus.collect { status ->
+                if (status is SessionStatus.Authenticated) {
+                    authRepository.loadEmpresaForCurrentUser()
+                        .onFailure { e ->
+                            // Si falla (ej: sin conexión), no bloquear la app.
+                            // El error se mostrará cuando el usuario intente usar DTE.
+                            println("AuthViewModel: no se pudo cargar empresa: ${e.message}")
+                        }
+                }
+            }
+        }
+    }
 
     fun login(email: String, password: String) {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             authRepository.login(email, password)
-                .onSuccess {
-                    _uiState.value = AuthUiState.Success
-                }
+                .onSuccess { _uiState.value = AuthUiState.Success }
                 .onFailure { e -> _uiState.value = AuthUiState.Error(parseLoginError(e)) }
         }
     }
@@ -61,11 +75,8 @@ class AuthViewModel @Inject constructor(
             _uiState.value = AuthUiState.Loading
             authRepository.register(email, password)
                 .onSuccess {
-                    // Intentar login automático después del registro
                     authRepository.login(email, password)
-                        .onSuccess {
-                            _uiState.value = AuthUiState.Success
-                        }
+                        .onSuccess { _uiState.value = AuthUiState.Success }
                         .onFailure { _uiState.value = AuthUiState.EmailPendingConfirmation }
                 }
                 .onFailure { e -> _uiState.value = AuthUiState.Error(parseRegisterError(e)) }
@@ -84,10 +95,10 @@ class AuthViewModel @Inject constructor(
         e.message?.contains("Invalid login credentials", ignoreCase = true) == true ->
             "Email o contraseña incorrectos."
         e.message?.contains("rate limit", ignoreCase = true) == true ||
-        e.message?.contains("over_email_send_rate_limit", ignoreCase = true) == true ->
+                e.message?.contains("over_email_send_rate_limit", ignoreCase = true) == true ->
             "Demasiados intentos. Espera unos minutos e intenta nuevamente."
         e.message?.contains("network", ignoreCase = true) == true ||
-        e.message?.contains("Unable to resolve host", ignoreCase = true) == true ->
+                e.message?.contains("Unable to resolve host", ignoreCase = true) == true ->
             "Sin conexión a internet. Verifica tu red."
         else -> "Error al iniciar sesión. Intenta nuevamente."
     }
@@ -98,21 +109,21 @@ class AuthViewModel @Inject constructor(
         e.message?.contains("Password should be at least", ignoreCase = true) == true ->
             "La contraseña debe tener al menos 6 caracteres."
         e.message?.contains("Unable to validate email", ignoreCase = true) == true ||
-        e.message?.contains("invalid email", ignoreCase = true) == true ->
+                e.message?.contains("invalid email", ignoreCase = true) == true ->
             "El formato del email no es válido."
         e.message?.contains("rate limit", ignoreCase = true) == true ->
             "Demasiados intentos. Espera unos minutos e intenta nuevamente."
         e.message?.contains("network", ignoreCase = true) == true ||
-        e.message?.contains("Unable to resolve host", ignoreCase = true) == true ->
+                e.message?.contains("Unable to resolve host", ignoreCase = true) == true ->
             "Sin conexión a internet. Verifica tu red."
         else -> "Error al registrarse. Intenta nuevamente."
     }
 }
 
 sealed class AuthUiState {
-    data object Idle                    : AuthUiState()
-    data object Loading                 : AuthUiState()
-    data object Success                 : AuthUiState()
-    data object EmailPendingConfirmation : AuthUiState()
+    data object Idle                       : AuthUiState()
+    data object Loading                    : AuthUiState()
+    data object Success                    : AuthUiState()
+    data object EmailPendingConfirmation   : AuthUiState()
     data class  Error(val message: String) : AuthUiState()
 }

@@ -1,5 +1,6 @@
 package com.nexo.empresas.data.repository;
 
+import com.nexo.empresas.core.session.TenantManager;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.Factory;
 import dagger.internal.Provider;
@@ -27,20 +28,25 @@ import javax.annotation.processing.Generated;
 public final class AuthRepositoryImpl_Factory implements Factory<AuthRepositoryImpl> {
   private final Provider<SupabaseClient> clientProvider;
 
-  private AuthRepositoryImpl_Factory(Provider<SupabaseClient> clientProvider) {
+  private final Provider<TenantManager> tenantManagerProvider;
+
+  private AuthRepositoryImpl_Factory(Provider<SupabaseClient> clientProvider,
+      Provider<TenantManager> tenantManagerProvider) {
     this.clientProvider = clientProvider;
+    this.tenantManagerProvider = tenantManagerProvider;
   }
 
   @Override
   public AuthRepositoryImpl get() {
-    return newInstance(clientProvider.get());
+    return newInstance(clientProvider.get(), tenantManagerProvider.get());
   }
 
-  public static AuthRepositoryImpl_Factory create(Provider<SupabaseClient> clientProvider) {
-    return new AuthRepositoryImpl_Factory(clientProvider);
+  public static AuthRepositoryImpl_Factory create(Provider<SupabaseClient> clientProvider,
+      Provider<TenantManager> tenantManagerProvider) {
+    return new AuthRepositoryImpl_Factory(clientProvider, tenantManagerProvider);
   }
 
-  public static AuthRepositoryImpl newInstance(SupabaseClient client) {
-    return new AuthRepositoryImpl(client);
+  public static AuthRepositoryImpl newInstance(SupabaseClient client, TenantManager tenantManager) {
+    return new AuthRepositoryImpl(client, tenantManager);
   }
 }
