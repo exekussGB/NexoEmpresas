@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AddCircle
@@ -90,18 +91,28 @@ fun HubEmpresaScreen(
 ) {
     val showOnboarding by viewModel.showOnboarding.collectAsState()
 
-    val items = listOf(
-        HubItem("Resumen", Icons.Default.Dashboard, Screen.Dashboard),
-        HubItem("Ingresar Doc.", Icons.Default.AddCircle, Screen.AddDocumento),
-        HubItem("Por Pagar", Icons.Default.TrendingDown, Screen.CuentasPagar),
-        HubItem("Por Cobrar", Icons.Default.TrendingUp, Screen.CuentasCobrar),
-        HubItem("Cheques", Icons.Default.Receipt, Screen.Cheques),
-        HubItem("Cuentas", Icons.Default.AccountBalance, Screen.Cuentas),
-        HubItem("Contactos", Icons.Default.Contacts, Screen.Contactos),
-        HubItem("Facturación", Icons.Default.Receipt, Screen.DteRoot),
-        HubItem("Simulador", Icons.Default.Calculate, Screen.Simulador),
-        HubItem("Opciones", Icons.Default.Settings, Screen.Opciones),
+    // ── Orden lógico por frecuencia de uso ───────────────────────────────────
+    val gridItems = listOf(
+        HubItem("Resumen",          Icons.Default.Dashboard,      Screen.Dashboard),
+        HubItem("Ingresar Doc.",    Icons.Default.AddCircle,      Screen.AddDocumento),
+        HubItem("Por Cobrar",       Icons.Default.TrendingUp,     Screen.CuentasCobrar),
+        HubItem("Por Pagar",        Icons.Default.TrendingDown,   Screen.CuentasPagar),
+        HubItem("Cheques",          Icons.Default.Receipt,        Screen.Cheques),
+        HubItem("Cuentas",          Icons.Default.AccountBalance, Screen.Cuentas),
+        HubItem("Facturación SII",  Icons.Default.Receipt,        Screen.DteRoot),
+        HubItem("Contactos",        Icons.Default.Contacts,       Screen.Contactos),
     )
+
+    val fullWidthItems = listOf(
+        HubItem("Simulador de Contratación", Icons.Default.Calculate, Screen.Simulador),
+        HubItem("Opciones",                  Icons.Default.Settings,  Screen.Opciones),
+    )
+
+    // ── Helper para resolver la ruta de navegación ────────────────────────────
+    fun resolveRoute(item: HubItem): String? = when (item.screen) {
+        Screen.DteRoot -> viewModel.currentEmpresaId?.let { Screen.DteLista.route(it) }
+        else -> item.screen.route
+    }
 
     Scaffold(
         topBar = {
@@ -124,17 +135,10 @@ fun HubEmpresaScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(items.dropLast(1)) { item ->
+            // ── Grid 2×2 ─────────────────────────────────────────────────────
+            items(gridItems) { item ->
                 Card(
-                    onClick = {
-                        if (item.screen == Screen.DteRoot) {
-                            viewModel.currentEmpresaId?.let { id ->
-                                onNavigate(Screen.DteLista.route(id))
-                            }
-                        } else {
-                            onNavigate(item.screen.route)
-                        }
-                    },
+                    onClick = { resolveRoute(item)?.let(onNavigate) },
                     modifier = Modifier.aspectRatio(1f)
                 ) {
                     Column(
@@ -146,7 +150,7 @@ fun HubEmpresaScreen(
                     ) {
                         Icon(
                             item.icon,
-                            null,
+                            contentDescription = null,
                             modifier = Modifier.size(40.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
@@ -160,22 +164,16 @@ fun HubEmpresaScreen(
                 }
             }
 
-            // Opciones a todo el ancho
-            item(span = { GridItemSpan(2) }) {
-                val opcion = items.last()
+            // ── Ancho completo: Simulador y Opciones ─────────────────────────
+            items(
+                fullWidthItems,
+                span = { GridItemSpan(2) }
+            ) { item ->
                 Card(
-                    onClick = {
-                        if (opcion.screen == Screen.DteRoot) {
-                            viewModel.currentEmpresaId?.let { id ->
-                                onNavigate(Screen.DteLista.route(id))
-                            }
-                        } else {
-                            onNavigate(opcion.screen.route)
-                        }
-                    },
+                    onClick = { resolveRoute(item)?.let(onNavigate) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(80.dp)
+                        .height(72.dp)
                 ) {
                     Row(
                         modifier = Modifier
@@ -185,20 +183,22 @@ fun HubEmpresaScreen(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Icon(
-                            opcion.icon,
-                            null,
-                            modifier = Modifier.size(32.dp),
+                            item.icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(28.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Spacer(Modifier.width(12.dp))
-                        Text(opcion.label, style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            item.label,
+                            style = MaterialTheme.typography.titleMedium
+                        )
                     }
                 }
             }
         }
     }
 
-    // Show onboarding on first visit
     if (showOnboarding) {
         OnboardingFlow(
             onComplete = { viewModel.onOnboardingComplete() }
