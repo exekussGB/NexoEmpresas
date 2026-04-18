@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,6 +32,7 @@ fun ListaDtesScreen(
     empresaId: String,
     onNavigateToDetalle: (String) -> Unit,
     onNavigateToEmitir: () -> Unit,
+    onBack: () -> Unit,
     viewModel: DteViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.listaState.collectAsStateWithLifecycle()
@@ -43,6 +45,11 @@ fun ListaDtesScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Documentos Tributarios") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                    }
+                },
                 actions = {
                     IconButton(onClick = { viewModel.cargarDtes(empresaId, uiState.estadoFiltro) }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Actualizar")

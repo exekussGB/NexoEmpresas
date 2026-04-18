@@ -50,7 +50,8 @@ fun NavGraphBuilder.dteNavGraph(navController: NavHostController) {
             },
             onNavigateToEmitir = {
                 navController.navigate(DteRoutes.emitir(empresaId))
-            }
+            },
+            onBack = { navController.popBackStack() }
         )
     }
 

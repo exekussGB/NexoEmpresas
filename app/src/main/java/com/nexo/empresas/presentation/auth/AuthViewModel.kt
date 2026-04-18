@@ -7,6 +7,7 @@ import com.nexo.empresas.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -15,7 +16,8 @@ class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    val isLoggedIn = mutableStateOf(authRepository.isLoggedIn())
+    private val _isLoggedIn = MutableStateFlow(authRepository.isLoggedIn())
+    val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
 
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
     val uiState: StateFlow<AuthUiState> = _uiState
@@ -24,7 +26,10 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             authRepository.login(email, password)
-                .onSuccess { _uiState.value = AuthUiState.Success }
+                .onSuccess {
+                    _isLoggedIn.value = true
+                    _uiState.value = AuthUiState.Success
+                }
                 .onFailure { e -> _uiState.value = AuthUiState.Error(parseLoginError(e)) }
         }
     }
@@ -36,7 +41,10 @@ class AuthViewModel @Inject constructor(
                 .onSuccess {
                     // Intentar login automático después del registro
                     authRepository.login(email, password)
-                        .onSuccess { _uiState.value = AuthUiState.Success }
+                        .onSuccess {
+                            _isLoggedIn.value = true
+                            _uiState.value = AuthUiState.Success
+                        }
                         .onFailure { _uiState.value = AuthUiState.EmailPendingConfirmation }
                 }
                 .onFailure { e -> _uiState.value = AuthUiState.Error(parseRegisterError(e)) }
@@ -46,7 +54,7 @@ class AuthViewModel @Inject constructor(
     fun logout() {
         viewModelScope.launch {
             authRepository.logout()
-            isLoggedIn.value = false
+            _isLoggedIn.value = false
         }
     }
 

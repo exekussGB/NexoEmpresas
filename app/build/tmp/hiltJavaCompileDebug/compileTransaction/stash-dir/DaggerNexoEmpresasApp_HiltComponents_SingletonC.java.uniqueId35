@@ -654,7 +654,7 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
           return (T) new GraficosViewModel(singletonCImpl.bindGraficosRepositoryProvider.get(), singletonCImpl.tenantManagerProvider.get(), singletonCImpl.sessionManagerProvider.get());
 
           case 11: // com.nexo.empresas.presentation.hub.HubViewModel
-          return (T) new HubViewModel(singletonCImpl.tutorialManagerProvider.get());
+          return (T) new HubViewModel(singletonCImpl.tutorialManagerProvider.get(), singletonCImpl.tenantManagerProvider.get());
 
           case 12: // com.nexo.empresas.presentation.tutorial.OnboardingViewModel
           return (T) new OnboardingViewModel(singletonCImpl.tutorialManagerProvider.get());
@@ -828,7 +828,7 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
     }
 
     @Override
-    public void injectNexoEmpresasApp(NexoEmpresasApp arg0) {
+    public void injectNexoEmpresasApp(NexoEmpresasApp nexoEmpresasApp) {
     }
 
     @Override
