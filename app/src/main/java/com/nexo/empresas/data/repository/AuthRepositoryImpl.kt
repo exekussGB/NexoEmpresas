@@ -4,11 +4,15 @@ import com.nexo.empresas.domain.repository.AuthRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.auth.status.SessionStatus
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
     private val client: SupabaseClient
 ) : AuthRepository {
+
+    override val sessionStatus: Flow<SessionStatus> = client.auth.sessionStatus
 
     override suspend fun login(email: String, password: String): Result<Unit> = runCatching {
         client.auth.signInWith(Email) {

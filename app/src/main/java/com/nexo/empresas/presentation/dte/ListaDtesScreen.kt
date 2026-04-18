@@ -36,9 +36,12 @@ fun ListaDtesScreen(
     viewModel: DteViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.listaState.collectAsStateWithLifecycle()
+    val empresaIdState by viewModel.empresaId.collectAsStateWithLifecycle()
 
-    LaunchedEffect(empresaId) {
-        viewModel.cargarDtes(empresaId)
+    LaunchedEffect(empresaIdState) {
+        empresaIdState?.let { id ->
+            viewModel.cargarDtes(id)
+        }
     }
 
     Scaffold(
@@ -51,7 +54,11 @@ fun ListaDtesScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.cargarDtes(empresaId, uiState.estadoFiltro) }) {
+                    IconButton(onClick = { 
+                        empresaIdState?.let { id ->
+                            viewModel.cargarDtes(id, uiState.estadoFiltro) 
+                        }
+                    }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Actualizar")
                     }
                 }
@@ -70,35 +77,42 @@ fun ListaDtesScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // ── Filtros de estado ──────────────────────────────────────────
-            FiltroEstadoRow(
-                estadoActual = uiState.estadoFiltro,
-                onFiltroSelected = { viewModel.filtrarPorEstado(empresaId, it) }
-            )
+            val id = empresaIdState
+            if (id == null) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                // ── Filtros de estado ──────────────────────────────────────────
+                FiltroEstadoRow(
+                    estadoActual = uiState.estadoFiltro,
+                    onFiltroSelected = { viewModel.filtrarPorEstado(id, it) }
+                )
 
-            // ── Contenido ─────────────────────────────────────────────────
-            when {
-                uiState.isLoading -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                // ── Contenido ─────────────────────────────────────────────────
+                when {
+                    uiState.isLoading -> {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
                     }
-                }
-                uiState.error != null -> {
-                    ErrorCard(
-                        message = uiState.error!!,
-                        onRetry = { viewModel.cargarDtes(empresaId) }
-                    )
-                }
-                uiState.dtes.isEmpty() -> {
-                    EmptyDtesPlaceholder()
-                }
-                else -> {
-                    LazyColumn(
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(uiState.dtes, key = { it.id ?: it.hashCode().toString() }) { dte ->
-                            DteCard(dte = dte, onClick = { dte.id?.let(onNavigateToDetalle) })
+                    uiState.error != null -> {
+                        ErrorCard(
+                            message = uiState.error!!,
+                            onRetry = { viewModel.cargarDtes(id) }
+                        )
+                    }
+                    uiState.dtes.isEmpty() -> {
+                        EmptyDtesPlaceholder()
+                    }
+                    else -> {
+                        LazyColumn(
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(uiState.dtes, key = { it.id ?: it.hashCode().toString() }) { dte ->
+                                DteCard(dte = dte, onClick = { dte.id?.let(onNavigateToDetalle) })
+                            }
                         }
                     }
                 }

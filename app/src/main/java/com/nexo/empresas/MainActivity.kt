@@ -4,8 +4,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import com.nexo.empresas.presentation.navigation.AppNavGraph
@@ -25,10 +30,16 @@ class MainActivity : ComponentActivity() {
                 val authViewModel: AuthViewModel = hiltViewModel()
                 val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
 
-                AppNavGraph(
-                    navController = navController,
-                    startDestination = if (isLoggedIn) Screen.Empresas.route else Screen.Login.route
-                )
+                if (isLoggedIn == null) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    AppNavGraph(
+                        navController = navController,
+                        startDestination = if (isLoggedIn == true) Screen.Empresas.route else Screen.Login.route
+                    )
+                }
             }
         }
     }

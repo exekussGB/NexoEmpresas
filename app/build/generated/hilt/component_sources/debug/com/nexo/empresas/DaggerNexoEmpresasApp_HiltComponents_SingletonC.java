@@ -645,7 +645,7 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
           return (T) new DocumentosViewModel(singletonCImpl.documentosRepositoryImplProvider.get(), singletonCImpl.sessionManagerProvider.get());
 
           case 8: // com.nexo.empresas.presentation.dte.DteViewModel
-          return (T) new DteViewModel(singletonCImpl.provideDteRepositoryProvider.get());
+          return (T) new DteViewModel(singletonCImpl.provideDteRepositoryProvider.get(), singletonCImpl.tenantManagerProvider.get());
 
           case 9: // com.nexo.empresas.presentation.empresas.EmpresasViewModel
           return (T) new EmpresasViewModel(singletonCImpl.bindEmpresasRepositoryProvider.get(), singletonCImpl.tenantManagerProvider.get(), singletonCImpl.sessionManagerProvider.get(), singletonCImpl.provideSupabaseClientProvider.get());

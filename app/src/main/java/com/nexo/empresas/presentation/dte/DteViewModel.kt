@@ -2,6 +2,7 @@ package com.nexo.empresas.presentation.dte
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nexo.empresas.core.session.TenantManager
 import com.nexo.empresas.dte.data.model.*
 import com.nexo.empresas.dte.data.repository.DteRepository
 import com.nexo.empresas.dte.data.repository.Result
@@ -76,8 +77,12 @@ data class OnboardingUiState(
 
 @HiltViewModel
 class DteViewModel @Inject constructor(
-    private val repository: DteRepository
+    private val repository: DteRepository,
+    private val tenantManager: TenantManager
 ) : ViewModel() {
+
+    private val _empresaId = MutableStateFlow<String?>(tenantManager.currentEmpresaId)
+    val empresaId: StateFlow<String?> = _empresaId.asStateFlow()
 
     // ── Lista de DTEs ───────────────────────────────────────────────────────
 
@@ -85,6 +90,7 @@ class DteViewModel @Inject constructor(
     val listaState: StateFlow<DteListUiState> = _listaState.asStateFlow()
 
     fun cargarDtes(empresaId: String, estadoFiltro: String? = null) {
+        if (empresaId.isBlank()) return
         viewModelScope.launch {
             repository.listarDtes(empresaId, estadoFiltro)
                 .collect { result ->
