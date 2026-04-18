@@ -16,18 +16,17 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -93,14 +92,14 @@ fun HubEmpresaScreen(
 
     // ── Orden lógico por frecuencia de uso ───────────────────────────────────
     val gridItems = listOf(
-        HubItem("Resumen",          Icons.Default.Dashboard,      Screen.Dashboard),
-        HubItem("Ingresar Doc.",    Icons.Default.AddCircle,      Screen.AddDocumento),
-        HubItem("Por Cobrar",       Icons.Default.TrendingUp,     Screen.CuentasCobrar),
-        HubItem("Por Pagar",        Icons.Default.TrendingDown,   Screen.CuentasPagar),
-        HubItem("Cheques",          Icons.Default.Receipt,        Screen.Cheques),
-        HubItem("Cuentas",          Icons.Default.AccountBalance, Screen.Cuentas),
-        HubItem("Facturación SII",  Icons.Default.Receipt,        Screen.DteRoot),
-        HubItem("Contactos",        Icons.Default.Contacts,       Screen.Contactos),
+        HubItem("Resumen",          Icons.Default.Dashboard,                Screen.Dashboard),
+        HubItem("Ingresar Doc.",    Icons.Default.AddCircle,                Screen.AddDocumento),
+        HubItem("Por Cobrar",       Icons.AutoMirrored.Filled.TrendingUp,   Screen.CuentasCobrar),
+        HubItem("Por Pagar",        Icons.AutoMirrored.Filled.TrendingDown, Screen.CuentasPagar),
+        HubItem("Cheques",          Icons.Default.Receipt,                  Screen.Cheques),
+        HubItem("Cuentas",          Icons.Default.AccountBalance,           Screen.Cuentas),
+        HubItem("Facturación SII",  Icons.Default.Receipt,                  Screen.DteRoot),
+        HubItem("Contactos",        Icons.Default.Contacts,                 Screen.Contactos),
     )
 
     val fullWidthItems = listOf(
@@ -120,7 +119,7 @@ fun HubEmpresaScreen(
                 title = { Text("NexoEmpresas") },
                 actions = {
                     IconButton(onClick = onLogout) {
-                        Icon(Icons.Default.Logout, "Cerrar sesión")
+                        Icon(Icons.AutoMirrored.Filled.Logout, "Cerrar sesión")
                     }
                 }
             )
