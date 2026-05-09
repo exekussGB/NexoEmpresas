@@ -7,7 +7,8 @@ package com.nexo.empresas.data.model
 object RemuneracionesChile {
 
     // ── Vigencia de parámetros ──
-    const val VIGENCIA_DESDE = "Enero 2026"
+    const val VIGENCIA_DESDE_FALLBACK = "Enero 2026"
+    var vigenciaDesde: String = "enero 2026"
 
     // ── UTM e Indicadores (Marzo 2026) ──
     var UTM = 69_889L                      // Valor UTM marzo 2026 (actualizable por API)
@@ -152,6 +153,10 @@ data class SimulacionInput(
     val tipoSalud: TipoSalud = TipoSalud.FONASA,
     val cotizacionIsapre: Long = 0,     // monto fijo en pesos si es Isapre
     val tasaMutualAdicional: Double = 0.0,
+    val colacionManual: Boolean = false,
+    val movilizacionManual: Boolean = false,
+    val otrosNoImponiblesManual: Boolean = false,
+    val warningPorDebajoMinimo: Boolean = false,
 )
 
 enum class GratificacionTipo(val label: String) {

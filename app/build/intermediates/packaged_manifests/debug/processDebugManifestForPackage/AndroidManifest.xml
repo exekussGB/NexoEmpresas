@@ -36,6 +36,7 @@
         android:extractNativeLibs="false"
         android:icon="@mipmap/ic_launcher"
         android:label="NexoEmpresas"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:testOnly="true"
         android:theme="@style/Theme.NexoEmpresas"
         android:usesCleartextTraffic="false" >
@@ -52,7 +53,7 @@
 
         <!-- Firebase Cloud Messaging -->
         <service
-            android:name="com.nexo.empresas.core.service.NexoFcmService"
+            android:name="com.nexo.empresas.core.service.DteFcmService"
             android:exported="false" >
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

@@ -1,4 +1,4 @@
-package com.nexo.empresas.dte
+package com.nexo.empresas.core.service
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -6,9 +6,17 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Servicio FCM para recibir notificaciones del estado de los DTEs.
@@ -40,31 +48,51 @@ class DteFcmService : FirebaseMessagingService() {
         super.onMessageReceived(message)
 
         val data = message.data
-        if (data["tipo"] != "dte_estado") return
+        if (data["tipo"] == "dte_estado") {
+            val dteId = data["dte_id"] ?: return
+            val folio = data["folio"] ?: "-"
+            val tipoDte = data["tipo_dte"] ?: "DTE"
+            val estado = data["estado"] ?: ""
+            val glosa = data["glosa"]
 
-        val dteId = data["dte_id"] ?: return
-        val folio = data["folio"] ?: "-"
-        val tipoDte = data["tipo_dte"] ?: "DTE"
-        val estado = data["estado"] ?: ""
-        val glosa = data["glosa"]
+            val (titulo, cuerpo) = when (estado) {
+                "ACEPTADO" -> "✅ DTE Aceptado" to "$tipoDte N° $folio fue aceptado por el SII."
+                "RECHAZADO" -> "❌ DTE Rechazado" to "$tipoDte N° $folio fue rechazado. ${glosa ?: ""}"
+                "ACEPTADO_REPAROS" -> "⚠️ DTE con Reparos" to "$tipoDte N° $folio aceptado con observaciones. ${glosa ?: ""}"
+                else -> "📄 Actualización DTE" to "$tipoDte N° $folio: $estado"
+            }
 
-        val (titulo, cuerpo) = when (estado) {
-            "ACEPTADO" -> "✅ DTE Aceptado" to "$tipoDte N° $folio fue aceptado por el SII."
-            "RECHAZADO" -> "❌ DTE Rechazado" to "$tipoDte N° $folio fue rechazado. ${glosa ?: ""}"
-            "ACEPTADO_REPAROS" -> "⚠️ DTE con Reparos" to "$tipoDte N° $folio aceptado con observaciones. ${glosa ?: ""}"
-            else -> "📄 Actualización DTE" to "$tipoDte N° $folio: $estado"
+            mostrarNotificacionDte(dteId, titulo, cuerpo)
+        } else {
+            // Manejo genérico para otros tipos de notificaciones (ej: vencimientos)
+            val titulo = message.notification?.title ?: data["title"] ?: "NexoEmpresas"
+            val cuerpo = message.notification?.body ?: data["body"] ?: return
+            mostrarNotificacionGenerica(titulo, cuerpo)
         }
-
-        mostrarNotificacion(dteId, titulo, cuerpo)
     }
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        // TODO: Enviar el nuevo token a Supabase para asociarlo al usuario/empresa
-        // DteTokenManager.updateToken(token)
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val fcmTokenManager = EntryPointAccessors.fromApplication(
+                    applicationContext,
+                    FcmTokenManagerEntryPoint::class.java
+                ).fcmTokenManager()
+                fcmTokenManager.registerCurrentToken()
+            } catch (e: Exception) {
+                Log.w("DteFcmService", "Token refresh failed: ${e.message}")
+            }
+        }
     }
 
-    private fun mostrarNotificacion(dteId: String, titulo: String, cuerpo: String) {
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface FcmTokenManagerEntryPoint {
+        fun fcmTokenManager(): FcmTokenManager
+    }
+
+    private fun mostrarNotificacionDte(dteId: String, titulo: String, cuerpo: String) {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         // Crear canal (Android 8+)
@@ -81,7 +109,6 @@ class DteFcmService : FirebaseMessagingService() {
         }
 
         // Intent para abrir el detalle del DTE al tocar la notificación
-        // Ajusta MainActivity y la ruta según tu setup de navegación
         val intent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra(EXTRA_DTE_ID, dteId)
@@ -91,11 +118,11 @@ class DteFcmService : FirebaseMessagingService() {
             this,
             dteId.hashCode(),
             intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE else PendingIntent.FLAG_UPDATE_CURRENT
         )
 
         val notificacion = NotificationCompat.Builder(this, CHANNEL_ID_DTE)
-            .setSmallIcon(android.R.drawable.ic_dialog_info) // Reemplaza con tu ícono
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(titulo)
             .setContentText(cuerpo)
             .setStyle(NotificationCompat.BigTextStyle().bigText(cuerpo))
@@ -105,5 +132,29 @@ class DteFcmService : FirebaseMessagingService() {
             .build()
 
         notificationManager.notify(dteId.hashCode(), notificacion)
+    }
+
+    private fun mostrarNotificacionGenerica(titulo: String, cuerpo: String) {
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channelId = "nexo_general_channel"
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val canal = NotificationChannel(
+                channelId,
+                "Notificaciones Generales",
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
+            notificationManager.createNotificationChannel(canal)
+        }
+
+        val notificacion = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(titulo)
+            .setContentText(cuerpo)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+
+        notificationManager.notify(System.currentTimeMillis().toInt(), notificacion)
     }
 }

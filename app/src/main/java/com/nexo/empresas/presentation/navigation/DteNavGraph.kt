@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.nexo.empresas.presentation.dte.*
+import com.nexo.empresas.presentation.dte.scanner.ScannerVerificacionScreen
 
 // ─── Rutas ────────────────────────────────────────────────────────────────────
 
@@ -25,6 +26,8 @@ object DteRoutes {
     // Detalle sí necesita el dteId
     const val DETALLE   = "dte/detalle/{dteId}"
     fun detalle(dteId: String) = "dte/detalle/$dteId"
+
+    const val SCANNER   = "dte/scanner"
 }
 
 // ─── Grafo de navegación ──────────────────────────────────────────────────────
@@ -45,6 +48,9 @@ fun NavGraphBuilder.dteNavGraph(navController: NavHostController) {
                 },
                 onNavigateToEmitir = {
                     navController.navigate(DteRoutes.EMITIR)
+                },
+                onNavigateToScanner = {
+                    navController.navigate(DteRoutes.SCANNER)
                 },
                 onBack = {
                     navController.popBackStack()
@@ -79,6 +85,13 @@ fun NavGraphBuilder.dteNavGraph(navController: NavHostController) {
         // Folios
         composable(route = DteRoutes.FOLIOS) {
             FoliosScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // Scanner Verificación
+        composable(route = DteRoutes.SCANNER) {
+            ScannerVerificacionScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

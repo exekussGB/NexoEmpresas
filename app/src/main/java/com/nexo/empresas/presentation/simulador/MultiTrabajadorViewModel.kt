@@ -1,11 +1,14 @@
 package com.nexo.empresas.presentation.simulador
 
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
 
-class MultiTrabajadorViewModel : ViewModel() {
+@HiltViewModel
+class MultiTrabajadorViewModel @Inject constructor() : ViewModel() {
 
     private val _state = MutableStateFlow(MultiTrabajadorState())
     val state: StateFlow<MultiTrabajadorState> = _state.asStateFlow()

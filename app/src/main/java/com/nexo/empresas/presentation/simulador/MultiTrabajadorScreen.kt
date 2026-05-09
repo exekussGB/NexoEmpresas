@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -24,7 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun MultiTrabajadorScreen(
     onBack: () -> Unit,
     initialCosto: Long = 0,
-    viewModel: MultiTrabajadorViewModel = viewModel()
+    viewModel: MultiTrabajadorViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
     val result by viewModel.result.collectAsState()

@@ -1,6 +1,7 @@
 package com.nexo.empresas.data.repository
 
 import com.nexo.empresas.core.session.TenantManager
+import com.nexo.empresas.core.service.FcmTokenManager
 import com.nexo.empresas.data.model.Empresa
 import com.nexo.empresas.domain.repository.AuthRepository
 import io.github.jan.supabase.SupabaseClient
@@ -21,7 +22,8 @@ private data class EmpresaUsuario(
 
 class AuthRepositoryImpl @Inject constructor(
     private val client: SupabaseClient,
-    private val tenantManager: TenantManager
+    private val tenantManager: TenantManager,
+    private val fcmTokenManager: FcmTokenManager
 ) : AuthRepository {
 
     override val sessionStatus: Flow<SessionStatus> = client.auth.sessionStatus
@@ -43,6 +45,7 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun logout() {
+        fcmTokenManager.unregisterToken()
         tenantManager.clearEmpresa()
         client.auth.signOut()
     }
@@ -87,5 +90,8 @@ class AuthRepositoryImpl @Inject constructor(
         // 3. Registrar en TenantManager
         tenantManager.empresa = empresa
         println("DEBUG: tenantManager.empresa después = ${tenantManager.empresa?.nombre}")
+
+        // 4. Registrar FCM Token para notificaciones
+        fcmTokenManager.registerCurrentToken()
     }
 }

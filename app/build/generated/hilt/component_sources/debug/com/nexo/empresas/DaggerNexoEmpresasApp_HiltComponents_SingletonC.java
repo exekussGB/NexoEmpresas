@@ -10,11 +10,13 @@ import androidx.lifecycle.SavedStateHandle;
 import androidx.lifecycle.ViewModel;
 import com.nexo.empresas.core.di.SupabaseModule_ProvideSupabaseClientFactory;
 import com.nexo.empresas.core.di.SupabaseModule_ProvideSupabaseSessionManagerFactory;
+import com.nexo.empresas.core.service.FcmTokenManager;
 import com.nexo.empresas.core.session.SessionManager;
 import com.nexo.empresas.core.session.SupabaseSessionManager;
 import com.nexo.empresas.core.session.TenantManager;
 import com.nexo.empresas.core.tutorial.TutorialDiModule_ProvideTutorialDataStoreFactory;
 import com.nexo.empresas.core.tutorial.TutorialManager;
+import com.nexo.empresas.data.network.IndicadoresService;
 import com.nexo.empresas.data.remote.dte.DteRemoteDataSource;
 import com.nexo.empresas.data.repository.AlertasRepositoryImpl;
 import com.nexo.empresas.data.repository.AuthRepositoryImpl;
@@ -27,6 +29,7 @@ import com.nexo.empresas.data.repository.EmpresasRepositoryImpl;
 import com.nexo.empresas.data.repository.GraficosRepositoryImpl;
 import com.nexo.empresas.di.DteModule_ProvideDteRemoteDataSourceFactory;
 import com.nexo.empresas.di.DteModule_ProvideDteRepositoryFactory;
+import com.nexo.empresas.di.DteModule_ProvideFcmTokenManagerFactory;
 import com.nexo.empresas.di.DteModule_ProvideHttpClientFactory;
 import com.nexo.empresas.domain.repository.AuthRepository;
 import com.nexo.empresas.domain.repository.ContactosRepository;
@@ -70,6 +73,10 @@ import com.nexo.empresas.presentation.dte.DteViewModel;
 import com.nexo.empresas.presentation.dte.DteViewModel_HiltModules;
 import com.nexo.empresas.presentation.dte.DteViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
 import com.nexo.empresas.presentation.dte.DteViewModel_HiltModules_KeyModule_Provide_LazyMapKey;
+import com.nexo.empresas.presentation.dte.scanner.ScannerVerificacionViewModel;
+import com.nexo.empresas.presentation.dte.scanner.ScannerVerificacionViewModel_HiltModules;
+import com.nexo.empresas.presentation.dte.scanner.ScannerVerificacionViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
+import com.nexo.empresas.presentation.dte.scanner.ScannerVerificacionViewModel_HiltModules_KeyModule_Provide_LazyMapKey;
 import com.nexo.empresas.presentation.empresas.EmpresasViewModel;
 import com.nexo.empresas.presentation.empresas.EmpresasViewModel_HiltModules;
 import com.nexo.empresas.presentation.empresas.EmpresasViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
@@ -90,6 +97,18 @@ import com.nexo.empresas.presentation.settings.SettingsViewModel;
 import com.nexo.empresas.presentation.settings.SettingsViewModel_HiltModules;
 import com.nexo.empresas.presentation.settings.SettingsViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
 import com.nexo.empresas.presentation.settings.SettingsViewModel_HiltModules_KeyModule_Provide_LazyMapKey;
+import com.nexo.empresas.presentation.simulador.FiniquitoViewModel;
+import com.nexo.empresas.presentation.simulador.FiniquitoViewModel_HiltModules;
+import com.nexo.empresas.presentation.simulador.FiniquitoViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
+import com.nexo.empresas.presentation.simulador.FiniquitoViewModel_HiltModules_KeyModule_Provide_LazyMapKey;
+import com.nexo.empresas.presentation.simulador.MultiTrabajadorViewModel;
+import com.nexo.empresas.presentation.simulador.MultiTrabajadorViewModel_HiltModules;
+import com.nexo.empresas.presentation.simulador.MultiTrabajadorViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
+import com.nexo.empresas.presentation.simulador.MultiTrabajadorViewModel_HiltModules_KeyModule_Provide_LazyMapKey;
+import com.nexo.empresas.presentation.simulador.SimuladorViewModel;
+import com.nexo.empresas.presentation.simulador.SimuladorViewModel_HiltModules;
+import com.nexo.empresas.presentation.simulador.SimuladorViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
+import com.nexo.empresas.presentation.simulador.SimuladorViewModel_HiltModules_KeyModule_Provide_LazyMapKey;
 import com.nexo.empresas.presentation.tutorial.OnboardingViewModel;
 import com.nexo.empresas.presentation.tutorial.OnboardingViewModel_HiltModules;
 import com.nexo.empresas.presentation.tutorial.OnboardingViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
@@ -449,7 +468,7 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
     }
 
     Map keySetMapOfClassOfAndBooleanBuilder() {
-      MapBuilder mapBuilder = MapBuilder.<String, Boolean>newMapBuilder(16);
+      MapBuilder mapBuilder = MapBuilder.<String, Boolean>newMapBuilder(20);
       mapBuilder.put(AddDocumentoViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, AddDocumentoViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(AlertasViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, AlertasViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(AuthViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, AuthViewModel_HiltModules.KeyModule.provide());
@@ -460,11 +479,15 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
       mapBuilder.put(DocumentosViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, DocumentosViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(DteViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, DteViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(EmpresasViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, EmpresasViewModel_HiltModules.KeyModule.provide());
+      mapBuilder.put(FiniquitoViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, FiniquitoViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(GraficosViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, GraficosViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(HubViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, HubViewModel_HiltModules.KeyModule.provide());
+      mapBuilder.put(MultiTrabajadorViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, MultiTrabajadorViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(OnboardingViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, OnboardingViewModel_HiltModules.KeyModule.provide());
+      mapBuilder.put(ScannerVerificacionViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, ScannerVerificacionViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(ScannerViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, ScannerViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(SettingsViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, SettingsViewModel_HiltModules.KeyModule.provide());
+      mapBuilder.put(SimuladorViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, SimuladorViewModel_HiltModules.KeyModule.provide());
       mapBuilder.put(TutorialListViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, TutorialListViewModel_HiltModules.KeyModule.provide());
       return mapBuilder.build();
     }
@@ -526,15 +549,23 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
 
     Provider<EmpresasViewModel> empresasViewModelProvider;
 
+    Provider<FiniquitoViewModel> finiquitoViewModelProvider;
+
     Provider<GraficosViewModel> graficosViewModelProvider;
 
     Provider<HubViewModel> hubViewModelProvider;
 
+    Provider<MultiTrabajadorViewModel> multiTrabajadorViewModelProvider;
+
     Provider<OnboardingViewModel> onboardingViewModelProvider;
+
+    Provider<ScannerVerificacionViewModel> scannerVerificacionViewModelProvider;
 
     Provider<ScannerViewModel> scannerViewModelProvider;
 
     Provider<SettingsViewModel> settingsViewModelProvider;
+
+    Provider<SimuladorViewModel> simuladorViewModelProvider;
 
     Provider<TutorialListViewModel> tutorialListViewModelProvider;
 
@@ -547,8 +578,12 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
 
     }
 
+    IndicadoresService indicadoresService() {
+      return new IndicadoresService(singletonCImpl.provideHttpClientProvider.get());
+    }
+
     Map hiltViewModelMapMapOfClassOfAndProviderOfViewModelBuilder() {
-      MapBuilder mapBuilder = MapBuilder.<String, javax.inject.Provider<ViewModel>>newMapBuilder(16);
+      MapBuilder mapBuilder = MapBuilder.<String, javax.inject.Provider<ViewModel>>newMapBuilder(20);
       mapBuilder.put(AddDocumentoViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (addDocumentoViewModelProvider)));
       mapBuilder.put(AlertasViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (alertasViewModelProvider)));
       mapBuilder.put(AuthViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (authViewModelProvider)));
@@ -559,11 +594,15 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
       mapBuilder.put(DocumentosViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (documentosViewModelProvider)));
       mapBuilder.put(DteViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (dteViewModelProvider)));
       mapBuilder.put(EmpresasViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (empresasViewModelProvider)));
+      mapBuilder.put(FiniquitoViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (finiquitoViewModelProvider)));
       mapBuilder.put(GraficosViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (graficosViewModelProvider)));
       mapBuilder.put(HubViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (hubViewModelProvider)));
+      mapBuilder.put(MultiTrabajadorViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (multiTrabajadorViewModelProvider)));
       mapBuilder.put(OnboardingViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (onboardingViewModelProvider)));
+      mapBuilder.put(ScannerVerificacionViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (scannerVerificacionViewModelProvider)));
       mapBuilder.put(ScannerViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (scannerViewModelProvider)));
       mapBuilder.put(SettingsViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (settingsViewModelProvider)));
+      mapBuilder.put(SimuladorViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (simuladorViewModelProvider)));
       mapBuilder.put(TutorialListViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) (tutorialListViewModelProvider)));
       return mapBuilder.build();
     }
@@ -581,12 +620,16 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
       this.documentosViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 7);
       this.dteViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 8);
       this.empresasViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 9);
-      this.graficosViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 10);
-      this.hubViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 11);
-      this.onboardingViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 12);
-      this.scannerViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 13);
-      this.settingsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 14);
-      this.tutorialListViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 15);
+      this.finiquitoViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 10);
+      this.graficosViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 11);
+      this.hubViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 12);
+      this.multiTrabajadorViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 13);
+      this.onboardingViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 14);
+      this.scannerVerificacionViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 15);
+      this.scannerViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 16);
+      this.settingsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 17);
+      this.simuladorViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 18);
+      this.tutorialListViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 19);
     }
 
     @Override
@@ -650,22 +693,34 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
           case 9: // com.nexo.empresas.presentation.empresas.EmpresasViewModel
           return (T) new EmpresasViewModel(singletonCImpl.bindEmpresasRepositoryProvider.get(), singletonCImpl.tenantManagerProvider.get(), singletonCImpl.sessionManagerProvider.get(), singletonCImpl.provideSupabaseClientProvider.get());
 
-          case 10: // com.nexo.empresas.presentation.graficos.GraficosViewModel
+          case 10: // com.nexo.empresas.presentation.simulador.FiniquitoViewModel
+          return (T) new FiniquitoViewModel();
+
+          case 11: // com.nexo.empresas.presentation.graficos.GraficosViewModel
           return (T) new GraficosViewModel(singletonCImpl.bindGraficosRepositoryProvider.get(), singletonCImpl.tenantManagerProvider.get(), singletonCImpl.sessionManagerProvider.get());
 
-          case 11: // com.nexo.empresas.presentation.hub.HubViewModel
+          case 12: // com.nexo.empresas.presentation.hub.HubViewModel
           return (T) new HubViewModel(singletonCImpl.tutorialManagerProvider.get(), singletonCImpl.tenantManagerProvider.get());
 
-          case 12: // com.nexo.empresas.presentation.tutorial.OnboardingViewModel
+          case 13: // com.nexo.empresas.presentation.simulador.MultiTrabajadorViewModel
+          return (T) new MultiTrabajadorViewModel();
+
+          case 14: // com.nexo.empresas.presentation.tutorial.OnboardingViewModel
           return (T) new OnboardingViewModel(singletonCImpl.tutorialManagerProvider.get());
 
-          case 13: // com.nexo.empresas.presentation.scanner.ScannerViewModel
+          case 15: // com.nexo.empresas.presentation.dte.scanner.ScannerVerificacionViewModel
+          return (T) new ScannerVerificacionViewModel(singletonCImpl.provideHttpClientProvider.get());
+
+          case 16: // com.nexo.empresas.presentation.scanner.ScannerViewModel
           return (T) new ScannerViewModel();
 
-          case 14: // com.nexo.empresas.presentation.settings.SettingsViewModel
+          case 17: // com.nexo.empresas.presentation.settings.SettingsViewModel
           return (T) new SettingsViewModel(singletonCImpl.bindEmpresasRepositoryProvider.get(), singletonCImpl.sessionManagerProvider.get());
 
-          case 15: // com.nexo.empresas.presentation.tutorial.TutorialListViewModel
+          case 18: // com.nexo.empresas.presentation.simulador.SimuladorViewModel
+          return (T) new SimuladorViewModel(viewModelCImpl.indicadoresService());
+
+          case 19: // com.nexo.empresas.presentation.tutorial.TutorialListViewModel
           return (T) new TutorialListViewModel(singletonCImpl.tutorialManagerProvider.get());
 
           default: throw new AssertionError(id);
@@ -754,6 +809,8 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
 
     Provider<TenantManager> tenantManagerProvider;
 
+    Provider<FcmTokenManager> provideFcmTokenManagerProvider;
+
     Provider<SessionManager> sessionManagerProvider;
 
     Provider<DocumentosRepositoryImpl> documentosRepositoryImplProvider;
@@ -804,31 +861,37 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
     private void initialize(final ApplicationContextModule applicationContextModuleParam) {
       this.provideSupabaseSessionManagerProvider = DoubleCheck.provider(new SwitchingProvider<SupabaseSessionManager>(singletonCImpl, 2));
       this.provideSupabaseClientProvider = DoubleCheck.provider(new SwitchingProvider<SupabaseClient>(singletonCImpl, 1));
-      this.tenantManagerProvider = DoubleCheck.provider(new SwitchingProvider<TenantManager>(singletonCImpl, 4));
-      this.sessionManagerProvider = DoubleCheck.provider(new SwitchingProvider<SessionManager>(singletonCImpl, 3));
-      this.documentosRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<DocumentosRepositoryImpl>(singletonCImpl, 0));
-      this.contactosRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 5);
+      this.tenantManagerProvider = DoubleCheck.provider(new SwitchingProvider<TenantManager>(singletonCImpl, 3));
+      this.provideFcmTokenManagerProvider = DoubleCheck.provider(new SwitchingProvider<FcmTokenManager>(singletonCImpl, 0));
+      this.sessionManagerProvider = DoubleCheck.provider(new SwitchingProvider<SessionManager>(singletonCImpl, 5));
+      this.documentosRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<DocumentosRepositoryImpl>(singletonCImpl, 4));
+      this.contactosRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 6);
       this.bindContactosRepositoryProvider = DoubleCheck.provider((Provider) (contactosRepositoryImplProvider));
-      this.cuentasCorrientesRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 6);
+      this.cuentasCorrientesRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 7);
       this.bindCuentasCorrientesRepositoryProvider = DoubleCheck.provider((Provider) (cuentasCorrientesRepositoryImplProvider));
-      this.alertasRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<AlertasRepositoryImpl>(singletonCImpl, 7));
-      this.authRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 8);
+      this.alertasRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<AlertasRepositoryImpl>(singletonCImpl, 8));
+      this.authRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 9);
       this.bindAuthRepositoryProvider = DoubleCheck.provider((Provider) (authRepositoryImplProvider));
-      this.chequesRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<ChequesRepositoryImpl>(singletonCImpl, 9));
-      this.dashboardRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<DashboardRepositoryImpl>(singletonCImpl, 10));
-      this.provideHttpClientProvider = DoubleCheck.provider(new SwitchingProvider<HttpClient>(singletonCImpl, 13));
-      this.provideDteRemoteDataSourceProvider = DoubleCheck.provider(new SwitchingProvider<DteRemoteDataSource>(singletonCImpl, 12));
-      this.provideDteRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<DteRepository>(singletonCImpl, 11));
-      this.empresasRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 14);
+      this.chequesRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<ChequesRepositoryImpl>(singletonCImpl, 10));
+      this.dashboardRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<DashboardRepositoryImpl>(singletonCImpl, 11));
+      this.provideHttpClientProvider = DoubleCheck.provider(new SwitchingProvider<HttpClient>(singletonCImpl, 14));
+      this.provideDteRemoteDataSourceProvider = DoubleCheck.provider(new SwitchingProvider<DteRemoteDataSource>(singletonCImpl, 13));
+      this.provideDteRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<DteRepository>(singletonCImpl, 12));
+      this.empresasRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 15);
       this.bindEmpresasRepositoryProvider = DoubleCheck.provider((Provider) (empresasRepositoryImplProvider));
-      this.graficosRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 15);
+      this.graficosRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 16);
       this.bindGraficosRepositoryProvider = DoubleCheck.provider((Provider) (graficosRepositoryImplProvider));
-      this.provideTutorialDataStoreProvider = DoubleCheck.provider(new SwitchingProvider<DataStore<Preferences>>(singletonCImpl, 17));
-      this.tutorialManagerProvider = DoubleCheck.provider(new SwitchingProvider<TutorialManager>(singletonCImpl, 16));
+      this.provideTutorialDataStoreProvider = DoubleCheck.provider(new SwitchingProvider<DataStore<Preferences>>(singletonCImpl, 18));
+      this.tutorialManagerProvider = DoubleCheck.provider(new SwitchingProvider<TutorialManager>(singletonCImpl, 17));
     }
 
     @Override
-    public void injectNexoEmpresasApp(NexoEmpresasApp nexoEmpresasApp) {
+    public void injectNexoEmpresasApp(NexoEmpresasApp arg0) {
+    }
+
+    @Override
+    public FcmTokenManager fcmTokenManager() {
+      return provideFcmTokenManagerProvider.get();
     }
 
     @Override
@@ -860,8 +923,8 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
       @SuppressWarnings("unchecked")
       public T get() {
         switch (id) {
-          case 0: // com.nexo.empresas.data.repository.DocumentosRepositoryImpl
-          return (T) new DocumentosRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.sessionManagerProvider.get());
+          case 0: // com.nexo.empresas.core.service.FcmTokenManager
+          return (T) DteModule_ProvideFcmTokenManagerFactory.provideFcmTokenManager(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.tenantManagerProvider.get());
 
           case 1: // io.github.jan.supabase.SupabaseClient
           return (T) SupabaseModule_ProvideSupabaseClientFactory.provideSupabaseClient(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule), singletonCImpl.provideSupabaseSessionManagerProvider.get());
@@ -869,49 +932,52 @@ public final class DaggerNexoEmpresasApp_HiltComponents_SingletonC {
           case 2: // com.nexo.empresas.core.session.SupabaseSessionManager
           return (T) SupabaseModule_ProvideSupabaseSessionManagerFactory.provideSupabaseSessionManager(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
-          case 3: // com.nexo.empresas.core.session.SessionManager
-          return (T) new SessionManager(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.tenantManagerProvider.get());
-
-          case 4: // com.nexo.empresas.core.session.TenantManager
+          case 3: // com.nexo.empresas.core.session.TenantManager
           return (T) new TenantManager();
 
-          case 5: // com.nexo.empresas.data.repository.ContactosRepositoryImpl
+          case 4: // com.nexo.empresas.data.repository.DocumentosRepositoryImpl
+          return (T) new DocumentosRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.sessionManagerProvider.get());
+
+          case 5: // com.nexo.empresas.core.session.SessionManager
+          return (T) new SessionManager(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.tenantManagerProvider.get());
+
+          case 6: // com.nexo.empresas.data.repository.ContactosRepositoryImpl
           return (T) new ContactosRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get());
 
-          case 6: // com.nexo.empresas.data.repository.CuentasCorrientesRepositoryImpl
+          case 7: // com.nexo.empresas.data.repository.CuentasCorrientesRepositoryImpl
           return (T) new CuentasCorrientesRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get());
 
-          case 7: // com.nexo.empresas.data.repository.AlertasRepositoryImpl
+          case 8: // com.nexo.empresas.data.repository.AlertasRepositoryImpl
           return (T) new AlertasRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.sessionManagerProvider.get());
 
-          case 8: // com.nexo.empresas.data.repository.AuthRepositoryImpl
-          return (T) new AuthRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.tenantManagerProvider.get());
+          case 9: // com.nexo.empresas.data.repository.AuthRepositoryImpl
+          return (T) new AuthRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.tenantManagerProvider.get(), singletonCImpl.provideFcmTokenManagerProvider.get());
 
-          case 9: // com.nexo.empresas.data.repository.ChequesRepositoryImpl
+          case 10: // com.nexo.empresas.data.repository.ChequesRepositoryImpl
           return (T) new ChequesRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.sessionManagerProvider.get());
 
-          case 10: // com.nexo.empresas.data.repository.DashboardRepositoryImpl
+          case 11: // com.nexo.empresas.data.repository.DashboardRepositoryImpl
           return (T) new DashboardRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get(), singletonCImpl.sessionManagerProvider.get());
 
-          case 11: // com.nexo.empresas.dte.data.repository.DteRepository
+          case 12: // com.nexo.empresas.dte.data.repository.DteRepository
           return (T) DteModule_ProvideDteRepositoryFactory.provideDteRepository(singletonCImpl.provideDteRemoteDataSourceProvider.get());
 
-          case 12: // com.nexo.empresas.data.remote.dte.DteRemoteDataSource
+          case 13: // com.nexo.empresas.data.remote.dte.DteRemoteDataSource
           return (T) DteModule_ProvideDteRemoteDataSourceFactory.provideDteRemoteDataSource(singletonCImpl.provideHttpClientProvider.get());
 
-          case 13: // io.ktor.client.HttpClient
+          case 14: // io.ktor.client.HttpClient
           return (T) DteModule_ProvideHttpClientFactory.provideHttpClient();
 
-          case 14: // com.nexo.empresas.data.repository.EmpresasRepositoryImpl
+          case 15: // com.nexo.empresas.data.repository.EmpresasRepositoryImpl
           return (T) new EmpresasRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get());
 
-          case 15: // com.nexo.empresas.data.repository.GraficosRepositoryImpl
+          case 16: // com.nexo.empresas.data.repository.GraficosRepositoryImpl
           return (T) new GraficosRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get());
 
-          case 16: // com.nexo.empresas.core.tutorial.TutorialManager
+          case 17: // com.nexo.empresas.core.tutorial.TutorialManager
           return (T) new TutorialManager(singletonCImpl.provideTutorialDataStoreProvider.get());
 
-          case 17: // @com.nexo.empresas.core.tutorial.TutorialDataStore androidx.datastore.core.DataStore<androidx.datastore.preferences.core.Preferences>
+          case 18: // @com.nexo.empresas.core.tutorial.TutorialDataStore androidx.datastore.core.DataStore<androidx.datastore.preferences.core.Preferences>
           return (T) TutorialDiModule_ProvideTutorialDataStoreFactory.provideTutorialDataStore(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
           default: throw new AssertionError(id);

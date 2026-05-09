@@ -1,5 +1,6 @@
 package com.nexo.empresas.data.repository;
 
+import com.nexo.empresas.core.service.FcmTokenManager;
 import com.nexo.empresas.core.session.TenantManager;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.Factory;
@@ -30,23 +31,29 @@ public final class AuthRepositoryImpl_Factory implements Factory<AuthRepositoryI
 
   private final Provider<TenantManager> tenantManagerProvider;
 
+  private final Provider<FcmTokenManager> fcmTokenManagerProvider;
+
   private AuthRepositoryImpl_Factory(Provider<SupabaseClient> clientProvider,
-      Provider<TenantManager> tenantManagerProvider) {
+      Provider<TenantManager> tenantManagerProvider,
+      Provider<FcmTokenManager> fcmTokenManagerProvider) {
     this.clientProvider = clientProvider;
     this.tenantManagerProvider = tenantManagerProvider;
+    this.fcmTokenManagerProvider = fcmTokenManagerProvider;
   }
 
   @Override
   public AuthRepositoryImpl get() {
-    return newInstance(clientProvider.get(), tenantManagerProvider.get());
+    return newInstance(clientProvider.get(), tenantManagerProvider.get(), fcmTokenManagerProvider.get());
   }
 
   public static AuthRepositoryImpl_Factory create(Provider<SupabaseClient> clientProvider,
-      Provider<TenantManager> tenantManagerProvider) {
-    return new AuthRepositoryImpl_Factory(clientProvider, tenantManagerProvider);
+      Provider<TenantManager> tenantManagerProvider,
+      Provider<FcmTokenManager> fcmTokenManagerProvider) {
+    return new AuthRepositoryImpl_Factory(clientProvider, tenantManagerProvider, fcmTokenManagerProvider);
   }
 
-  public static AuthRepositoryImpl newInstance(SupabaseClient client, TenantManager tenantManager) {
-    return new AuthRepositoryImpl(client, tenantManager);
+  public static AuthRepositoryImpl newInstance(SupabaseClient client, TenantManager tenantManager,
+      FcmTokenManager fcmTokenManager) {
+    return new AuthRepositoryImpl(client, tenantManager, fcmTokenManager);
   }
 }

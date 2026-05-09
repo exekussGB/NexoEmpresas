@@ -5,17 +5,20 @@ import androidx.lifecycle.viewModelScope
 import com.nexo.empresas.data.model.*
 import com.nexo.empresas.data.model.RemuneracionesChile as RC
 import com.nexo.empresas.data.network.IndicadoresService
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToLong
 
-class SimuladorViewModel : ViewModel() {
-
-    private val indicadoresService = IndicadoresService()
+@HiltViewModel
+class SimuladorViewModel @Inject constructor(
+    private val indicadoresService: IndicadoresService
+) : ViewModel() {
 
     private val _input = MutableStateFlow(SimulacionInput())
     val input: StateFlow<SimulacionInput> = _input.asStateFlow()
@@ -26,16 +29,12 @@ class SimuladorViewModel : ViewModel() {
     private val _isFetchingUtm = MutableStateFlow(false)
     val isFetchingUtm: StateFlow<Boolean> = _isFetchingUtm.asStateFlow()
 
-    // Tracking manual edits to hide "sugerido" badges
-    private val _manualFields = MutableStateFlow(setOf<String>())
-    val manualFields: StateFlow<Set<String>> = _manualFields.asStateFlow()
-
     private val _comparacion = MutableStateFlow<ComparacionEscenarios?>(null)
     val comparacion: StateFlow<ComparacionEscenarios?> = _comparacion.asStateFlow()
 
     init {
         fetchUtm()
-        // Asegurar modo DESDE_LIQUIDO por defecto y sueldoBase fijo
+        // Forzar modo DESDE_LIQUIDO y sueldoBase = INGRESO_MINIMO
         _input.value = _input.value.copy(
             modoCalculo = ModoCalculo.DESDE_LIQUIDO,
             sueldoBase = RC.INGRESO_MINIMO
@@ -47,7 +46,7 @@ class SimuladorViewModel : ViewModel() {
             _isFetchingUtm.value = true
             val utm = indicadoresService.fetchUtm()
             if (utm != null) {
-                RC.UTM = utm.roundToLong()
+                RC.UTM = utm
                 RC.isUtmUpdated = true
                 recalculate()
             }
@@ -57,16 +56,17 @@ class SimuladorViewModel : ViewModel() {
 
     fun updateInput(transform: SimulacionInput.() -> SimulacionInput) {
         val oldInput = _input.value
-        val newInput = oldInput.transform()
+        var newInput = oldInput.transform()
 
-        // Detectar cambios manuales
-        val fields = mutableSetOf<String>()
-        if (newInput.colacion != oldInput.colacion) fields.add("colacion")
-        if (newInput.movilizacion != oldInput.movilizacion) fields.add("movilizacion")
-        if (newInput.bonosNoImponibles != oldInput.bonosNoImponibles) fields.add("otrosNoImponibles")
-        
-        if (fields.isNotEmpty()) {
-            _manualFields.value = _manualFields.value + fields
+        // Detectar cambios manuales y actualizar flags
+        if (newInput.colacion != oldInput.colacion) {
+            newInput = newInput.copy(colacionManual = true)
+        }
+        if (newInput.movilizacion != oldInput.movilizacion) {
+            newInput = newInput.copy(movilizacionManual = true)
+        }
+        if (newInput.bonosNoImponibles != oldInput.bonosNoImponibles) {
+            newInput = newInput.copy(otrosNoImponiblesManual = true)
         }
 
         // Forzar sueldoBase = INGRESO_MINIMO
@@ -79,7 +79,6 @@ class SimuladorViewModel : ViewModel() {
             modoCalculo = ModoCalculo.DESDE_LIQUIDO,
             sueldoBase = RC.INGRESO_MINIMO
         )
-        _manualFields.value = emptySet()
         _result.value = null
         _comparacion.value = null
     }
@@ -87,70 +86,56 @@ class SimuladorViewModel : ViewModel() {
     private fun recalculate() {
         val i = _input.value
 
-        if (i.modoCalculo == ModoCalculo.DESDE_BRUTO) {
-            // Este modo ya no se usa según el requerimiento, pero lo mantenemos por compatibilidad
-            if (i.sueldoBase <= 0) {
-                _result.value = null
-                return
-            }
-            _result.value = calculateResult(i.sueldoBase, i)
-        } else {
-            // Modo OPTIMIZADO (Fixed Base + shortfall)
-            if (i.sueldoLiquidoDeseado <= 0) {
-                _result.value = null
-                _comparacion.value = null
-                return
-            }
-
-            // 1. Calcular líquido base con sueldo mínimo
-            val baseResult = calculateResult(RC.INGRESO_MINIMO, i.copy(
-                colacion = 0, movilizacion = 0, viaticos = 0,
-                desgasteHerramientas = 0, bonosNoImponibles = 0
-            ))
-            
-            val shortfall = i.sueldoLiquidoDeseado - baseResult.sueldoLiquido
-            
-            if (shortfall <= 0) {
-                // El mínimo ya cubre el deseo
-                _result.value = baseResult
-                _comparacion.value = null
-                return
-            }
-
-            // 2. Sugerir haberes no imponibles si no han sido editados manualmente
-            var suggestedColacion = i.colacion
-            var suggestedMovilizacion = i.movilizacion
-            var suggestedOtros = i.bonosNoImponibles
-            
-            if ("colacion" !in _manualFields.value) {
-                suggestedColacion = min(shortfall, 50000L)
-            }
-            val remainingAfterCol = shortfall - suggestedColacion
-            
-            if ("movilizacion" !in _manualFields.value) {
-                suggestedMovilizacion = if (remainingAfterCol > 0) min(remainingAfterCol, 50000L) else 0L
-            }
-            val remainingAfterMov = remainingAfterCol - suggestedMovilizacion
-            
-            if ("otrosNoImponibles" !in _manualFields.value) {
-                suggestedOtros = max(0L, remainingAfterMov)
-            }
-
-            val optimizedInput = i.copy(
-                colacion = suggestedColacion,
-                movilizacion = suggestedMovilizacion,
-                bonosNoImponibles = suggestedOtros
-            )
-            
-            // Actualizar el input visible (sin disparar recalculate infinito)
-            _input.value = optimizedInput
-
-            val finalResult = calculateResult(RC.INGRESO_MINIMO, optimizedInput)
-            _result.value = finalResult.copy(sueldoLiquidoDeseado = i.sueldoLiquidoDeseado)
-
-            // 3. Calcular escenario de comparación (Todo Imponible)
-            calculateComparison(i.sueldoLiquidoDeseado, optimizedInput, finalResult)
+        if (i.sueldoLiquidoDeseado <= 0) {
+            _result.value = null
+            _comparacion.value = null
+            return
         }
+
+        // STEP 1 — Fixed components
+        val sueldoBase = RC.INGRESO_MINIMO
+
+        // STEP 2 — Net from fixed base only
+        // Simulamos con 0 no imponibles para ver el líquido base legal
+        val inputBaseLegal = i.copy(
+            colacion = 0, movilizacion = 0, viaticos = 0,
+            desgasteHerramientas = 0, bonosNoImponibles = 0,
+            horasExtraCount = 0, comisiones = 0, bonosImponibles = 0
+        )
+        val resBaseLegal = calculateResult(sueldoBase, inputBaseLegal)
+        val liquidoDeBase = resBaseLegal.sueldoLiquido
+
+        // STEP 3 — Shortfall
+        val shortfall = i.sueldoLiquidoDeseado - liquidoDeBase
+
+        var warningMinimo = false
+        var optimizedInput = i
+
+        if (shortfall < 0) {
+            warningMinimo = true
+        } else if (shortfall > 0) {
+            // Auto-suggest non-taxable allowances if not manual
+            val sugeridaColacion = min(shortfall, 50_000L)
+            val remaining1 = shortfall - sugeridaColacion
+            val sugeridaMovilizacion = min(remaining1, 50_000L)
+            val remaining2 = remaining1 - sugeridaMovilizacion
+            val sugeridaOtros = remaining2
+
+            optimizedInput = i.copy(
+                colacion = if (i.colacionManual) i.colacion else sugeridaColacion,
+                movilizacion = if (i.movilizacionManual) i.movilizacion else sugeridaMovilizacion,
+                bonosNoImponibles = if (i.otrosNoImponiblesManual) i.bonosNoImponibles else sugeridaOtros
+            )
+        }
+
+        // Actualizar el input con flags de warning
+        _input.value = optimizedInput.copy(warningPorDebajoMinimo = warningMinimo)
+
+        val finalResult = calculateResult(sueldoBase, optimizedInput)
+        _result.value = finalResult.copy(sueldoLiquidoDeseado = i.sueldoLiquidoDeseado)
+
+        // STEP 5 — Scenario comparison
+        calculateComparison(i.sueldoLiquidoDeseado, optimizedInput, finalResult)
     }
 
     private fun calculateComparison(liquidoDeseado: Long, currentInput: SimulacionInput, currentResult: SimulacionResult) {
@@ -158,7 +143,6 @@ class SimuladorViewModel : ViewModel() {
         // Buscamos un sueldoBase que de el líquidoDeseado con 0 no imponibles
         var low = 1L
         var high = 10_000_000L
-        var foundBase = low
         var resTodoImponible: SimulacionResult? = null
 
         val inputSoloImponible = currentInput.copy(
@@ -172,12 +156,10 @@ class SimuladorViewModel : ViewModel() {
             val diff = res.sueldoLiquido - liquidoDeseado
 
             if (kotlin.math.abs(diff) <= 100) {
-                foundBase = mid
                 resTodoImponible = res
                 break
             }
             if (diff < 0) low = mid + 1 else high = mid - 1
-            foundBase = mid
             resTodoImponible = res
         }
 

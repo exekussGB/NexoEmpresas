@@ -28,6 +28,7 @@ object TedParser {
         var fecha       = ""
         var monto       = 0L
         var descripcion = ""
+        var rsReceptor  = ""
         var currentTag  = ""
 
         var eventType = parser.eventType
@@ -45,6 +46,7 @@ object TedParser {
                         "FE"  -> fecha       = text
                         "MNT" -> monto       = text.toLongOrNull() ?: 0L
                         "IT1" -> if (descripcion.isEmpty()) descripcion = text
+                        "RSR" -> rsReceptor  = text
                     }
                 }
             }
@@ -61,6 +63,7 @@ object TedParser {
             fechaEmision = fecha,
             montoTotal   = monto,
             descripcion  = descripcion,
+            razonSocialReceptor = rsReceptor,
             tipoNexo     = DteScanResult.derivarTipo(tipoDoc)
         )
     } catch (e: Exception) {

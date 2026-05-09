@@ -97,6 +97,7 @@ dependencies {
     // Kotlin
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
 
     // UI extras
     implementation(libs.coil.compose)

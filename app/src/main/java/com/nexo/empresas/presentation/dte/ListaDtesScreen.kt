@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,6 +32,7 @@ import java.util.Locale
 fun ListaDtesScreen(
     onNavigateToDetalle: (String) -> Unit,
     onNavigateToEmitir: () -> Unit,
+    onNavigateToScanner: () -> Unit,
     onBack: () -> Unit,
     viewModel: DteViewModel = hiltViewModel()
 ) {
@@ -50,6 +52,9 @@ fun ListaDtesScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToScanner) {
+                        Icon(Icons.Default.QrCodeScanner, contentDescription = "Escanear TED")
+                    }
                     IconButton(onClick = { viewModel.cargarDtes(uiState.estadoFiltro) }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Actualizar")
                     }

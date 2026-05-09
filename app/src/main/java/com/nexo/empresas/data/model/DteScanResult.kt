@@ -16,8 +16,11 @@ data class DteScanResult(
     val fechaEmision: String,    // <FE> — fecha ISO "YYYY-MM-DD"
     val montoTotal: Long,        // <MNT> — monto CLP
     val descripcion: String,     // <IT1> — descripción ítem principal
+    val razonSocialReceptor: String? = null, // <RSR> — Razón social del receptor
     val tipoNexo: String         // "ingreso" o "egreso" derivado de tipoDocumento
 ) : Parcelable {
+
+    val tipoDescripcion: String get() = nombreDte(tipoDocumento)
 
     companion object {
         /** Tipos DTE que generan EGRESO (el proveedor te cobra a ti) */

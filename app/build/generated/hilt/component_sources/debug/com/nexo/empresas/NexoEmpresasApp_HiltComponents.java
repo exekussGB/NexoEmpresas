@@ -3,6 +3,7 @@ package com.nexo.empresas;
 import androidx.hilt.work.HiltWrapper_WorkerFactoryModule;
 import com.nexo.empresas.core.di.AppModule;
 import com.nexo.empresas.core.di.SupabaseModule;
+import com.nexo.empresas.core.service.DteFcmService;
 import com.nexo.empresas.core.tutorial.TutorialDiModule;
 import com.nexo.empresas.core.worker.VencimientosCheckWorker_HiltModule;
 import com.nexo.empresas.di.DteModule;
@@ -15,11 +16,15 @@ import com.nexo.empresas.presentation.dashboard.DashboardViewModel_HiltModules;
 import com.nexo.empresas.presentation.documentos.AddDocumentoViewModel_HiltModules;
 import com.nexo.empresas.presentation.documentos.DocumentosViewModel_HiltModules;
 import com.nexo.empresas.presentation.dte.DteViewModel_HiltModules;
+import com.nexo.empresas.presentation.dte.scanner.ScannerVerificacionViewModel_HiltModules;
 import com.nexo.empresas.presentation.empresas.EmpresasViewModel_HiltModules;
 import com.nexo.empresas.presentation.graficos.GraficosViewModel_HiltModules;
 import com.nexo.empresas.presentation.hub.HubViewModel_HiltModules;
 import com.nexo.empresas.presentation.scanner.ScannerViewModel_HiltModules;
 import com.nexo.empresas.presentation.settings.SettingsViewModel_HiltModules;
+import com.nexo.empresas.presentation.simulador.FiniquitoViewModel_HiltModules;
+import com.nexo.empresas.presentation.simulador.MultiTrabajadorViewModel_HiltModules;
+import com.nexo.empresas.presentation.simulador.SimuladorViewModel_HiltModules;
 import com.nexo.empresas.presentation.tutorial.OnboardingViewModel_HiltModules;
 import com.nexo.empresas.presentation.tutorial.TutorialListViewModel_HiltModules;
 import dagger.Binds;
@@ -161,6 +166,7 @@ public final class NexoEmpresasApp_HiltComponents {
   @Singleton
   @jakarta.inject.Singleton
   public abstract static class SingletonC implements NexoEmpresasApp_GeneratedInjector,
+      DteFcmService.FcmTokenManagerEntryPoint,
       FragmentGetContextFix.FragmentGetContextFixEntryPoint,
       HiltWrapper_ActivityRetainedComponentManager_ActivityRetainedComponentBuilderEntryPoint,
       ServiceComponentManager.ServiceComponentBuilderEntryPoint,
@@ -189,15 +195,19 @@ public final class NexoEmpresasApp_HiltComponents {
           DocumentosViewModel_HiltModules.KeyModule.class,
           DteViewModel_HiltModules.KeyModule.class,
           EmpresasViewModel_HiltModules.KeyModule.class,
+          FiniquitoViewModel_HiltModules.KeyModule.class,
           GraficosViewModel_HiltModules.KeyModule.class,
           HiltWrapper_ActivityRetainedComponentManager_LifecycleModule.class,
           HiltWrapper_ActivitySavedStateHandleModule.class,
           HubViewModel_HiltModules.KeyModule.class,
+          MultiTrabajadorViewModel_HiltModules.KeyModule.class,
           ActivityCBuilderModule.class,
           ViewModelCBuilderModule.class,
           OnboardingViewModel_HiltModules.KeyModule.class,
+          ScannerVerificacionViewModel_HiltModules.KeyModule.class,
           ScannerViewModel_HiltModules.KeyModule.class,
           SettingsViewModel_HiltModules.KeyModule.class,
+          SimuladorViewModel_HiltModules.KeyModule.class,
           TutorialListViewModel_HiltModules.KeyModule.class
       }
   )
@@ -244,12 +254,16 @@ public final class NexoEmpresasApp_HiltComponents {
           DocumentosViewModel_HiltModules.BindsModule.class,
           DteViewModel_HiltModules.BindsModule.class,
           EmpresasViewModel_HiltModules.BindsModule.class,
+          FiniquitoViewModel_HiltModules.BindsModule.class,
           GraficosViewModel_HiltModules.BindsModule.class,
           HiltWrapper_HiltViewModelFactory_ViewModelModule.class,
           HubViewModel_HiltModules.BindsModule.class,
+          MultiTrabajadorViewModel_HiltModules.BindsModule.class,
           OnboardingViewModel_HiltModules.BindsModule.class,
+          ScannerVerificacionViewModel_HiltModules.BindsModule.class,
           ScannerViewModel_HiltModules.BindsModule.class,
           SettingsViewModel_HiltModules.BindsModule.class,
+          SimuladorViewModel_HiltModules.BindsModule.class,
           TutorialListViewModel_HiltModules.BindsModule.class
       }
   )

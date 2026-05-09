@@ -1,37 +1,24 @@
 package com.nexo.empresas.data.network
 
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.serialization.kotlinx.json.*
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.get
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.double
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import javax.inject.Inject
+import kotlin.math.roundToLong
 
-@Serializable
-data class IndicadoresResponse(
-    val utm: IndicadorValue
-)
-
-@Serializable
-data class IndicadorValue(
-    val valor: Double
-)
-
-class IndicadoresService {
-    private val client = HttpClient {
-        install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                coerceInputValues = true
-            })
-        }
-    }
-
-    suspend fun fetchUtm(): Double? {
+class IndicadoresService @Inject constructor(
+    private val httpClient: HttpClient
+) {
+    suspend fun fetchUtm(): Long? {
         return try {
-            val response: IndicadoresResponse = client.get("https://mindicador.cl/api").body()
-            response.utm.valor
+            val response = httpClient.get("https://mindicador.cl/api")
+            val json = response.body<JsonObject>()
+            json["utm"]?.jsonObject?.get("valor")
+                ?.jsonPrimitive?.double?.roundToLong()
         } catch (e: Exception) {
             null
         }

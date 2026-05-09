@@ -2,15 +2,17 @@ package com.nexo.empresas.presentation.simulador
 
 import androidx.lifecycle.ViewModel
 import com.nexo.empresas.data.model.RemuneracionesChile as RC
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
-import kotlin.math.floor
+import javax.inject.Inject
 import kotlin.math.min
 
-class FiniquitoViewModel : ViewModel() {
+@HiltViewModel
+class FiniquitoViewModel @Inject constructor() : ViewModel() {
 
     private val _state = MutableStateFlow(FiniquitoState())
     val state: StateFlow<FiniquitoState> = _state.asStateFlow()
