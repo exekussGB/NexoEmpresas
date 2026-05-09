@@ -6,10 +6,17 @@ package com.nexo.empresas.data.model
  */
 object RemuneracionesChile {
 
+    // ── Vigencia de parámetros ──
+    const val VIGENCIA_DESDE = "Enero 2026"
+
     // ── UTM e Indicadores (Marzo 2026) ──
-    const val UTM = 69_889L                  // Valor UTM marzo 2026
+    var UTM = 69_889L                      // Valor UTM marzo 2026 (actualizable por API)
+    var isUtmUpdated = false               // Indica si se obtuvo valor real de API
+
     const val UF = 38_876.52                 // Referencial
     const val INGRESO_MINIMO = 539_000L      // Ley 21.751, vigente desde enero 2026
+    // IMM: update manually when Ley reajuste is published (usually July)
+
     const val TOPE_IMPONIBLE_UF = 81.6       // 81,6 UF
     val TOPE_IMPONIBLE: Long get() = (TOPE_IMPONIBLE_UF * UF).toLong() // ~$3.173.208
 
@@ -45,6 +52,7 @@ object RemuneracionesChile {
 
     // ── Gratificación Legal ──
     const val TOPE_GRATIFICACION_ART50 = 4.75 // 4,75 IMM (Ingreso Mínimo Mensual)
+    const val TOPE_GRATIFICACION_MENSUAL = 213_354L // (4.75 * IMM / 12) aprox
 
     // ── Impuesto Único Segunda Categoría (IUSC) — Tramos mensuales en UTM ──
     data class TramoImpuesto(
@@ -83,6 +91,7 @@ data class SimulacionResult(
     val colacion: Long,
     val movilizacion: Long,
     val viaticos: Long,
+    val desgasteHerramientas: Long,
     val bonosNoImponibles: Long,
     val totalNoImponible: Long,
 
@@ -97,10 +106,15 @@ data class SimulacionResult(
     val baseImponibleImpuesto: Long,    // imponibleTopado - AFP - salud - cesantía
     val impuestoUnico: Long,            // IUSC
     val tasaEfectivaImpuesto: Double,   // % efectivo
+    val anticipo: Long,
+    val prestamoEmpresa: Long,
+    val otrosDescuentos: Long,
+    val otrosDescuentosLabel: String,
     val totalDescuentosTrabajador: Long,
 
     // ── Líquido ──
     val sueldoLiquido: Long,            // totalHaberes - totalDescuentos
+    val sueldoLiquidoDeseado: Long? = null,
 
     // ── Costos empleador ──
     val sisMonto: Long,                 // 1,54%
@@ -116,15 +130,23 @@ data class SimulacionResult(
  * Input para la simulación.
  */
 data class SimulacionInput(
+    val nombreCandidato: String = "",
+    val modoCalculo: ModoCalculo = ModoCalculo.DESDE_BRUTO,
     val sueldoBase: Long = 0,
+    val sueldoLiquidoDeseado: Long = 0,
     val gratificacionTipo: GratificacionTipo = GratificacionTipo.ART_50,
     val comisiones: Long = 0,
     val bonosImponibles: Long = 0,
-    val horasExtras: Long = 0,
+    val horasExtraCount: Int = 0,
     val colacion: Long = 0,
     val movilizacion: Long = 0,
     val viaticos: Long = 0,
+    val desgasteHerramientas: Long = 0,
     val bonosNoImponibles: Long = 0,
+    val anticipo: Long = 0,
+    val prestamoEmpresa: Long = 0,
+    val otrosDescuentos: Long = 0,
+    val otrosDescuentosLabel: String = "Otros descuentos",
     val tipoContrato: TipoContrato = TipoContrato.INDEFINIDO,
     val afpIndex: Int = 0,
     val tipoSalud: TipoSalud = TipoSalud.FONASA,
@@ -147,4 +169,17 @@ enum class TipoContrato(val label: String) {
 enum class TipoSalud(val label: String) {
     FONASA("Fonasa (7%)"),
     ISAPRE("Isapre"),
+}
+
+enum class ModoCalculo(val label: String) {
+    DESDE_BRUTO("Sueldo Bruto"),
+    DESDE_LIQUIDO("Sueldo Líquido"),
+}
+
+data class ComparacionEscenarios(
+    val costoTodoImponible: Long,
+    val costoSugerido: Long
+) {
+    val ahorroMensual = costoTodoImponible - costoSugerido
+    val ahorroAnual = ahorroMensual * 12
 }

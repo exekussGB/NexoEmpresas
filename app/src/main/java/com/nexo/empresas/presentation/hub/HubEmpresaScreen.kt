@@ -1,5 +1,6 @@
 package com.nexo.empresas.presentation.hub
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -41,11 +43,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nexo.empresas.R
 import com.nexo.empresas.core.tutorial.TutorialManager
 import com.nexo.empresas.core.session.TenantManager
 import com.nexo.empresas.core.tutorial.TutorialModule
@@ -104,6 +108,8 @@ fun HubEmpresaScreen(
 
     val fullWidthItems = listOf(
         HubItem("Simulador de Contratación", Icons.Default.Calculate, Screen.Simulador),
+        HubItem("Simulador Finiquito",      Icons.Default.Calculate, Screen.Finiquito),
+        HubItem("Multi-Trabajador",          Icons.Default.Group,     Screen.MultiTrabajador),
         HubItem("Opciones",                  Icons.Default.Settings,  Screen.Opciones),
     )
 
@@ -116,7 +122,17 @@ fun HubEmpresaScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("NexoEmpresas") },
+                title = { 
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(id = R.drawable.app_logo),
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text("NexoEmpresas")
+                    }
+                },
                 actions = {
                     IconButton(onClick = onLogout) {
                         Icon(Icons.AutoMirrored.Filled.Logout, "Cerrar sesión")

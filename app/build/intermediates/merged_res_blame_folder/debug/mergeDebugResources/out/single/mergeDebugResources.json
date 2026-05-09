@@ -1,54 +1,58 @@
 [
     {
-        "merged": "com.nexo.empresas.app-debug-70:/xml_data_extraction_rules.xml.flat",
-        "source": "com.nexo.empresas.app-main-72:/xml/data_extraction_rules.xml"
+        "merged": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-debug-70:\\mipmap-mdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-main-72:\\mipmap-mdpi\\ic_launcher_round.png"
     },
     {
-        "merged": "com.nexo.empresas.app-debug-70:/mipmap-hdpi_ic_launcher.png.flat",
-        "source": "com.nexo.empresas.app-main-72:/mipmap-hdpi/ic_launcher.png"
+        "merged": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-debug-70:\\mipmap-xxhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-main-72:\\mipmap-xxhdpi\\ic_launcher_round.png"
     },
     {
-        "merged": "com.nexo.empresas.app-debug-70:/drawable_ic_notification.xml.flat",
-        "source": "com.nexo.empresas.app-main-72:/drawable/ic_notification.xml"
+        "merged": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-debug-70:\\mipmap-mdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-main-72:\\mipmap-mdpi\\ic_launcher.png"
     },
     {
-        "merged": "com.nexo.empresas.app-debug-70:/mipmap-hdpi_ic_launcher_round.png.flat",
-        "source": "com.nexo.empresas.app-main-72:/mipmap-hdpi/ic_launcher_round.png"
+        "merged": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-debug-70:\\mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-main-72:\\mipmap-xxhdpi\\ic_launcher.png"
     },
     {
-        "merged": "com.nexo.empresas.app-debug-70:/xml_backup_rules.xml.flat",
-        "source": "com.nexo.empresas.app-main-72:/xml/backup_rules.xml"
+        "merged": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-debug-70:\\xml_data_extraction_rules.xml.flat",
+        "source": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-main-72:\\xml\\data_extraction_rules.xml"
     },
     {
-        "merged": "com.nexo.empresas.app-debug-70:/mipmap-xxxhdpi_ic_launcher.png.flat",
-        "source": "com.nexo.empresas.app-main-72:/mipmap-xxxhdpi/ic_launcher.png"
+        "merged": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-debug-70:\\drawable_ic_notification.xml.flat",
+        "source": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-main-72:\\drawable\\ic_notification.xml"
     },
     {
-        "merged": "com.nexo.empresas.app-debug-70:/mipmap-mdpi_ic_launcher.png.flat",
-        "source": "com.nexo.empresas.app-main-72:/mipmap-mdpi/ic_launcher.png"
+        "merged": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-debug-70:\\mipmap-hdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-main-72:\\mipmap-hdpi\\ic_launcher.png"
     },
     {
-        "merged": "com.nexo.empresas.app-debug-70:/mipmap-xhdpi_ic_launcher.png.flat",
-        "source": "com.nexo.empresas.app-main-72:/mipmap-xhdpi/ic_launcher.png"
+        "merged": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-debug-70:\\mipmap-xxxhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-main-72:\\mipmap-xxxhdpi\\ic_launcher.png"
     },
     {
-        "merged": "com.nexo.empresas.app-debug-70:/mipmap-xxxhdpi_ic_launcher_round.png.flat",
-        "source": "com.nexo.empresas.app-main-72:/mipmap-xxxhdpi/ic_launcher_round.png"
+        "merged": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-debug-70:\\mipmap-xhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-main-72:\\mipmap-xhdpi\\ic_launcher_round.png"
     },
     {
-        "merged": "com.nexo.empresas.app-debug-70:/mipmap-mdpi_ic_launcher_round.png.flat",
-        "source": "com.nexo.empresas.app-main-72:/mipmap-mdpi/ic_launcher_round.png"
+        "merged": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-debug-70:\\mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-main-72:\\mipmap-xhdpi\\ic_launcher.png"
     },
     {
-        "merged": "com.nexo.empresas.app-debug-70:/mipmap-xxhdpi_ic_launcher_round.png.flat",
-        "source": "com.nexo.empresas.app-main-72:/mipmap-xxhdpi/ic_launcher_round.png"
+        "merged": "com.nexo.empresas.app-debug-70:/drawable_app_logo.png.flat",
+        "source": "com.nexo.empresas.app-main-72:/drawable/app_logo.png"
     },
     {
-        "merged": "com.nexo.empresas.app-debug-70:/mipmap-xxhdpi_ic_launcher.png.flat",
-        "source": "com.nexo.empresas.app-main-72:/mipmap-xxhdpi/ic_launcher.png"
+        "merged": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-debug-70:\\mipmap-xxxhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-main-72:\\mipmap-xxxhdpi\\ic_launcher_round.png"
     },
     {
-        "merged": "com.nexo.empresas.app-debug-70:/mipmap-xhdpi_ic_launcher_round.png.flat",
-        "source": "com.nexo.empresas.app-main-72:/mipmap-xhdpi/ic_launcher_round.png"
+        "merged": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-debug-70:\\mipmap-hdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-main-72:\\mipmap-hdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-debug-70:\\xml_backup_rules.xml.flat",
+        "source": "C:\\Users\\exeku\\.gradle\\daemon\\9.0.0\\com.nexo.empresas.app-main-72:\\xml\\backup_rules.xml"
     }
 ]

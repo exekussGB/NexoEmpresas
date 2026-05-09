@@ -16,6 +16,10 @@ sealed class Screen(val route: String) {
     data object Opciones : Screen("opciones")
     data object Alertas : Screen("alertas")
     data object Simulador : Screen("simulador")
+    data object Finiquito : Screen("finiquito")
+    data object MultiTrabajador : Screen("multi_trabajador?costo={costo}") {
+        fun route(costo: Long) = "multi_trabajador?costo=$costo"
+    }
     data object Scanner : Screen("scanner")
     data object TutorialList : Screen("tutorial_list")
 

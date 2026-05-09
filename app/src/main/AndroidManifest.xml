@@ -12,6 +12,7 @@
         android:name=".NexoEmpresasApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="NexoEmpresas"
         android:theme="@style/Theme.NexoEmpresas"
         android:usesCleartextTraffic="false">

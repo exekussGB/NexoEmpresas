@@ -7,12 +7,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -21,26 +23,63 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nexo.empresas.data.model.*
 import com.nexo.empresas.data.model.RemuneracionesChile as RC
+import kotlinx.coroutines.launch
+import kotlin.math.roundToLong
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SimuladorScreen(
     onBack: () -> Unit,
+    onNavigateToFiniquito: () -> Unit,
+    onNavigateToMulti: (Long) -> Unit,
     viewModel: SimuladorViewModel = viewModel()
 ) {
     val input by viewModel.input.collectAsState()
     val result by viewModel.result.collectAsState()
+    val isFetchingUtm by viewModel.isFetchingUtm.collectAsState()
+    val manualFields by viewModel.manualFields.collectAsState()
+    val comparacion by viewModel.comparacion.collectAsState()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Asegurar que siempre esté en modo DESDE_LIQUIDO
+    LaunchedEffect(Unit) {
+        if (input.modoCalculo != ModoCalculo.DESDE_LIQUIDO) {
+            viewModel.updateInput { copy(modoCalculo = ModoCalculo.DESDE_LIQUIDO) }
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Simulador Contratación") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver")
                     }
                 },
                 actions = {
+                    if (result != null) {
+                        IconButton(onClick = {
+                            result?.let { r ->
+                                SimuladorPdfGenerator.generateAndSavePdf(
+                                    context = context,
+                                    result = r,
+                                    candidateName = input.nombreCandidato,
+                                    onSuccess = {
+                                        scope.launch { snackbarHostState.showSnackbar("PDF guardado en Descargas") }
+                                    },
+                                    onError = { e ->
+                                        scope.launch { snackbarHostState.showSnackbar("Error: ${e.message}") }
+                                    }
+                                )
+                            }
+                        }) {
+                            Icon(Icons.Default.PictureAsPdf, "Exportar PDF")
+                        }
+                    }
                     IconButton(onClick = { viewModel.reset() }) {
                         Icon(Icons.Default.Refresh, "Reiniciar")
                     }
@@ -60,10 +99,29 @@ fun SimuladorScreen(
             // SECCIÓN: DATOS DEL CANDIDATO
             // ═══════════════════════════════════════════
             SectionCard("Pretensión de Renta") {
+                OutlinedTextField(
+                    value = input.nombreCandidato,
+                    onValueChange = { v -> viewModel.updateInput { copy(nombreCandidato = v) } },
+                    label = { Text("Nombre del Candidato / Empresa") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
                 MoneyField(
-                    label = "Sueldo Base *",
-                    value = input.sueldoBase,
-                    onValueChange = { v -> viewModel.updateInput { copy(sueldoBase = v) } }
+                    label = "¿Cuánto quiere ganar al bolsillo? *",
+                    value = input.sueldoLiquidoDeseado,
+                    onValueChange = { v -> viewModel.updateInput { copy(sueldoLiquidoDeseado = v) } }
+                )
+                
+                // Sueldo Base Fixed
+                OutlinedTextField(
+                    value = "$${SimuladorViewModel.formatCLP(RC.INGRESO_MINIMO)}",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Sueldo Base (Mínimo Legal)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Default.Lock, "Fijo") },
+                    supportingText = { Text("Protegido por ley: ingreso mínimo mensual") }
                 )
             }
 
@@ -158,10 +216,17 @@ fun SimuladorScreen(
                         }
                     }
                 }
+                Text(
+                    "Tope legal: $213.354 (4.75 × IMM mensual)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
-            // Otros haberes
+            // OTROS HABERES
             SectionCard("Otros Haberes (opcional)") {
+                // Subsection A: Haberes Imponibles
+                Text("Haberes Imponibles", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     MoneyField("Comisiones", input.comisiones,
                         { v -> viewModel.updateInput { copy(comisiones = v) } },
@@ -170,86 +235,127 @@ fun SimuladorScreen(
                         { v -> viewModel.updateInput { copy(bonosImponibles = v) } },
                         Modifier.weight(1f))
                 }
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = if (input.horasExtraCount > 0) input.horasExtraCount.toString() else "",
+                        onValueChange = { text ->
+                            val v = text.filter { it.isDigit() }.toIntOrNull() ?: 0
+                            viewModel.updateInput { copy(horasExtraCount = v) }
+                        },
+                        label = { Text("Num. Horas Extra") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                    result?.let { r ->
+                        val valorHora = if (r.sueldoBase > 0) (r.sueldoBase / 30.0 / 8.0 * 1.5).roundToLong() else 0L
+                        Text(
+                            "Valor hora extra: \$${SimuladorViewModel.formatCLP(valorHora)}  |  Total: \$${SimuladorViewModel.formatCLP(r.horasExtras)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // Subsection B: Haberes No Imponibles
+                Text("Haberes No Imponibles", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MoneyField("Hrs. Extra", input.horasExtras,
-                        { v -> viewModel.updateInput { copy(horasExtras = v) } },
-                        Modifier.weight(1f))
-                    MoneyField("Colación", input.colacion,
-                        { v -> viewModel.updateInput { copy(colacion = v) } },
-                        Modifier.weight(1f))
+                    Column(modifier = Modifier.weight(1f)) {
+                        MoneyField("Colación", input.colacion,
+                            { v -> viewModel.updateInput { copy(colacion = v) } })
+                        if ("colacion" !in manualFields && input.colacion > 0) {
+                            InfoBadge()
+                        }
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        MoneyField("Movilización", input.movilizacion,
+                            { v -> viewModel.updateInput { copy(movilizacion = v) } })
+                        if ("movilizacion" !in manualFields && input.movilizacion > 0) {
+                            InfoBadge()
+                        }
+                    }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MoneyField("Movilización", input.movilizacion,
-                        { v -> viewModel.updateInput { copy(movilizacion = v) } },
-                        Modifier.weight(1f))
                     MoneyField("Viáticos", input.viaticos,
                         { v -> viewModel.updateInput { copy(viaticos = v) } },
                         Modifier.weight(1f))
+                    MoneyField("Desgaste Herr.", input.desgasteHerramientas,
+                        { v -> viewModel.updateInput { copy(desgasteHerramientas = v) } },
+                        Modifier.weight(1f))
                 }
-                MoneyField("Bonos No Imponibles", input.bonosNoImponibles,
-                    { v -> viewModel.updateInput { copy(bonosNoImponibles = v) } })
+                Column {
+                    MoneyField("Otros no imponibles", input.bonosNoImponibles,
+                        { v -> viewModel.updateInput { copy(bonosNoImponibles = v) } })
+                    if ("otrosNoImponibles" !in manualFields && input.bonosNoImponibles > 0) {
+                        InfoBadge()
+                    }
+                }
             }
 
             // Mutual adicional
             SectionCard("Mutual de Seguridad") {
-                Text(
-                    "Tasa base: 0,93%. Agrega tasa adicional según actividad económica (0% a 3,4%)",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                OutlinedTextField(
-                    value = if (input.tasaMutualAdicional > 0)
-                        input.tasaMutualAdicional.toString() else "",
-                    onValueChange = { text ->
-                        val v = text.toDoubleOrNull() ?: 0.0
-                        viewModel.updateInput { copy(tasaMutualAdicional = v.coerceIn(0.0, 3.4)) }
-                    },
-                    label = { Text("Tasa adicional (%)") },
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    suffix = { Text("%") }
-                )
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = "0.93%",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Tasa base") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text("+", style = MaterialTheme.typography.titleLarge)
+                    OutlinedTextField(
+                        value = if (input.tasaMutualAdicional > 0)
+                            input.tasaMutualAdicional.toString() else "",
+                        onValueChange = { text ->
+                            val v = text.toDoubleOrNull() ?: 0.0
+                            viewModel.updateInput { copy(tasaMutualAdicional = v.coerceIn(0.0, 3.4)) }
+                        },
+                        label = { Text("Adicional (%)") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        suffix = { Text("%") }
+                    )
+                }
+            }
+
+            SectionCard("Otros Descuentos") {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MoneyField("Anticipo", input.anticipo,
+                        { v -> viewModel.updateInput { copy(anticipo = v) } },
+                        Modifier.weight(1f))
+                    MoneyField("Préstamo empresa", input.prestamoEmpresa,
+                        { v -> viewModel.updateInput { copy(prestamoEmpresa = v) } },
+                        Modifier.weight(1f))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = input.otrosDescuentosLabel,
+                        onValueChange = { v -> viewModel.updateInput { copy(otrosDescuentosLabel = v) } },
+                        label = { Text("Concepto") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    MoneyField("Monto", input.otrosDescuentos,
+                        { v -> viewModel.updateInput { copy(otrosDescuentos = v) } },
+                        Modifier.weight(1f))
+                }
             }
 
             // ═══════════════════════════════════════════
-            // SECCIÓN: RESULTADOS
+            // SECCIÓN: RESULTADOS (LIQUIDACIÓN STYLE)
             // ═══════════════════════════════════════════
             AnimatedVisibility(result != null) {
                 result?.let { r ->
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
 
-                        // ── COSTO TOTAL ──
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            )
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth().padding(20.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text("COSTO TOTAL EMPRESA",
-                                    style = MaterialTheme.typography.labelLarge)
-                                Text(
-                                    "\$${SimuladorViewModel.formatCLP(r.costoTotalEmpresa)}",
-                                    style = MaterialTheme.typography.headlineLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text("Líquido trabajador",
-                                    style = MaterialTheme.typography.labelMedium)
-                                Text(
-                                    "\$${SimuladorViewModel.formatCLP(r.sueldoLiquido)}",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.tertiary
-                                )
-                            }
-                        }
-
-                        // ── Composición visual ──
+                        // Composición visual
                         val totalRef = r.costoTotalEmpresa.toFloat()
                         if (totalRef > 0 && r.sueldoLiquido > 0) {
                             val liquidoPct = (r.sueldoLiquido / totalRef).coerceAtLeast(0.01f)
@@ -263,98 +369,162 @@ fun SimuladorScreen(
                                     )
                             ) {
                                 Box(Modifier.weight(liquidoPct).fillMaxHeight()
-                                    .background(
-                                        MaterialTheme.colorScheme.tertiary,
-                                        MaterialTheme.shapes.small
-                                    ))
+                                    .background(Color(0xFF4CAF50), MaterialTheme.shapes.small))
                                 Box(Modifier.weight(descPct).fillMaxHeight()
-                                    .background(
-                                        MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                                        MaterialTheme.shapes.small
-                                    ))
+                                    .background(MaterialTheme.colorScheme.error, MaterialTheme.shapes.small))
                                 Box(Modifier.weight(empPct).fillMaxHeight()
-                                    .background(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                                        MaterialTheme.shapes.small
-                                    ))
-                            }
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                LegendDot("Líquido", MaterialTheme.colorScheme.tertiary)
-                                LegendDot("Descuentos", MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
-                                LegendDot("Empleador", MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                                    .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
                             }
                         }
 
-                        // ── Haberes ──
-                        ResultSection("Haberes Imponibles") {
-                            ResultRow("Sueldo Base", r.sueldoBase)
-                            ResultRow("Gratificación", r.gratificacion)
-                            if (r.comisiones > 0) ResultRow("Comisiones", r.comisiones)
-                            if (r.bonosImponibles > 0) ResultRow("Bonos Imponibles", r.bonosImponibles)
-                            if (r.horasExtras > 0) ResultRow("Horas Extra", r.horasExtras)
-                            Divider()
+                        // BLOCK A — INGRESOS
+                        PayslipBlock("INGRESOS", Color(0xFF4CAF50)) {
+                            ResultRow("Sueldo Base", r.sueldoBase, prefix = "+ ")
+                            ResultRow("Gratificación", r.gratificacion, prefix = "+ ")
+                            if (r.horasExtras > 0) ResultRow("Horas Extra", r.horasExtras, prefix = "+ ")
+                            if (r.comisiones > 0) ResultRow("Comisiones", r.comisiones, prefix = "+ ")
+                            if (r.bonosImponibles > 0) ResultRow("Bonos Imponibles", r.bonosImponibles, prefix = "+ ")
+                            HorizontalDivider()
                             ResultRow("Total Imponible", r.totalImponible, bold = true)
-                            if (r.excedeTopeImponible) {
-                                Text(
-                                    "⚠️ Excede tope imponible (\$${SimuladorViewModel.formatCLP(RC.TOPE_IMPONIBLE)}). " +
-                                            "Se usa topado: \$${SimuladorViewModel.formatCLP(r.imponibleTopado)}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error
-                                )
+                            if (r.colacion > 0) ResultRow("Colación", r.colacion, prefix = "+ ")
+                            if (r.movilizacion > 0) ResultRow("Movilización", r.movilizacion, prefix = "+ ")
+                            if (r.viaticos > 0) ResultRow("Viáticos", r.viaticos, prefix = "+ ")
+                            if (r.desgasteHerramientas > 0) ResultRow("Desgaste Herramientas", r.desgasteHerramientas, prefix = "+ ")
+                            if (r.bonosNoImponibles > 0) ResultRow("Otros no imponibles", r.bonosNoImponibles, prefix = "+ ")
+                            HorizontalDivider()
+                            ResultRow("Total Haberes", r.totalHaberes, bold = true)
+                        }
+
+                        // BLOCK B — DESCUENTOS TRABAJADOR
+                        PayslipBlock("DESCUENTOS TRABAJADOR", MaterialTheme.colorScheme.error) {
+                            ResultRow("AFP ${r.afpNombre}", r.afpMonto, negative = true, prefix = "- ")
+                            ResultRow("Salud ${r.saludDetalle}", r.saludMonto, negative = true, prefix = "- ")
+                            if (r.cesantiaTrabajador > 0) ResultRow("Seg. Cesantía (0,6%)", r.cesantiaTrabajador, negative = true, prefix = "- ")
+                            if (r.impuestoUnico > 0) ResultRow("Impuesto Único (${String.format("%.1f", r.tasaEfectivaImpuesto)}%)", r.impuestoUnico, negative = true, prefix = "- ")
+                            if (r.anticipo > 0) ResultRow("Anticipo", r.anticipo, negative = true, prefix = "- ")
+                            if (r.prestamoEmpresa > 0) ResultRow("Préstamo empresa", r.prestamoEmpresa, negative = true, prefix = "- ")
+                            if (r.otrosDescuentos > 0) ResultRow(r.otrosDescuentosLabel, r.otrosDescuentos, negative = true, prefix = "- ")
+                            HorizontalDivider()
+                            ResultRow("Total Descuentos", r.totalDescuentosTrabajador, bold = true, negative = true)
+                        }
+
+                        // BLOCK C — COSTO ADICIONAL EMPLEADOR
+                        PayslipBlock("COSTO ADICIONAL EMPLEADOR", MaterialTheme.colorScheme.primary) {
+                            ResultRow("SIS (1,54%)", r.sisMonto, prefix = "+ ")
+                            val cesantiaLabel = if (input.tipoContrato == TipoContrato.INDEFINIDO)
+                                "Seg. Cesantía emp. (2,4%)" else "Seg. Cesantía emp. (3%)"
+                            ResultRow(cesantiaLabel, r.cesantiaEmpleador, prefix = "+ ")
+                            ResultRow("Mutual de Seguridad", r.mutualMonto, prefix = "+ ")
+                            HorizontalDivider()
+                            ResultRow("Total Costo Empleador", r.totalCostosEmpleador, bold = true)
+                        }
+
+                        // FINAL SUMMARY
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(
+                                        modifier = Modifier.weight(1f),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text("SUELDO LÍQUIDO", style = MaterialTheme.typography.labelMedium)
+                                        Text(
+                                            "\$${SimuladorViewModel.formatCLP(r.sueldoLiquido)}",
+                                            style = MaterialTheme.typography.headlineMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.tertiary
+                                        )
+                                        Text("Lo que recibe el trabajador", style = MaterialTheme.typography.labelSmall)
+                                    }
+                                    VerticalDivider(modifier = Modifier.height(60.dp).padding(horizontal = 8.dp))
+                                    Column(
+                                        modifier = Modifier.weight(1f),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text("COSTO TOTAL", style = MaterialTheme.typography.labelMedium)
+                                        Text(
+                                            "\$${SimuladorViewModel.formatCLP(r.costoTotalEmpresa)}",
+                                            style = MaterialTheme.typography.headlineMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text("Lo que paga la empresa", style = MaterialTheme.typography.labelSmall)
+                                    }
+                                }
+                                
+                                comparacion?.let { comp ->
+                                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("Si pagara todo imponible:", style = MaterialTheme.typography.labelSmall)
+                                            Text("$${SimuladorViewModel.formatCLP(comp.costoTodoImponible)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                                        }
+                                        Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
+                                            Text("Ahorro empleador:", style = MaterialTheme.typography.labelSmall, color = Color(0xFF4CAF50))
+                                            Text("$${SimuladorViewModel.formatCLP(comp.ahorroMensual)} / mes", 
+                                                style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
+                                        }
+                                    }
+                                }
                             }
                         }
 
-                        if (r.totalNoImponible > 0) {
-                            ResultSection("Haberes No Imponibles") {
-                                if (r.colacion > 0) ResultRow("Colación", r.colacion)
-                                if (r.movilizacion > 0) ResultRow("Movilización", r.movilizacion)
-                                if (r.viaticos > 0) ResultRow("Viáticos", r.viaticos)
-                                if (r.bonosNoImponibles > 0) ResultRow("Bonos No Imp.", r.bonosNoImponibles)
-                                Divider()
-                                ResultRow("Total No Imponible", r.totalNoImponible, bold = true)
+                        // Acciones adicionales
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = { onNavigateToMulti(r.costoTotalEmpresa) },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                            ) {
+                                Icon(Icons.Default.Group, null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Escalar a N personas", fontSize = 11.sp)
+                            }
+                            OutlinedButton(
+                                onClick = onNavigateToFiniquito,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Default.Gavel, null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Ver Finiquito", fontSize = 11.sp)
                             }
                         }
 
-                        // ── Descuentos trabajador ──
-                        ResultSection("Descuentos Trabajador") {
-                            ResultRow("AFP ${r.afpNombre}", r.afpMonto, negative = true)
-                            ResultRow(r.saludDetalle, r.saludMonto, negative = true)
-                            if (r.cesantiaTrabajador > 0)
-                                ResultRow("Seg. Cesantía (0,6%)", r.cesantiaTrabajador, negative = true)
-                            if (r.impuestoUnico > 0) {
-                                ResultRow(
-                                    "Impuesto Único (${String.format("%.1f", r.tasaEfectivaImpuesto)}%)",
-                                    r.impuestoUnico,
-                                    negative = true
-                                )
-                            }
-                            Divider()
-                            ResultRow("Total Descuentos", r.totalDescuentosTrabajador,
-                                bold = true, negative = true)
-                        }
-
-                        // ── Costos empleador ──
-                        ResultSection("Costos Empleador (adicionales)") {
-                            ResultRow("SIS (1,54%)", r.sisMonto)
-                            ResultRow("Seg. Cesantía Empleador", r.cesantiaEmpleador)
-                            ResultRow("Mutual de Seguridad", r.mutualMonto)
-                            Divider()
-                            ResultRow("Total Costos Empleador", r.totalCostosEmpleador, bold = true)
-                        }
-
-                        // ── Valores de referencia ──
+                        // TODO: These values should be fetched from an API or remote config.
+                        // Currently hardcoded in RemuneracionesChile object.
+                        // Suggested solution: use a RemoteConfig or a Supabase table "parametros_legales"
+                        // with columns: nombre, valor, vigencia_desde. Update quarterly.
                         Card(
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant
                             )
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
-                                Text("Valores de Referencia — Marzo 2026",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Valores de Referencia — Vigentes desde ${RC.VIGENCIA_DESDE}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.weight(1f))
+                                    if (isFetchingUtm) {
+                                        CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                                    } else if (RC.isUtmUpdated) {
+                                        InfoBadge(label = "Actualizado")
+                                    }
+                                }
                                 Spacer(Modifier.height(4.dp))
                                 Text("UTM: \$${SimuladorViewModel.formatCLP(RC.UTM)}", style = MaterialTheme.typography.bodySmall)
                                 Text("Sueldo Mínimo: \$${SimuladorViewModel.formatCLP(RC.INGRESO_MINIMO)}", style = MaterialTheme.typography.bodySmall)
@@ -388,7 +558,7 @@ fun SimuladorScreen(
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            "Ingresa la pretensión de renta del candidato para ver el desglose completo del costo de contratación.",
+                            "Ingresa la pretensión líquida del candidato para ver el desglose completo del costo de contratación.",
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center
                         )
@@ -421,20 +591,24 @@ private fun SectionCard(
 }
 
 @Composable
-private fun ResultSection(
+private fun PayslipBlock(
     title: String,
+    borderColor: Color,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Card(colors = CardDefaults.cardColors(
-        containerColor = MaterialTheme.colorScheme.surface
-    )) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(title, style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold)
-            content()
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+            Box(modifier = Modifier.fillMaxHeight().width(4.dp).background(borderColor))
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(title, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = borderColor)
+                content()
+            }
         }
     }
 }
@@ -465,14 +639,15 @@ private fun ResultRow(
     label: String,
     amount: Long,
     bold: Boolean = false,
-    negative: Boolean = false
+    negative: Boolean = false,
+    prefix: String = ""
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            label,
+            "$prefix$label",
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal
         )
@@ -481,21 +656,24 @@ private fun ResultRow(
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
             color = if (negative) MaterialTheme.colorScheme.error
-            else MaterialTheme.colorScheme.onSurface
+            else if (bold) MaterialTheme.colorScheme.onSurface
+            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
         )
     }
 }
 
 @Composable
-private fun LegendDot(label: String, color: Color) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+private fun InfoBadge(label: String = "Sugerido") {
+    Surface(
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = MaterialTheme.shapes.extraSmall,
+        modifier = Modifier.padding(top = 2.dp)
     ) {
-        Box(
-            Modifier.size(8.dp)
-                .background(color, MaterialTheme.shapes.extraSmall)
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
         )
-        Text(label, style = MaterialTheme.typography.labelSmall)
     }
 }

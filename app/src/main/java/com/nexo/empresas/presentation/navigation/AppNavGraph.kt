@@ -19,8 +19,12 @@ import com.nexo.empresas.presentation.hub.HubEmpresaScreen
 import com.nexo.empresas.presentation.navigation.dte.dteNavGraph
 import com.nexo.empresas.presentation.settings.SettingsScreen
 import com.nexo.empresas.presentation.scanner.ScannerScreen
+import com.nexo.empresas.presentation.simulador.FiniquitoScreen
+import com.nexo.empresas.presentation.simulador.MultiTrabajadorScreen
 import com.nexo.empresas.presentation.simulador.SimuladorScreen
 import com.nexo.empresas.presentation.tutorial.TutorialListScreen
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
 
 @Composable
 fun AppNavGraph(
@@ -121,7 +125,26 @@ fun AppNavGraph(
 
         composable(Screen.Simulador.route) {
             SimuladorScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToFiniquito = { navController.navigate(Screen.Finiquito.route) },
+                onNavigateToMulti = { costo -> navController.navigate(Screen.MultiTrabajador.route(costo)) }
+            )
+        }
+
+        composable(Screen.Finiquito.route) {
+            FiniquitoScreen(
                 onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.MultiTrabajador.route,
+            arguments = listOf(navArgument("costo") { type = NavType.LongType; defaultValue = 0L })
+        ) { backStackEntry ->
+            val costo = backStackEntry.arguments?.getLong("costo") ?: 0L
+            MultiTrabajadorScreen(
+                onBack = { navController.popBackStack() },
+                initialCosto = costo
             )
         }
 
