@@ -155,8 +155,11 @@ data class SimulacionInput(
     val tasaMutualAdicional: Double = 0.0,
     val colacionManual: Boolean = false,
     val movilizacionManual: Boolean = false,
+    val viaticosManual: Boolean = false,
+    val desgasteHerramientasManual: Boolean = false,
     val otrosNoImponiblesManual: Boolean = false,
     val warningPorDebajoMinimo: Boolean = false,
+    val errorSueldoExcedido: Boolean = false,
 )
 
 enum class GratificacionTipo(val label: String) {

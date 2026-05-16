@@ -65,6 +65,12 @@ class SimuladorViewModel @Inject constructor(
         if (newInput.movilizacion != oldInput.movilizacion) {
             newInput = newInput.copy(movilizacionManual = true)
         }
+        if (newInput.viaticos != oldInput.viaticos) {
+            newInput = newInput.copy(viaticosManual = true)
+        }
+        if (newInput.desgasteHerramientas != oldInput.desgasteHerramientas) {
+            newInput = newInput.copy(desgasteHerramientasManual = true)
+        }
         if (newInput.bonosNoImponibles != oldInput.bonosNoImponibles) {
             newInput = newInput.copy(otrosNoImponiblesManual = true)
         }
@@ -92,49 +98,97 @@ class SimuladorViewModel @Inject constructor(
             return
         }
 
-        // STEP 1 — Fixed components
-        val sueldoBase = RC.INGRESO_MINIMO
-
-        // STEP 2 — Net from fixed base only
-        // Simulamos con 0 no imponibles para ver el líquido base legal
+        // 1. Calcular líquido base legal (Sueldo mínimo + mandatory bonuses)
+        // Usamos una copia limpia sin ningún haber no imponible
         val inputBaseLegal = i.copy(
             colacion = 0, movilizacion = 0, viaticos = 0,
-            desgasteHerramientas = 0, bonosNoImponibles = 0,
-            horasExtraCount = 0, comisiones = 0, bonosImponibles = 0
+            desgasteHerramientas = 0, bonosNoImponibles = 0
         )
-        val resBaseLegal = calculateResult(sueldoBase, inputBaseLegal)
+        val resBaseLegal = calculateResult(RC.INGRESO_MINIMO, inputBaseLegal)
         val liquidoDeBase = resBaseLegal.sueldoLiquido
 
-        // STEP 3 — Shortfall
+        // 2. Shortfall: Cuánto falta para llegar al líquido deseado
         val shortfall = i.sueldoLiquidoDeseado - liquidoDeBase
 
         var warningMinimo = false
-        var optimizedInput = i
+        var errorExcedido = false
+        val optimizedInput: SimulacionInput
 
         if (shortfall < 0) {
             warningMinimo = true
-        } else if (shortfall > 0) {
-            // Auto-suggest non-taxable allowances if not manual
-            val sugeridaColacion = min(shortfall, 50_000L)
-            val remaining1 = shortfall - sugeridaColacion
-            val sugeridaMovilizacion = min(remaining1, 50_000L)
-            val remaining2 = remaining1 - sugeridaMovilizacion
-            val sugeridaOtros = remaining2
-
+            // Si el mínimo ya lo supera, los no imponibles sugeridos deben ser 0
             optimizedInput = i.copy(
-                colacion = if (i.colacionManual) i.colacion else sugeridaColacion,
-                movilizacion = if (i.movilizacionManual) i.movilizacion else sugeridaMovilizacion,
-                bonosNoImponibles = if (i.otrosNoImponiblesManual) i.bonosNoImponibles else sugeridaOtros
+                colacion = if (i.colacionManual) i.colacion else 0L,
+                movilizacion = if (i.movilizacionManual) i.movilizacion else 0L,
+                viaticos = if (i.viaticosManual) i.viaticos else 0L,
+                desgasteHerramientas = if (i.desgasteHerramientasManual) i.desgasteHerramientas else 0L,
+                bonosNoImponibles = if (i.otrosNoImponiblesManual) i.bonosNoImponibles else 0L
             )
+        } else {
+            // Sumamos lo que el usuario fijó manualmente
+            val fixedManual = (if (i.colacionManual) i.colacion else 0L) +
+                    (if (i.movilizacionManual) i.movilizacion else 0L) +
+                    (if (i.viaticosManual) i.viaticos else 0L) +
+                    (if (i.desgasteHerramientasManual) i.desgasteHerramientas else 0L) +
+                    (if (i.otrosNoImponiblesManual) i.bonosNoImponibles else 0L)
+
+            if (fixedManual > shortfall) {
+                errorExcedido = true
+                // Mantener los manuales, pero los automáticos a 0
+                optimizedInput = i.copy(
+                    colacion = if (i.colacionManual) i.colacion else 0L,
+                    movilizacion = if (i.movilizacionManual) i.movilizacion else 0L,
+                    viaticos = if (i.viaticosManual) i.viaticos else 0L,
+                    desgasteHerramientas = if (i.desgasteHerramientasManual) i.desgasteHerramientas else 0L,
+                    bonosNoImponibles = if (i.otrosNoImponiblesManual) i.bonosNoImponibles else 0L
+                )
+            } else {
+                // Distribuir el restante entre lo no manual
+                var remaining = shortfall - fixedManual
+                
+                // Prioridad 1: Colación (hasta 50k)
+                val finalColacion = if (i.colacionManual) i.colacion else {
+                    val sug = min(remaining, 50000L)
+                    remaining -= sug
+                    sug
+                }
+
+                // Prioridad 2: Movilización (hasta 50k)
+                val finalMovilizacion = if (i.movilizacionManual) i.movilizacion else {
+                    val sug = min(remaining, 50000L)
+                    remaining -= sug
+                    sug
+                }
+
+                // Prioridad 3: Otros no imponibles (el resto)
+                val finalOtros = if (i.otrosNoImponiblesManual) i.bonosNoImponibles else {
+                    val sug = remaining
+                    sug
+                }
+                
+                // Viáticos y Desgaste Herr. no se auto-llenan si no son manuales (quedan en 0)
+                val finalViaticos = if (i.viaticosManual) i.viaticos else 0L
+                val finalDesgaste = if (i.desgasteHerramientasManual) i.desgasteHerramientas else 0L
+
+                optimizedInput = i.copy(
+                    colacion = finalColacion,
+                    movilizacion = finalMovilizacion,
+                    viaticos = finalViaticos,
+                    desgasteHerramientas = finalDesgaste,
+                    bonosNoImponibles = finalOtros
+                )
+            }
         }
 
-        // Actualizar el input con flags de warning
-        _input.value = optimizedInput.copy(warningPorDebajoMinimo = warningMinimo)
+        // Actualizar el input con flags de estado
+        _input.value = optimizedInput.copy(
+            warningPorDebajoMinimo = warningMinimo,
+            errorSueldoExcedido = errorExcedido
+        )
 
-        val finalResult = calculateResult(sueldoBase, optimizedInput)
+        val finalResult = calculateResult(RC.INGRESO_MINIMO, optimizedInput)
         _result.value = finalResult.copy(sueldoLiquidoDeseado = i.sueldoLiquidoDeseado)
 
-        // STEP 5 — Scenario comparison
         calculateComparison(i.sueldoLiquidoDeseado, optimizedInput, finalResult)
     }
 

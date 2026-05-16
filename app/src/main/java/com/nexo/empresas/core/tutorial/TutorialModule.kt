@@ -16,6 +16,9 @@ enum class TutorialModule(
     CUENTAS("tutorial_cuentas", "Cuentas Corrientes", "Control de cuentas bancarias"),
     GRAFICOS("tutorial_graficos", "Gráficos", "Análisis visual del negocio"),
     ALERTAS("tutorial_alertas", "Alertas", "Vencimientos y notificaciones"),
-    SCANNER("tutorial_scanner", "Escáner DTE", "Lectura de documentos PDF417"),
-    SIMULADOR("tutorial_simulador", "Simulador", "Proyecciones financieras")
+    DTE_MODULO("tutorial_dte", "Facturación SII", "Emisión y gestión de DTEs"),
+    SCANNER("tutorial_scanner", "Verificación DTE", "Valida autenticidad ante el SII"),
+    SIMULADOR("tutorial_simulador", "Simulador Contratación", "Costo empresa y líquido"),
+    FINIQUITO("tutorial_finiquito", "Simulador Finiquito", "Cálculo de indemnizaciones"),
+    MULTI_TRABAJADOR("tutorial_multi", "Multi-Trabajador", "Escalabilidad de costos")
 }

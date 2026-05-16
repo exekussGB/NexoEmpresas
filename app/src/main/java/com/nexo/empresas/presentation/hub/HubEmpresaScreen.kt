@@ -20,12 +20,11 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
@@ -94,26 +93,25 @@ fun HubEmpresaScreen(
 ) {
     val showOnboarding by viewModel.showOnboarding.collectAsState()
 
-    // ── Orden lógico por frecuencia de uso ───────────────────────────────────
+    // ── Grid 2×2: módulos de uso frecuente ───────────────────────────────────
     val gridItems = listOf(
-        HubItem("Resumen",          Icons.Default.Dashboard,                Screen.Dashboard),
-        HubItem("Ingresar Doc.",    Icons.Default.AddCircle,                Screen.AddDocumento),
-        HubItem("Por Cobrar",       Icons.AutoMirrored.Filled.TrendingUp,   Screen.CuentasCobrar),
-        HubItem("Por Pagar",        Icons.AutoMirrored.Filled.TrendingDown, Screen.CuentasPagar),
-        HubItem("Cheques",          Icons.Default.Receipt,                  Screen.Cheques),
-        HubItem("Cuentas",          Icons.Default.AccountBalance,           Screen.Cuentas),
-        HubItem("Facturación SII",  Icons.Default.Receipt,                  Screen.DteRoot),
-        HubItem("Contactos",        Icons.Default.Contacts,                 Screen.Contactos),
+        HubItem("Resumen",         Icons.Default.Dashboard,                Screen.Dashboard),
+        HubItem("Ingresar Doc.",   Icons.Default.AddCircle,                Screen.AddDocumento),
+        HubItem("Por Cobrar",      Icons.AutoMirrored.Filled.TrendingUp,   Screen.CuentasCobrar),
+        HubItem("Por Pagar",       Icons.AutoMirrored.Filled.TrendingDown, Screen.CuentasPagar),
+        HubItem("Cheques",         Icons.Default.Receipt,                  Screen.Cheques),
+        HubItem("Cuentas",         Icons.Default.AccountBalance,           Screen.Cuentas),
+        HubItem("Facturación SII", Icons.Default.Receipt,                  Screen.DteRoot),
+        HubItem("Contactos",       Icons.Default.Contacts,                 Screen.Contactos),
     )
 
+    // ── Ancho completo: accesos secundarios ───────────────────────────────────
     val fullWidthItems = listOf(
-        HubItem("Simulador de Contratación", Icons.Default.Calculate, Screen.Simulador),
-        HubItem("Simulador Finiquito",      Icons.Default.Calculate, Screen.Finiquito),
-        HubItem("Multi-Trabajador",          Icons.Default.Group,     Screen.MultiTrabajador),
-        HubItem("Opciones",                  Icons.Default.Settings,  Screen.Opciones),
+        HubItem("Contrataciones", Icons.Default.Work,     Screen.Contrataciones),
+        HubItem("Opciones",       Icons.Default.Settings, Screen.Opciones),
     )
 
-    // ── Helper para resolver la ruta de navegación ────────────────────────────
+    // ── Resuelve la ruta de navegación según la pantalla ─────────────────────
     fun resolveRoute(item: HubItem): String? = when (item.screen) {
         Screen.DteRoot -> viewModel.currentEmpresaId?.let { Screen.DteLista.route(it) }
         else -> item.screen.route
@@ -122,7 +120,7 @@ fun HubEmpresaScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
                             painter = painterResource(id = R.drawable.app_logo),
@@ -150,7 +148,7 @@ fun HubEmpresaScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // ── Grid 2×2 ─────────────────────────────────────────────────────
+            // ── Tarjetas cuadradas 2×2 ────────────────────────────────────────
             items(gridItems) { item ->
                 Card(
                     onClick = { resolveRoute(item)?.let(onNavigate) },
@@ -179,7 +177,7 @@ fun HubEmpresaScreen(
                 }
             }
 
-            // ── Ancho completo: Simulador y Opciones ─────────────────────────
+            // ── Tarjetas de ancho completo ────────────────────────────────────
             items(
                 fullWidthItems,
                 span = { GridItemSpan(2) }

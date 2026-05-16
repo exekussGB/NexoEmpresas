@@ -135,6 +135,23 @@ fun SimuladorScreen(
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
+
+                if (input.errorSueldoExcedido) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Warning, null, tint = MaterialTheme.colorScheme.error)
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                "Los haberes manuales exceden el sueldo deseado. Ajusta los valores para cuadrar el líquido.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
             }
 
             // ═══════════════════════════════════════════
@@ -280,8 +297,14 @@ fun SimuladorScreen(
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MoneyField("Viáticos", input.viaticos, { v -> viewModel.updateInput { copy(viaticos = v) } }, Modifier.weight(1f))
-                    MoneyField("Desgaste Herr.", input.desgasteHerramientas, { v -> viewModel.updateInput { copy(desgasteHerramientas = v) } }, Modifier.weight(1f))
+                    Column(modifier = Modifier.weight(1f)) {
+                        MoneyField("Viáticos", input.viaticos, { v -> viewModel.updateInput { copy(viaticos = v) } })
+                        if (!input.viaticosManual && input.viaticos > 0) InfoBadge("Sugerido")
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        MoneyField("Desgaste Herr.", input.desgasteHerramientas, { v -> viewModel.updateInput { copy(desgasteHerramientas = v) } })
+                        if (!input.desgasteHerramientasManual && input.desgasteHerramientas > 0) InfoBadge("Sugerido")
+                    }
                 }
                 Column {
                     MoneyField("Otros no imponibles", input.bonosNoImponibles, { v -> viewModel.updateInput { copy(bonosNoImponibles = v) } })

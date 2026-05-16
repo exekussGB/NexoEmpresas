@@ -9,6 +9,7 @@ import com.nexo.empresas.presentation.auth.LoginScreen
 import com.nexo.empresas.presentation.auth.RegisterScreen
 import com.nexo.empresas.presentation.cheques.ChequesScreen
 import com.nexo.empresas.presentation.contactos.ContactosScreen
+import com.nexo.empresas.presentation.contrataciones.ContratacionesScreen
 import com.nexo.empresas.presentation.cuentas.CuentasCorrientesScreen
 import com.nexo.empresas.presentation.dashboard.DashboardScreen
 import com.nexo.empresas.presentation.documentos.AddDocumentoScreen
@@ -120,6 +121,16 @@ fun AppNavGraph(
         composable(Screen.Contactos.route) {
             ContactosScreen(
                 onBack = { navController.popBackStack() }
+            )
+        }
+
+        // ── Hub intermedio de Contrataciones ─────────────────────────────────
+        composable(Screen.Contrataciones.route) {
+            ContratacionesScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToSimulador = { navController.navigate(Screen.Simulador.route) },
+                onNavigateToFiniquito = { navController.navigate(Screen.Finiquito.route) },
+                onNavigateToMultiTrabajador = { navController.navigate(Screen.MultiTrabajador.route(0L)) }
             )
         }
 

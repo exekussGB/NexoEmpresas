@@ -37,7 +37,6 @@
         android:icon="@mipmap/ic_launcher"
         android:label="NexoEmpresas"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:testOnly="true"
         android:theme="@style/Theme.NexoEmpresas"
         android:usesCleartextTraffic="false" >
         <activity

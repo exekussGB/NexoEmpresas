@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Domain
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Image
@@ -59,8 +60,11 @@ object TutorialSteps {
         TutorialModule.CUENTAS -> cuentasSteps()
         TutorialModule.GRAFICOS -> graficosSteps()
         TutorialModule.ALERTAS -> alertasSteps()
+        TutorialModule.DTE_MODULO -> dteSteps()
         TutorialModule.SCANNER -> scannerSteps()
         TutorialModule.SIMULADOR -> simuladorSteps()
+        TutorialModule.FINIQUITO -> finiquitoSteps()
+        TutorialModule.MULTI_TRABAJADOR -> multiTrabajadorSteps()
     }
 
     private fun onboardingSteps() = listOf(
@@ -165,30 +169,30 @@ object TutorialSteps {
             iconBgColor = Color(0xFFE3F2FD)
         ),
         TutorialStep(
-            title = "Documentos (CxC / CxP)",
-            description = "Registra facturas por cobrar (ingresos) y por pagar (egresos). El botón diferencia automáticamente el tipo.",
+            title = "Módulos de Gestión",
+            description = "Registra facturas (CxC/CxP), gestiona cheques y visualiza tus cuentas corrientes bancarias.",
             icon = Icons.Default.Description,
             iconColor = Color(0xFF2E7D32),
             iconBgColor = Color(0xFFE8F5E9)
         ),
         TutorialStep(
-            title = "Cheques y Cuentas",
-            description = "Lleva el control de cheques recibidos/emitidos y los saldos de tus cuentas corrientes.",
-            icon = Icons.Default.AccountBalance,
+            title = "Facturación SII",
+            description = "Emite facturas y boletas electrónicas directamente. También puedes verificar documentos escaneando su timbre.",
+            icon = Icons.Default.Receipt,
             iconColor = Color(0xFF6A1B9A),
             iconBgColor = Color(0xFFF3E5F5)
         ),
         TutorialStep(
-            title = "Gráficos y Dashboard",
-            description = "Visualiza el estado financiero de tu empresa: flujo de caja, documentos pendientes y evolución mensual.",
-            icon = Icons.Default.BarChart,
+            title = "Simuladores",
+            description = "Calcula costos de contratación, finiquitos y proyecciones de equipo en el módulo de Simulación.",
+            icon = Icons.Default.Calculate,
             iconColor = Color(0xFFF57F17),
             iconBgColor = Color(0xFFFFF8E1)
         ),
         TutorialStep(
-            title = "Escáner DTE",
-            description = "Lee documentos tributarios electrónicos usando el código PDF417 del papel. Extrae el RUT y monto automáticamente.",
-            icon = Icons.Default.QrCodeScanner,
+            title = "Análisis y Alertas",
+            description = "Revisa gráficos de desempeño y configura alertas para no olvidar ningún vencimiento.",
+            icon = Icons.Default.BarChart,
             iconColor = Color(0xFFC62828),
             iconBgColor = Color(0xFFFFEBEE)
         )
@@ -406,30 +410,54 @@ object TutorialSteps {
 
     private fun scannerSteps() = listOf(
         TutorialStep(
-            title = "Escáner de documentos DTE",
-            description = "Lee documentos tributarios electrónicos. Apunta la cámara al código PDF417 que aparece en la parte inferior de la factura impresa.",
+            title = "Verificación de DTE",
+            description = "Valida la autenticidad de un documento físico. Apunta al código PDF417 (timbre electrónico) en la esquina inferior.",
             icon = Icons.Default.QrCodeScanner,
             iconColor = Color(0xFF1565C0),
             iconBgColor = Color(0xFFE3F2FD)
         ),
         TutorialStep(
-            title = "Datos extraídos",
-            description = "El escáner extrae automáticamente: tipo de documento, folio, RUT emisor, RUT receptor, monto neto, IVA y total.",
-            icon = Icons.Default.DataObject,
+            title = "Consulta al SII",
+            description = "La app extrae los datos del timbre y consulta automáticamente el estado del documento en los servidores del SII.",
+            icon = Icons.Default.Cloud,
             iconColor = Color(0xFF2E7D32),
             iconBgColor = Color(0xFFE8F5E9)
         ),
         TutorialStep(
-            title = "Crear documento desde scan",
-            description = "Una vez escaneado, puedes crear un documento directamente con los datos extraídos. Revisa y confirma antes de guardar.",
+            title = "Resultado detallado",
+            description = "Verás si el documento es válido, junto con el folio, RUT emisor y monto total para tu tranquilidad.",
+            icon = Icons.Default.Verified,
+            iconColor = Color(0xFF6A1B9A),
+            iconBgColor = Color(0xFFF3E5F5)
+        )
+    )
+
+    private fun dteSteps() = listOf(
+        TutorialStep(
+            title = "Facturación Electrónica",
+            description = "Gestiona tus documentos tributarios (DTE) directamente con el SII desde NexoEmpresas.",
+            icon = Icons.Default.Receipt,
+            iconColor = Color(0xFF1565C0),
+            iconBgColor = Color(0xFFE3F2FD)
+        ),
+        TutorialStep(
+            title = "Emisión de Documentos",
+            description = "Emite Facturas Afectas, Exentas y Boletas. El sistema calcula el IVA automáticamente según el tipo de documento.",
             icon = Icons.Default.NoteAdd,
+            iconColor = Color(0xFF2E7D32),
+            iconBgColor = Color(0xFFE8F5E9)
+        ),
+        TutorialStep(
+            title = "Gestión de Folios",
+            description = "Carga tus CAF (Códigos de Autorización de Folios) obtenidos del SII para poder emitir documentos.",
+            icon = Icons.Default.Pin,
             iconColor = Color(0xFF6A1B9A),
             iconBgColor = Color(0xFFF3E5F5)
         ),
         TutorialStep(
-            title = "Simulador de datos",
-            description = "Si no tienes un documento físico, usa el Simulador para ingresar datos manualmente y probar el flujo completo.",
-            icon = Icons.Default.Calculate,
+            title = "Certificado Digital",
+            description = "Sube tu certificado digital (.pfx) para firmar los documentos. La firma se realiza de forma segura y cifrada.",
+            icon = Icons.Default.Security,
             iconColor = Color(0xFFF57F17),
             iconBgColor = Color(0xFFFFF8E1)
         )
@@ -437,23 +465,71 @@ object TutorialSteps {
 
     private fun simuladorSteps() = listOf(
         TutorialStep(
-            title = "Simulador financiero",
-            description = "Proyecta diferentes escenarios para tu empresa: ¿qué pasa si aumentas tus cobros un 20%?",
+            title = "Costo de Contratación",
+            description = "Calcula cuánto cuesta realmente contratar a alguien. Ingresa el sueldo líquido deseado y optimiza la estructura.",
             icon = Icons.Default.Calculate,
             iconColor = Color(0xFF1565C0),
             iconBgColor = Color(0xFFE3F2FD)
         ),
         TutorialStep(
-            title = "Variables ajustables",
-            description = "Modifica ingresos estimados, egresos planificados y flujo de caja proyectado. El simulador recalcula todo en tiempo real.",
+            title = "Estructura Optimizada",
+            description = "La app sugiere automáticamente haberes no imponibles (colación, movilización) para minimizar el costo empleador.",
             icon = Icons.Default.Tune,
             iconColor = Color(0xFF2E7D32),
             iconBgColor = Color(0xFFE8F5E9)
         ),
         TutorialStep(
-            title = "Sin efecto en datos reales",
-            description = "Las simulaciones son solo proyecciones. No modifican ni afectan ningún documento, cheque o cuenta real de tu empresa.",
-            icon = Icons.Default.Info,
+            title = "Escenario Comparativo",
+            description = "Compara el ahorro mensual entre pagar todo como imponible vs. usar la estructura optimizada sugerida.",
+            icon = Icons.Default.CompareArrows,
+            iconColor = Color(0xFF6A1B9A),
+            iconBgColor = Color(0xFFF3E5F5)
+        )
+    )
+
+    private fun finiquitoSteps() = listOf(
+        TutorialStep(
+            title = "Simulador de Finiquito",
+            description = "Calcula el costo de desvincular a un trabajador según los años de servicio y la causal de término.",
+            icon = Icons.Default.Description,
+            iconColor = Color(0xFF1565C0),
+            iconBgColor = Color(0xFFE3F2FD)
+        ),
+        TutorialStep(
+            title = "Causales Legales",
+            description = "Selecciona entre Art. 161 (Necesidades de la empresa), 159 o 160. La app ajusta las indemnizaciones según corresponda.",
+            icon = Icons.Default.Gavel,
+            iconColor = Color(0xFF2E7D32),
+            iconBgColor = Color(0xFFE8F5E9)
+        ),
+        TutorialStep(
+            title = "Proporcionales",
+            description = "Calcula automáticamente el feriado proporcional (vacaciones) y la gratificación acumulada a la fecha de término.",
+            icon = Icons.Default.DateRange,
+            iconColor = Color(0xFF6A1B9A),
+            iconBgColor = Color(0xFFF3E5F5)
+        )
+    )
+
+    private fun multiTrabajadorSteps() = listOf(
+        TutorialStep(
+            title = "Escalado de Costos",
+            description = "Proyecta el gasto mensual y anual para equipos completos de trabajadores con un mismo perfil de costo.",
+            icon = Icons.Default.Group,
+            iconColor = Color(0xFF1565C0),
+            iconBgColor = Color(0xFFE3F2FD)
+        ),
+        TutorialStep(
+            title = "Proyección Anual",
+            description = "Visualiza el costo total considerando 12 meses o 13 meses (incluyendo una gratificación anual completa).",
+            icon = Icons.Default.TrendingUp,
+            iconColor = Color(0xFF2E7D32),
+            iconBgColor = Color(0xFFE8F5E9)
+        ),
+        TutorialStep(
+            title = "Desglose por Concepto",
+            description = "Entiende cuánto del presupuesto total se destina a imponibles, no imponibles y cotizaciones previsionales del grupo.",
+            icon = Icons.Default.DataObject,
             iconColor = Color(0xFF6A1B9A),
             iconBgColor = Color(0xFFF3E5F5)
         )

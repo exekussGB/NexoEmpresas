@@ -15,6 +15,7 @@ sealed class Screen(val route: String) {
     data object Contactos : Screen("contactos")
     data object Opciones : Screen("opciones")
     data object Alertas : Screen("alertas")
+    data object Contrataciones : Screen("contrataciones")
     data object Simulador : Screen("simulador")
     data object Finiquito : Screen("finiquito")
     data object MultiTrabajador : Screen("multi_trabajador?costo={costo}") {
@@ -22,13 +23,11 @@ sealed class Screen(val route: String) {
     }
     data object Scanner : Screen("scanner")
     data object TutorialList : Screen("tutorial_list")
-
     // DTE
     data object DteRoot : Screen("dte")
     data object DteLista : Screen("dte/lista/{empresaId}") {
         fun route(id: String) = "dte/lista/$id"
     }
-
     data object DocumentoDetail : Screen("documento/{documentoId}") {
         fun route(id: String) = "documento/$id"
     }
